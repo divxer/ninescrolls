@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 
 export type DataQualityFlag = 'INCOMPLETE' | 'UNCONFIRMED' | 'CONFLICT_RESOLVED';
 export type HistoricalFxProvenance = 'CONFIRMED' | 'INFERRED' | 'UNKNOWN';
+export const MAX_IMPORT_ROWS = 50;
 
 export interface HistoricalQuotationInput {
   customerName: string;

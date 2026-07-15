@@ -1,7 +1,7 @@
 import { mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   importBatchIdFor,
   buildNormalizedHistoricalQuotations,
@@ -12,6 +12,12 @@ import {
   serializeHistoricalQuotations,
   sourceDocumentHashFor,
   withWorkbookSnapshot,
+  classifyHistoricalDryRun,
+  validateExpectedRows,
+  assertProbeResult,
+  assertSandboxTarget,
+  syntheticSandboxRows,
+  MAX_IMPORT_ROWS,
 } from './historicalQuotationImport';
 import {
   contentHashFor,
@@ -150,5 +156,37 @@ describe('historical quotation normalization helpers', () => {
       else process.env.TMPDIR = previous;
       rmSync(insideTemp, { recursive: true, force: true });
     }
+  });
+});
+
+describe('operator safety helpers', () => {
+  it('consults the server for every row and honestly classifies hashes', async () => {
+    const rows = [1, 2, 3].map(sourceRow => ({ ...contentFixture, sourceRow, historicalId: historicalIdFor('book.xlsx', sourceRow), contentHash: contentHashFor({ ...contentFixture, sourceRow }) }));
+    const normalized = { importBatchId: 'HB-fixture', sourceDocument: 'book.xlsx', sourceDocumentHash: 'a'.repeat(64), rows };
+    const get = vi.fn().mockResolvedValueOnce(null).mockResolvedValueOnce({ contentHash: rows[1].contentHash }).mockResolvedValueOnce({ contentHash: 'different' });
+    expect(await classifyHistoricalDryRun(normalized, get)).toEqual(rows.map((row, i) => ({ historicalId: row.historicalId, status: ['IMPORTED', 'SKIPPED', 'CONFLICT'][i] })));
+    expect(get).toHaveBeenCalledTimes(3);
+  });
+
+  it('checks expected rows against actual file length', () => {
+    expect(() => validateExpectedRows(2, 3)).toThrow(/expected 2.*found 3/i);
+    expect(() => validateExpectedRows(undefined, 37)).not.toThrow();
+  });
+
+  it('accepts typed reachability and rejects transport/schema failures', () => {
+    expect(() => assertProbeResult({ errors: [{ message: 'NOT_FOUND: absent' }] }, ['NOT_FOUND'])).not.toThrow();
+    expect(() => assertProbeResult({ errors: [{ message: 'Cannot query field pbGetHistoricalQuotation' }] }, ['NOT_FOUND'])).toThrow(/probe failed/i);
+  });
+
+  it('requires an independent denylist and both sandbox stack identifiers', () => {
+    expect(() => assertSandboxTarget('pool-a', 'pool-a', 'sandbox-historical-import-review')).toThrow(/production/i);
+    expect(() => assertSandboxTarget('pool-a', 'pool-prod', 'sandbox-only')).toThrow(/historical-import-review/i);
+    expect(() => assertSandboxTarget('pool-a', 'pool-prod', 'prod-historical-import-review')).toThrow(/sandbox/i);
+  });
+
+  it('creates exactly MAX_IMPORT_ROWS fabricated rows', () => {
+    const rows = syntheticSandboxRows('supplier-fabricated');
+    expect(rows).toHaveLength(MAX_IMPORT_ROWS);
+    expect(rows.every(row => row.supplierId === 'supplier-fabricated' && row.customerName.includes('Synthetic'))).toBe(true);
   });
 });

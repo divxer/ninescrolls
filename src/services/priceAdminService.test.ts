@@ -3,12 +3,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const queries = {
   pbListSuppliers: vi.fn(), pbListCatalogItems: vi.fn(), pbListCostVersions: vi.fn(),
   pbGetPricingPolicy: vi.fn(), pbGetQuotation: vi.fn(), pbListQuotations: vi.fn(),
+  pbListHistoricalQuotations: vi.fn(), pbGetHistoricalQuotation: vi.fn(),
 };
 const mutations = {
   pbCreateSupplier: vi.fn(), pbUpdateSupplier: vi.fn(),
   pbCreateCatalogItem: vi.fn(), pbUpdateCatalogItem: vi.fn(),
   pbAppendCostVersion: vi.fn(), pbUpdatePricingPolicy: vi.fn(),
   pbCreateQuotationDraft: vi.fn(), pbUpdateQuotationDraft: vi.fn(),
+  pbImportHistoricalQuotations: vi.fn(), pbRollbackHistoricalQuotationImport: vi.fn(),
 };
 
 vi.mock('./amplifyClient', () => ({
@@ -68,5 +70,20 @@ describe('priceAdminService', () => {
 
     expect(historicalLine.previousUnitCostFen).toBeUndefined();
     expect(historicalLine.costDeltaFen).toBeUndefined();
+  });
+
+  it('selects and unwraps all four historical operations', async () => {
+    queries.pbListHistoricalQuotations.mockResolvedValueOnce({ data: JSON.stringify({ items: [], nextToken: null }) });
+    queries.pbGetHistoricalQuotation.mockResolvedValueOnce({ data: JSON.stringify({ historicalId: 'h' }) });
+    mutations.pbImportHistoricalQuotations.mockResolvedValueOnce({ data: JSON.stringify([{ status: 'IMPORTED' }]) });
+    mutations.pbRollbackHistoricalQuotationImport.mockResolvedValueOnce({ data: JSON.stringify({ mode: 'PREVIEW' }) });
+    await svc.listHistoricalQuotations({ limit: 1 });
+    await svc.getHistoricalQuotation('h');
+    await svc.importHistoricalQuotations({ importBatchId: 'b', sourceDocument: 's', sourceDocumentHash: 'x', rows: [] });
+    await svc.rollbackHistoricalQuotationImport({ importBatchId: 'b', mode: 'PREVIEW' });
+    expect(queries.pbListHistoricalQuotations).toHaveBeenCalledWith({ limit: 1 }, { authMode: 'userPool' });
+    expect(JSON.parse(queries.pbGetHistoricalQuotation.mock.calls[0][0].input)).toEqual({ historicalId: 'h' });
+    expect(JSON.parse(mutations.pbImportHistoricalQuotations.mock.calls[0][0].input).importBatchId).toBe('b');
+    expect(JSON.parse(mutations.pbRollbackHistoricalQuotationImport.mock.calls[0][0].input).mode).toBe('PREVIEW');
   });
 });

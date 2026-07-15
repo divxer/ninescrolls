@@ -6,6 +6,7 @@ import {
   buildHistoricalRecord,
   contentHashFor,
   historicalIdFor,
+  MAX_IMPORT_ROWS,
   rollbackTokenFor,
   validateHistoricalQuotationInput,
   type HistoricalQuotationInput,
@@ -15,7 +16,7 @@ import {
 const MAX_PAGE_SIZE = 200;
 const HISTORICAL_ID_PATTERN = /^[a-f0-9]{64}$/;
 const DOCUMENT_HASH_PATTERN = /^[a-f0-9]{64}$/;
-export const MAX_IMPORT_ROWS = 50;
+export { MAX_IMPORT_ROWS };
 const stripHistoricalKeys = (item: Record<string, unknown>) => stripKeys(
   item as Record<string, unknown> & { PK: string; SK: string },
 );

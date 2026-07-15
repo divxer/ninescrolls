@@ -2,7 +2,8 @@ import { createHash } from 'node:crypto';
 import { lstatSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { isAbsolute, join, parse, relative, resolve } from 'node:path';
-import { contentHashFor, historicalIdFor, type DataQualityFlag, type HistoricalQuotationInput } from '../../amplify/functions/price-api/lib/historicalQuotation';
+import { contentHashFor, historicalIdFor, MAX_IMPORT_ROWS, type DataQualityFlag, type HistoricalQuotationInput } from '../../amplify/functions/price-api/lib/historicalQuotation';
+export { MAX_IMPORT_ROWS };
 import { rmbToFen } from './csv';
 
 export interface SupplierIdentity { supplierId: string; name: string }
@@ -210,4 +211,54 @@ export function parseNormalizedHistoricalQuotations(json: string): NormalizedHis
     sourceDocumentHash: requireString(object, 'sourceDocumentHash'),
     rows,
   };
+}
+
+export type DryRunStatus = 'IMPORTED' | 'SKIPPED' | 'CONFLICT';
+export async function classifyHistoricalDryRun(
+  normalized: NormalizedHistoricalQuotations,
+  get: (historicalId: string) => Promise<{ contentHash?: string } | null>,
+): Promise<Array<{ historicalId: string; status: DryRunStatus }>> {
+  const outcomes = [];
+  for (const row of normalized.rows) {
+    const existing = await get(row.historicalId);
+    outcomes.push({ historicalId: row.historicalId, status: !existing ? 'IMPORTED' : existing.contentHash === row.contentHash ? 'SKIPPED' : 'CONFLICT' } as const);
+  }
+  return outcomes;
+}
+
+export function validateExpectedRows(expected: number | undefined, actual: number): void {
+  if (expected !== undefined && expected !== actual) throw new Error(`Expected ${expected} rows but found ${actual}`);
+}
+
+export function assertProbeResult(
+  result: { data?: unknown; errors?: Array<{ message: string }> },
+  acceptedCodes: readonly string[] = [],
+): void {
+  if (!result.errors?.length) return;
+  const messages = result.errors.map(error => error.message);
+  if (messages.every(message => acceptedCodes.some(code => message.startsWith(`${code}:`)))) return;
+  throw new Error(`Probe failed: ${messages.join(', ')}`);
+}
+
+export function assertSandboxTarget(loadedPoolId: string, productionPoolId: string, stackName: string): void {
+  if (!productionPoolId.trim()) throw new Error('PRODUCTION_POOL_ID is required as an independent denylist');
+  if (loadedPoolId === productionPoolId) throw new Error('Refusing production user pool');
+  const lower = stackName.toLowerCase();
+  if (!lower.includes('sandbox')) throw new Error('Owning stack name must contain sandbox');
+  if (!lower.includes('historical-import-review')) throw new Error('Owning stack name must contain historical-import-review');
+}
+
+export function syntheticSandboxRows(supplierId: string): HistoricalQuotationInput[] {
+  return Array.from({ length: MAX_IMPORT_ROWS }, (_, index) => ({
+    customerName: `Synthetic Customer ${index + 1}`, productName: `Synthetic Product ${index + 1}`,
+    configuration: 'Fabricated sandbox review data', supplierId,
+    supplierQuoteText: `FABRICATED RMB ${(1000 + index).toFixed(2)}`, supplierQuoteBasis: 'synthetic',
+    supplierEvidenceType: 'SYNTHETIC', supplierQuotedAt: '2020-01-01',
+    customerQuoteText: `FABRICATED USD ${(200 + index).toFixed(2)}`, sourceQuotationNumber: null,
+    quotedAt: '2020-01-02', legacyStatus: 'synthetic', supplierAmountFen: (1000 + index) * 100,
+    customerAmountUsdCents: (200 + index) * 100, historicalFxRate: null, historicalFxSource: null,
+    historicalFxProvenance: 'UNKNOWN', historicalFxNote: 'Fabricated sandbox data; no real FX evidence',
+    sourceDocument: 'synthetic-sandbox.json', sourceDocumentHash: '0'.repeat(64), sourceRow: index + 1,
+    importBatchId: 'HB-sandbox-synthetic', dataQualityFlags: ['UNCONFIRMED'], dataQualityNotes: ['Fabricated test record'],
+  }));
 }

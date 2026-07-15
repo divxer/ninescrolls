@@ -241,6 +241,62 @@ export const listQuotations = async (opts: { limit?: number; nextToken?: string 
     await client().queries.pbListQuotations(opts, AUTH),
   );
 
+export interface HistoricalQuotationSummary {
+  historicalId: string;
+  status: 'HISTORICAL';
+  customerName: string;
+  productName: string;
+  configuration: string;
+  supplierId: string;
+  supplierQuoteText: string;
+  customerQuoteText: string;
+  sourceDocument: string;
+  sourceDocumentHash: string;
+  sourceRow: number;
+  importBatchId: string;
+  historicalFxProvenance: 'CONFIRMED' | 'INFERRED' | 'UNKNOWN';
+  dataQualityFlags: Array<'INCOMPLETE' | 'UNCONFIRMED' | 'CONFLICT_RESOLVED'>;
+  contentHash: string;
+  importedAt: string;
+}
+
+export interface HistoricalQuotationDetail extends HistoricalQuotationSummary {
+  supplierQuoteBasis: string;
+  supplierEvidenceType: string;
+  supplierQuotedAt: string | null;
+  sourceQuotationNumber: string | null;
+  quotedAt: string | null;
+  legacyStatus: string;
+  supplierAmountFen?: number | null;
+  customerAmountUsdCents?: number | null;
+  historicalFxRate: string | null;
+  historicalFxSource: string | null;
+  historicalFxNote: string | null;
+  dataQualityNotes: string[];
+  importedBy: string;
+}
+
+export interface HistoricalImportInput {
+  importBatchId: string;
+  sourceDocument: string;
+  sourceDocumentHash: string;
+  rows: Array<Record<string, unknown>>;
+}
+export interface HistoricalImportOutcome { historicalId: string; status: 'IMPORTED' | 'SKIPPED' | 'CONFLICT' | 'FAILED'; message?: string }
+export interface HistoricalRollbackInput { importBatchId: string; mode: 'PREVIEW' | 'APPLY'; rollbackToken?: string; reason?: string }
+export interface HistoricalRollbackResult { mode: 'PREVIEW' | 'APPLY'; sourceDocument?: string; counts?: Record<string, number>; warnings?: string[]; rollbackToken?: string; outcomes?: Array<Record<string, unknown>> }
+
+export const listHistoricalQuotations = async (opts: { limit?: number; nextToken?: string } = {}) =>
+  unwrap<{ items: HistoricalQuotationSummary[]; nextToken: string | null }>(
+    await client().queries.pbListHistoricalQuotations(opts, AUTH),
+  );
+export const getHistoricalQuotation = async (historicalId: string) =>
+  unwrap<HistoricalQuotationDetail>(await client().queries.pbGetHistoricalQuotation(asInput({ historicalId }), AUTH));
+export const importHistoricalQuotations = async (input: HistoricalImportInput) =>
+  unwrap<HistoricalImportOutcome[]>(await client().mutations.pbImportHistoricalQuotations(asInput(input), AUTH));
+export const rollbackHistoricalQuotationImport = async (input: HistoricalRollbackInput) =>
+  unwrap<HistoricalRollbackResult>(await client().mutations.pbRollbackHistoricalQuotationImport(asInput(input), AUTH));
+
 export const usd = (cents: number | null | undefined) =>
   cents == null
     ? '—'
