@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { marshall } from '@aws-sdk/util-dynamodb';
+import { readFileSync } from 'node:fs';
 
 const send = vi.fn();
 vi.mock('../lib/dynamodb.js', () => ({
@@ -15,6 +16,7 @@ import {
   pbRollbackHistoricalQuotationImport,
 } from './historicalQuotationResolvers.js';
 import { contentHashFor, historicalIdFor, type HistoricalQuotationInput } from '../lib/historicalQuotation.js';
+import { buildNormalizedHistoricalQuotations } from '../../../../scripts/lib/historicalQuotationImport.js';
 
 const historicalId = 'a'.repeat(64);
 const ev = (args: Record<string, unknown>) => ({
@@ -452,5 +454,79 @@ describe('pbRollbackHistoricalQuotationImport', () => {
     })) as { results: Array<{ status: string }> };
     expect(recovered.results.map(r => r.status)).toEqual(['ALREADY_ABSENT', 'DELETED']);
     expect(state.size).toBe(0);
+  });
+
+  it('imports, rolls back, re-normalizes changed workbook bytes, and re-imports with surviving audit', async () => {
+    const fixture = JSON.parse(readFileSync('scripts/fixtures/historical-quotations.synthetic.json', 'utf8'));
+    const normalizedA = buildNormalizedHistoricalQuotations({
+      ...fixture.input, sourceRows: [fixture.input.sourceRows[0]],
+      workbookBytes: Buffer.from('fabricated workbook version A'),
+    });
+    const changedSourceRows = [{ ...fixture.input.sourceRows[0], customerQuoteText: 'USD 21.00', customerAmountUsdCents: 2100 }];
+    const normalizedB = buildNormalizedHistoricalQuotations({
+      ...fixture.input, sourceRows: changedSourceRows,
+      workbookBytes: Buffer.from('fabricated workbook version B with corrected content'),
+    });
+    const a = normalizedA.rows[0]; const b = normalizedB.rows[0];
+    expect(b.historicalId).toBe(a.historicalId);
+    expect(b.contentHash).not.toBe(a.contentHash);
+    expect(normalizedB.importBatchId).not.toBe(normalizedA.importBatchId);
+
+    const table = new Map<string, Record<string, unknown>>();
+    const keyFor = (value: { PK: string; SK: string }) => `${value.PK}|${value.SK}`;
+    send.mockImplementation(async (command) => {
+      if (!command) return {};
+      const input = command.input;
+      if (command.constructor.name === 'GetCommand') {
+        if (input.Key.PK.startsWith('PSUP#')) return { Item: { PK: input.Key.PK, SK: 'META' } };
+        return { Item: table.get(keyFor(input.Key)) };
+      }
+      if (command.constructor.name === 'PutCommand') {
+        const key = keyFor(input.Item);
+        const existing = table.get(key);
+        if (input.ConditionExpression === 'attribute_not_exists(PK)' && existing) {
+          throw Object.assign(new Error(), { name: 'ConditionalCheckFailedException', Item: marshall(existing) });
+        }
+        table.set(key, structuredClone(input.Item));
+        return {};
+      }
+      if (command.constructor.name === 'DeleteCommand') {
+        const key = keyFor(input.Key); const existing = table.get(key);
+        const valid = existing?.recordType === 'HISTORICAL_QUOTATION'
+          && existing.importBatchId === input.ExpressionAttributeValues[':batch']
+          && existing.PK.toString().startsWith('PHIST#') && existing.SK === 'META';
+        if (!valid) throw Object.assign(new Error(), { name: 'ConditionalCheckFailedException',
+          ...(existing ? { Item: marshall(existing) } : {}) });
+        table.delete(key); return {};
+      }
+      throw new Error(`unexpected ${command.constructor.name}`);
+    });
+    const importNormalized = (normalized: typeof normalizedA) => pbImportHistoricalQuotations(ev({ input: {
+      importBatchId: normalized.importBatchId, sourceDocument: normalized.sourceDocument,
+      sourceDocumentHash: normalized.sourceDocumentHash, rows: normalized.rows,
+    } }));
+
+    await expect(importNormalized(normalizedA)).resolves.toEqual([{ historicalId: a.historicalId, status: 'IMPORTED' }]);
+    const preview = await pbRollbackHistoricalQuotationImport(ev({ input: {
+      importBatchId: normalizedA.importBatchId, mode: 'PREVIEW',
+    } })) as { rollbackToken: string };
+    await expect(pbRollbackHistoricalQuotationImport(ev({ input: {
+      importBatchId: normalizedA.importBatchId, mode: 'APPLY', rollbackToken: preview.rollbackToken,
+      reason: 'correct fabricated source',
+    } }))).resolves.toMatchObject({ results: [{ historicalId: a.historicalId, status: 'DELETED' }] });
+    const oldPartition = [...table.values()].filter(item => item.PK === `HISTIMPORT#${normalizedA.importBatchId}`);
+    expect(oldPartition.some(item => item.SK.toString().startsWith('ROLLBACK_INTENT#'))).toBe(true);
+    expect(oldPartition.some(item => item.SK.toString().startsWith('ROLLBACK#'))).toBe(true);
+    expect(oldPartition.some(item => item.SK === 'MANIFEST')).toBe(true);
+
+    await expect(importNormalized(normalizedB)).resolves.toEqual([{ historicalId: b.historicalId, status: 'IMPORTED' }]);
+    const reimported = table.get(`PHIST#${b.historicalId}|META`);
+    expect(reimported).toMatchObject({ historicalId: a.historicalId, contentHash: b.contentHash,
+      importBatchId: normalizedB.importBatchId });
+    expect(send.mock.calls.filter(c => c[0]?.constructor.name === 'PutCommand'
+      && c[0].input.Item?.PK === `PHIST#${a.historicalId}`)[1][0].input.ConditionExpression)
+      .toBe('attribute_not_exists(PK)');
+    expect([...table.values()].filter(item => item.PK === `HISTIMPORT#${normalizedA.importBatchId}`))
+      .toEqual(expect.arrayContaining(oldPartition));
   });
 });

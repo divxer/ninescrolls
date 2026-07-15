@@ -63,3 +63,13 @@ The previous source-text keyspace check was replaced with actual invocation of e
 the real dispatch surface for all four adversarial IDs. Tests inspect real emitted write commands recursively,
 assert resolver-owned prefixes, reject `PHIST#`/`HISTIMPORT#`, and deep-equal the complete dispatch
 classification so future operation drift fails closed.
+
+## Full recovery integration closure
+
+The plan-mandated recovery cycle now uses Task 2's pure normalizer twice with two fabricated workbook byte
+versions and corrected fabricated row content. A single stateful in-memory DynamoDB command model drives the
+real import and rollback resolvers through batch A import, PREVIEW, APPLY, retained manifest/intent/final audit,
+then batch B re-import. It proves the source filename/row retains the same `historicalId`, corrected content
+produces a new `contentHash`, changed workbook bytes produce a new `importBatchId`, and the second historical
+Put succeeds under `attribute_not_exists(PK)` because rollback removed the first record. The old batch's three
+surviving evidence records are asserted after re-import.
