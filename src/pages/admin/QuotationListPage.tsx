@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { Link } from 'react-router-dom';
 import {
   listHistoricalQuotations,
@@ -10,12 +10,6 @@ import {
 } from '../../services/priceAdminService';
 
 type Tab = 'live' | 'historical';
-type HistoricalListItem = HistoricalQuotationSummary & {
-  sourceQuotationNumber?: string | null;
-  legacyStatus?: string;
-  customerAmountUsdCents?: number | null;
-  quotedAt?: string | null;
-};
 
 const tableClass = 'w-full min-w-[920px] border-collapse text-sm';
 const headClass = 'bg-surface-container-low text-left text-[11px] uppercase tracking-wider text-on-surface-variant';
@@ -36,7 +30,7 @@ function LiveTable({ items }: { items: QuotationSummary[] }) {
   </table></div>;
 }
 
-function HistoricalTable({ items }: { items: HistoricalListItem[] }) {
+function HistoricalTable({ items }: { items: HistoricalQuotationSummary[] }) {
   return <div className="overflow-x-auto"><table className={tableClass}>
     <thead className={headClass}><tr><th className="px-5 py-3">Number</th><th className="px-4 py-3">Customer</th><th className="px-4 py-3">Product / project</th><th className="px-4 py-3">Legacy status</th><th className="px-4 py-3 text-right">Customer amount</th><th className="px-4 py-3">Quote date</th><th className="px-5 py-3">Data quality</th></tr></thead>
     <tbody>{items.map((q) => {
@@ -60,11 +54,12 @@ export function QuotationListPage() {
   const [liveNextToken, setLiveNextToken] = useState<string | null>(null);
   const [liveLoading, setLiveLoading] = useState(true);
   const [liveError, setLiveError] = useState('');
-  const [historicalItems, setHistoricalItems] = useState<HistoricalListItem[]>([]);
+  const [historicalItems, setHistoricalItems] = useState<HistoricalQuotationSummary[]>([]);
   const [historicalNextToken, setHistoricalNextToken] = useState<string | null>(null);
   const [historicalLoading, setHistoricalLoading] = useState(false);
   const [historicalError, setHistoricalError] = useState('');
   const [historicalInitialized, setHistoricalInitialized] = useState(false);
+  const tabRefs = useRef<Record<Tab, HTMLButtonElement | null>>({ live: null, historical: null });
 
   const loadLive = useCallback((token?: string) => {
     setLiveLoading(true); setLiveError('');
@@ -77,8 +72,7 @@ export function QuotationListPage() {
   const loadHistorical = useCallback((token?: string) => {
     setHistoricalLoading(true); setHistoricalError('');
     listHistoricalQuotations(token ? { nextToken: token } : {}).then((result) => {
-      const items = result.items as HistoricalListItem[];
-      setHistoricalItems((current) => token ? [...current, ...items] : items);
+      setHistoricalItems((current) => token ? [...current, ...result.items] : result.items);
       setHistoricalNextToken(result.nextToken);
     }).catch((cause: unknown) => setHistoricalError(cause instanceof Error ? cause.message : String(cause))).finally(() => setHistoricalLoading(false));
   }, []);
@@ -93,6 +87,18 @@ export function QuotationListPage() {
     }
   };
 
+  const onTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
+    let nextTab: Tab | undefined;
+    const currentTab: Tab = event.currentTarget.id === 'live-tab' ? 'live' : 'historical';
+    if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') nextTab = currentTab === 'live' ? 'historical' : 'live';
+    if (event.key === 'End') nextTab = 'historical';
+    if (event.key === 'Home') nextTab = 'live';
+    if (!nextTab) return;
+    event.preventDefault();
+    selectTab(nextTab);
+    tabRefs.current[nextTab]?.focus();
+  };
+
   const isLive = activeTab === 'live';
   const loading = isLive ? liveLoading : historicalLoading;
   const error = isLive ? liveError : historicalError;
@@ -101,7 +107,7 @@ export function QuotationListPage() {
   return <div className="px-5 py-8 lg:px-8 lg:py-10">
     <header className="mb-6 flex items-end justify-between gap-4"><div><p className="mb-2 text-xs font-bold uppercase tracking-[.18em] text-secondary">Sales operations</p><h1 className="font-headline text-3xl font-black tracking-tight text-on-surface">Quotations</h1><p className="mt-2 text-sm text-on-surface-variant">Create and revise customer pricing from the current catalog.</p></div>{isLive && <Link to="/admin/quotations/new" className="rounded-xl bg-primary px-5 py-3 text-sm font-bold text-on-primary no-underline shadow-sm">Create quotation</Link>}</header>
     <div role="tablist" aria-label="Quotation type" className="mb-4 inline-flex rounded-xl bg-surface-container-low p-1">
-      {(['live', 'historical'] as const).map((tab) => <button key={tab} id={`${tab}-tab`} role="tab" aria-selected={activeTab === tab} aria-controls={`${tab}-panel`} onClick={() => selectTab(tab)} className={`rounded-lg px-5 py-2 text-sm font-bold ${activeTab === tab ? 'bg-surface-container-lowest text-on-surface shadow-sm' : 'text-on-surface-variant'}`}>{tab === 'live' ? 'Live' : 'Historical'}</button>)}
+      {(['live', 'historical'] as const).map((tab) => <button key={tab} ref={(node) => { tabRefs.current[tab] = node; }} id={`${tab}-tab`} role="tab" aria-selected={activeTab === tab} aria-controls={`${tab}-panel`} tabIndex={activeTab === tab ? 0 : -1} onClick={() => selectTab(tab)} onKeyDown={onTabKeyDown} className={`rounded-lg px-5 py-2 text-sm font-bold ${activeTab === tab ? 'bg-surface-container-lowest text-on-surface shadow-sm' : 'text-on-surface-variant'}`}>{tab === 'live' ? 'Live' : 'Historical'}</button>)}
     </div>
     {error && <p role="alert" className="mb-4 rounded-xl bg-error-container p-4 text-error">{error}</p>}
     <section id={`${activeTab}-panel`} role="tabpanel" aria-labelledby={`${activeTab}-tab`} className="overflow-hidden rounded-2xl border border-outline-variant/40 bg-surface-container-lowest shadow-sm">

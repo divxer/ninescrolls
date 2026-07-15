@@ -60,6 +60,40 @@ describe('QuotationListPage', () => {
     expect(screen.getByRole('tabpanel', { name: 'Historical' })).toBeInTheDocument();
   });
 
+  it('uses roving focus and selects tabs with Arrow keys, Home, and End', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByText('Q-2026-0008');
+    const liveTab = screen.getByRole('tab', { name: 'Live' });
+    const historicalTab = screen.getByRole('tab', { name: 'Historical' });
+    expect(liveTab).toHaveAttribute('tabindex', '0');
+    expect(historicalTab).toHaveAttribute('tabindex', '-1');
+
+    liveTab.focus();
+    await user.keyboard('{ArrowRight}');
+    expect(historicalTab).toHaveFocus();
+    expect(historicalTab).toHaveAttribute('aria-selected', 'true');
+    expect(historicalTab).toHaveAttribute('tabindex', '0');
+    expect(service.listHistoricalQuotations).toHaveBeenCalledTimes(1);
+
+    await user.keyboard('{ArrowRight}');
+    expect(liveTab).toHaveFocus();
+    expect(liveTab).toHaveAttribute('aria-selected', 'true');
+    await user.keyboard('{ArrowLeft}');
+    expect(historicalTab).toHaveFocus();
+    expect(historicalTab).toHaveAttribute('aria-selected', 'true');
+    await user.keyboard('{Home}');
+    expect(liveTab).toHaveFocus();
+    expect(liveTab).toHaveAttribute('aria-selected', 'true');
+    await user.keyboard('{End}');
+    expect(historicalTab).toHaveFocus();
+    expect(historicalTab).toHaveAttribute('aria-selected', 'true');
+    await user.keyboard('{Home}');
+    expect(liveTab).toHaveFocus();
+    expect(liveTab).toHaveAttribute('aria-selected', 'true');
+    expect(service.listHistoricalQuotations).toHaveBeenCalledTimes(1);
+  });
+
   it('keeps independent items, loading, errors, cursors, and load-more targets across tab switches', async () => {
     const user = userEvent.setup();
     const historicalPage = deferred<{ items: ReturnType<typeof historical>[]; nextToken: string | null }>();
@@ -118,15 +152,25 @@ describe('QuotationListPage', () => {
     expect(within(secondRow).getByText('+2')).toBeInTheDocument();
   });
 
-  it('does not expose live actions or live-only columns in Historical', async () => {
+  it('renders concrete live actions and columns only in Live', async () => {
     const user = userEvent.setup();
     vi.mocked(service.listHistoricalQuotations).mockResolvedValue({ items: [historical('hist-only')], nextToken: null });
     renderPage();
+    const liveLink = await screen.findByRole('link', { name: 'Q-2026-0008' });
+    expect(liveLink).toHaveAttribute('href', '/admin/quotations/Q-2026-0008');
+    expect(screen.getByRole('link', { name: 'Create quotation' })).toBeInTheDocument();
+    expect(screen.getByText('v1')).toBeInTheDocument();
+    for (const name of ['Scheme', 'Cost', 'Suggested', 'Actual', 'Margin']) {
+      expect(screen.getByRole('columnheader', { name })).toBeInTheDocument();
+    }
+
     await user.click(screen.getByRole('tab', { name: 'Historical' }));
     await screen.findByTestId('hist-only');
     expect(screen.queryByRole('link', { name: 'Create quotation' })).not.toBeInTheDocument();
-    for (const name of ['Version', 'Cost', 'Suggested', 'Margin', 'PDF', 'Convert']) {
-      expect(screen.queryByText(name, { exact: true })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Q-2026-0008' })).not.toBeInTheDocument();
+    expect(screen.queryByText('v1')).not.toBeInTheDocument();
+    for (const name of ['Scheme', 'Cost', 'Suggested', 'Actual', 'Margin']) {
+      expect(screen.queryByRole('columnheader', { name })).not.toBeInTheDocument();
     }
   });
 

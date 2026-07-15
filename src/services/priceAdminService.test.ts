@@ -19,9 +19,20 @@ vi.mock('./amplifyClient', () => ({
 
 import * as svc from './priceAdminService';
 
+const historicalSummaryContract = (summary: svc.HistoricalQuotationSummary) => {
+  const sourceQuotationNumber: string | null = summary.sourceQuotationNumber;
+  const legacyStatus: string = summary.legacyStatus;
+  const customerAmountUsdCents: number | null = summary.customerAmountUsdCents;
+  const quotedAt: string | null = summary.quotedAt;
+  return { sourceQuotationNumber, legacyStatus, customerAmountUsdCents, quotedAt };
+};
+
 beforeEach(() => Object.values({ ...queries, ...mutations }).forEach((f) => f.mockReset()));
 
 describe('priceAdminService', () => {
+  it('types the historical list display fields with their resolver nullability', () => {
+    expect(typeof historicalSummaryContract).toBe('function');
+  });
   it.each([
     ['19.99', 1999],
     ['90071992547409.91', Number.MAX_SAFE_INTEGER],

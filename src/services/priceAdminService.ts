@@ -253,6 +253,10 @@ export interface HistoricalQuotationSummary {
   sourceDocument: string;
   sourceDocumentHash: string;
   sourceRow: number;
+  sourceQuotationNumber: string | null;
+  quotedAt: string | null;
+  legacyStatus: string;
+  customerAmountUsdCents: number | null;
   importBatchId: string;
   historicalFxProvenance: 'CONFIRMED' | 'INFERRED' | 'UNKNOWN';
   dataQualityFlags: Array<'INCOMPLETE' | 'UNCONFIRMED' | 'CONFLICT_RESOLVED'>;
@@ -264,11 +268,7 @@ export interface HistoricalQuotationDetail extends HistoricalQuotationSummary {
   supplierQuoteBasis: string;
   supplierEvidenceType: string;
   supplierQuotedAt: string | null;
-  sourceQuotationNumber: string | null;
-  quotedAt: string | null;
-  legacyStatus: string;
   supplierAmountFen?: number | null;
-  customerAmountUsdCents?: number | null;
   historicalFxRate: string | null;
   historicalFxSource: string | null;
   historicalFxNote: string | null;
