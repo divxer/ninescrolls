@@ -111,7 +111,7 @@ export function resolvePhysicalPathOutsideWorktree(
 export async function withWorkbookSnapshot<T>(
   workbookPath: string,
   worktreeRoot: string,
-  useSnapshot: (snapshotPath: string, snapshotBytes: Buffer) => Promise<T> | T,
+  runSnapshot: (snapshotPath: string, snapshotBytes: Buffer) => Promise<T> | T,
 ): Promise<T> {
   const bytes = readFileSync(workbookPath);
   const snapshotBase = resolvePhysicalPathOutsideWorktree(tmpdir(), worktreeRoot, 'Snapshot directory', true);
@@ -119,7 +119,7 @@ export async function withWorkbookSnapshot<T>(
   const snapshotPath = join(directory, 'workbook.xlsx');
   try {
     writeFileSync(snapshotPath, bytes, { flag: 'wx', mode: 0o600 });
-    return await useSnapshot(snapshotPath, bytes);
+    return await runSnapshot(snapshotPath, bytes);
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
