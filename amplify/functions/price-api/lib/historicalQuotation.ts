@@ -97,9 +97,13 @@ export function validateHistoricalQuotationInput(input: HistoricalQuotationInput
   if (input.dataQualityFlags.some(flag => !allowedFlags.includes(flag))) {
     errors.push('dataQualityFlags contains an invalid flag');
   }
+  const allowedFxProvenance: readonly string[] = ['CONFIRMED', 'INFERRED', 'UNKNOWN'];
+  if (!allowedFxProvenance.includes(input.historicalFxProvenance)) {
+    errors.push('historicalFxProvenance is invalid');
+  }
   if (input.historicalFxProvenance === 'UNKNOWN'
-      && (input.historicalFxRate !== null || input.historicalFxSource !== null || input.historicalFxNote !== null)) {
-    errors.push('UNKNOWN FX requires null rate, source, and note');
+      && (input.historicalFxRate !== null || input.historicalFxSource !== null)) {
+    errors.push('UNKNOWN FX requires null rate and source');
   }
   return errors;
 }

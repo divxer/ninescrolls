@@ -104,10 +104,15 @@ describe('content hashing', () => {
     expect(contentHashFor({ ...row, ...mutation })).toBe(contentHashFor(row));
   });
 
-  it('excludes stamped lineage and canonicalizes flags as a set', () => {
-    const record = buildHistoricalRecord(row, 'actor-a', 'time-a');
-    const other = buildHistoricalRecord(row, 'actor-b', 'time-b');
-    expect(other.contentHash).toBe(record.contentHash);
+  it.each([
+    ['importedBy', 'actor-b', 'time-a'],
+    ['importedAt', 'actor-a', 'time-b'],
+  ])('excludes stamped lineage field %s', (_field, actor, time) => {
+    expect(buildHistoricalRecord(row, actor, time).contentHash)
+      .toBe(buildHistoricalRecord(row, 'actor-a', 'time-a').contentHash);
+  });
+
+  it('canonicalizes flags as a set', () => {
     expect(contentHashFor({ ...row, dataQualityFlags: ['UNCONFIRMED', 'INCOMPLETE'] }))
       .toBe(contentHashFor({ ...row, dataQualityFlags: ['INCOMPLETE', 'UNCONFIRMED', 'INCOMPLETE'] }));
   });
@@ -126,13 +131,18 @@ describe('validation', () => {
     expect(validateHistoricalQuotationInput({ ...row, dataQualityFlags: ['INCOMPLETE', 'UNCONFIRMED'] })).toEqual([]);
   });
 
-  it('preserves INFERRED provenance and enforces UNKNOWN nulls', () => {
+  it('preserves INFERRED provenance and allows an explanatory UNKNOWN note', () => {
     expect(buildHistoricalRecord({ ...row, historicalFxProvenance: 'INFERRED' }, 'actor', 'now').historicalFxProvenance)
       .toBe('INFERRED');
     expect(validateHistoricalQuotationInput({ ...row, historicalFxProvenance: 'UNKNOWN', historicalFxRate: '7.0', historicalFxSource: null, historicalFxNote: null }))
-      .toContain('UNKNOWN FX requires null rate, source, and note');
-    expect(validateHistoricalQuotationInput({ ...row, historicalFxProvenance: 'UNKNOWN', historicalFxRate: null, historicalFxSource: null, historicalFxNote: null }))
+      .toContain('UNKNOWN FX requires null rate and source');
+    expect(validateHistoricalQuotationInput({ ...row, historicalFxProvenance: 'UNKNOWN', historicalFxRate: null, historicalFxSource: null, historicalFxNote: 'No rate evidence in source' }))
       .toEqual([]);
+  });
+
+  it('rejects invalid FX provenance received at runtime', () => {
+    const invalid = { ...row, historicalFxProvenance: 'ESTIMATED' } as unknown as HistoricalQuotationInput;
+    expect(validateHistoricalQuotationInput(invalid)).toContain('historicalFxProvenance is invalid');
   });
 });
 
