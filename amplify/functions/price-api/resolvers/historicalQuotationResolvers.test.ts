@@ -48,6 +48,12 @@ const importEvent = (rows: Array<Record<string, unknown>>, overrides: Record<str
 } });
 
 describe('pbImportHistoricalQuotations', () => {
+  it('rejects the probe malformed import before any manifest Put or other database call', async () => {
+    await expect(pbImportHistoricalQuotations(ev({ input: JSON.stringify({ rows: [] }) })))
+      .rejects.toThrow(/^VALIDATION:/);
+    expect(send).not.toHaveBeenCalled();
+  });
+
   it('writes the complete manifest first, then independently imports valid rows despite a validation failure', async () => {
     vi.useFakeTimers(); vi.setSystemTime(new Date('2026-07-14T12:00:00.000Z'));
     const good = row(); const bad = row({ sourceRow: 3, customerName: '' });
@@ -233,7 +239,7 @@ describe('pbGetHistoricalQuotation', () => {
       GSI1SK: `2025-01-01#${historicalId}`, historicalId, quotedAt: '2025-01-01',
     } });
 
-    const result = await pbGetHistoricalQuotation(ev({ historicalId })) as Record<string, unknown>;
+    const result = await pbGetHistoricalQuotation(ev({ input: JSON.stringify({ historicalId }) })) as Record<string, unknown>;
 
     expect(send.mock.calls[0][0].constructor.name).toBe('GetCommand');
     expect(send.mock.calls[0][0].input).toEqual({
@@ -244,13 +250,13 @@ describe('pbGetHistoricalQuotation', () => {
 
   it('maps a missing historical quotation to typed NOT_FOUND', async () => {
     send.mockResolvedValueOnce({});
-    await expect(pbGetHistoricalQuotation(ev({ historicalId }))).rejects.toThrow(/^NOT_FOUND:/);
+    await expect(pbGetHistoricalQuotation(ev({ input: { historicalId } }))).rejects.toThrow(/^NOT_FOUND:/);
   });
 
   it.each(['', 'abc', 'A'.repeat(64), `${'a'.repeat(63)}g`, `PHIST#${historicalId}`])(
     'rejects malformed historicalId %j before reading',
     async (invalidId) => {
-      await expect(pbGetHistoricalQuotation(ev({ historicalId: invalidId }))).rejects.toThrow(/^VALIDATION:/);
+      await expect(pbGetHistoricalQuotation(ev({ input: JSON.stringify({ historicalId: invalidId }) }))).rejects.toThrow(/^VALIDATION:/);
       expect(send).not.toHaveBeenCalled();
     },
   );

@@ -55,7 +55,9 @@ export async function pbListHistoricalQuotations(event: PriceApiEvent) {
 }
 
 export async function pbGetHistoricalQuotation(event: PriceApiEvent) {
-  const { historicalId } = (event.arguments ?? {}) as { historicalId?: string };
+  let input: { historicalId?: string };
+  try { input = parseInput<{ historicalId?: string }>(event); } catch { throw new Error('VALIDATION: malformed historical quotation request'); }
+  const { historicalId } = input;
   if (typeof historicalId !== 'string' || !HISTORICAL_ID_PATTERN.test(historicalId)) {
     throw new Error('VALIDATION: historicalId must be a 64-character lowercase hex string');
   }

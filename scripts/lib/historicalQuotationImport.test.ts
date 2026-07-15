@@ -18,6 +18,8 @@ import {
   assertSandboxTarget,
   syntheticSandboxRows,
   MAX_IMPORT_ROWS,
+  parseImportArgv,
+  parseRollbackArgv,
 } from './historicalQuotationImport';
 import {
   contentHashFor,
@@ -176,6 +178,40 @@ describe('operator safety helpers', () => {
   it('accepts typed reachability and rejects transport/schema failures', () => {
     expect(() => assertProbeResult({ errors: [{ message: 'NOT_FOUND: absent' }] }, ['NOT_FOUND'])).not.toThrow();
     expect(() => assertProbeResult({ errors: [{ message: 'Cannot query field pbGetHistoricalQuotation' }] }, ['NOT_FOUND'])).toThrow(/probe failed/i);
+    expect(() => assertProbeResult({ data: { unexpectedly: 'succeeded' } }, ['VALIDATION'])).toThrow(/expected.*VALIDATION/i);
+  });
+
+  it.each([
+    [['file.json', '--expect-rows'], /value/i],
+    [['file.json', '--expect-rows', '--apply'], /value/i],
+    [['file.json', '--wat'], /unknown/i],
+    [['file.json', 'other.json'], /exactly one/i],
+    [['file.json', '--apply', '--apply'], /duplicate/i],
+  ] as Array<[string[], RegExp]>)('rejects unsafe import argv %j', (argv, error) => {
+    expect(() => parseImportArgv(argv)).toThrow(error);
+  });
+
+  it('parses explicit import guards without dropping them', () => {
+    expect(parseImportArgv(['file.json', '--expect-rows', '37', '--apply']))
+      .toEqual({ file: 'file.json', expectedRows: 37, apply: true });
+  });
+
+  it.each([
+    [['--batch'], /value/i],
+    [['--batch', '--apply'], /value/i],
+    [['--batch', 'HB-x', '--apply'], /reason/i],
+    [['--batch', 'HB-x', '--reason', '--apply'], /value/i],
+    [['--batch', 'HB-x', '--wat'], /unknown/i],
+    [['--batch', 'HB-x', '--batch', 'HB-y'], /duplicate/i],
+    [['--batch', '   '], /non-empty/i],
+  ] as Array<[string[], RegExp]>)('rejects unsafe rollback argv %j', (argv, error) => {
+    expect(() => parseRollbackArgv(argv)).toThrow(error);
+  });
+
+  it('parses preview and apply rollback argv', () => {
+    expect(parseRollbackArgv(['--batch', 'HB-x'])).toEqual({ importBatchId: 'HB-x', apply: false });
+    expect(parseRollbackArgv(['--apply', '--reason', 'operator correction', '--batch', 'HB-x']))
+      .toEqual({ importBatchId: 'HB-x', apply: true, reason: 'operator correction' });
   });
 
   it('requires an independent denylist and both sandbox stack identifiers', () => {

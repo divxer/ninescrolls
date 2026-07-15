@@ -284,7 +284,13 @@ export interface HistoricalImportInput {
 }
 export interface HistoricalImportOutcome { historicalId: string; status: 'IMPORTED' | 'SKIPPED' | 'CONFLICT' | 'FAILED'; message?: string }
 export interface HistoricalRollbackInput { importBatchId: string; mode: 'PREVIEW' | 'APPLY'; rollbackToken?: string; reason?: string }
-export interface HistoricalRollbackResult { mode: 'PREVIEW' | 'APPLY'; sourceDocument?: string; counts?: Record<string, number>; warnings?: string[]; rollbackToken?: string; outcomes?: Array<Record<string, unknown>> }
+export interface HistoricalRollbackPreview {
+  matchedCount: number; deletableCount: number; blockedCount: number;
+  historicalIds: string[]; sourceDocuments: string[]; warnings: string[]; rollbackToken: string;
+}
+export interface HistoricalRollbackOutcome { historicalId: string; status: 'DELETED' | 'ALREADY_ABSENT' | 'BLOCKED' | 'FAILED'; message?: string }
+export interface HistoricalRollbackApply { results: HistoricalRollbackOutcome[] }
+export type HistoricalRollbackResult = HistoricalRollbackPreview | HistoricalRollbackApply;
 
 export const listHistoricalQuotations = async (opts: { limit?: number; nextToken?: string } = {}) =>
   unwrap<{ items: HistoricalQuotationSummary[]; nextToken: string | null }>(

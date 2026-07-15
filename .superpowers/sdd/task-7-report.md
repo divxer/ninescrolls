@@ -44,3 +44,14 @@ Same command after implementation: 11/11 passed.
 - Static search found no DynamoDB client/command imports in any of the four operator scripts.
 - Static inspection confirms the only synthetic output path is under `/tmp`, the stack fixed identifier is literal, and no confidential workbook/data path is embedded.
 - No cloud, authentication, production, or sandbox command was run.
+
+## Corrective review cycle
+
+Review findings were addressed with a second RED/GREEN cycle:
+
+- RED: wrapped AppSync get requests failed with `VALIDATION`; successful malformed-import probe responses were incorrectly accepted; 13 strict argv cases failed because pure parsers were absent.
+- `pbGetHistoricalQuotation` now uses the shared `parseInput` convention. Resolver tests exercise both JSON-string and object `{ input: ... }` AppSync shapes, matching the service/probe wrappers, including typed `NOT_FOUND`.
+- Probe expectations are fail-closed: when typed errors are required, a successful response is rejected. A resolver test proves the deliberately malformed probe import performs zero database calls, including no manifest Put.
+- Rollback response types now exactly model resolver PREVIEW fields or APPLY `{ results }`; no invented `mode`, `counts`, or `outcomes` fields remain.
+- Pure import/rollback argv parsers reject missing values, flag-as-value, unknown flags, duplicates, extra positionals, whitespace batch IDs, and APPLY without a non-empty reason. Tests import only these pure helpers and execute no cloud/auth code.
+- GREEN verification after corrections: focused service/helper/resolver suites, root TypeScript, scripts TypeScript, and diff hygiene all pass. No cloud-facing script was executed.

@@ -234,10 +234,63 @@ export function assertProbeResult(
   result: { data?: unknown; errors?: Array<{ message: string }> },
   acceptedCodes: readonly string[] = [],
 ): void {
-  if (!result.errors?.length) return;
+  if (!result.errors?.length) {
+    if (acceptedCodes.length) throw new Error(`Probe expected typed ${acceptedCodes.join('/')} response but operation succeeded`);
+    return;
+  }
   const messages = result.errors.map(error => error.message);
   if (messages.every(message => acceptedCodes.some(code => message.startsWith(`${code}:`)))) return;
   throw new Error(`Probe failed: ${messages.join(', ')}`);
+}
+
+function uniqueFlag(argv: readonly string[], flag: string): number {
+  const indices = argv.flatMap((arg, index) => arg === flag ? [index] : []);
+  if (indices.length > 1) throw new Error(`Duplicate ${flag}`);
+  return indices[0] ?? -1;
+}
+
+function requiredFlagValue(argv: readonly string[], flag: string, required: boolean): string | undefined {
+  const index = uniqueFlag(argv, flag);
+  if (index < 0) {
+    if (required) throw new Error(`${flag} value is required`);
+    return undefined;
+  }
+  const value = argv[index + 1];
+  if (!value || value.startsWith('--')) throw new Error(`${flag} value is required`);
+  return value;
+}
+
+export interface ImportArgv { file: string; expectedRows?: number; apply: boolean }
+export function parseImportArgv(argv: readonly string[]): ImportArgv {
+  const allowed = new Set(['--apply', '--expect-rows']);
+  const unknown = argv.find(arg => arg.startsWith('--') && !allowed.has(arg));
+  if (unknown) throw new Error(`Unknown flag: ${unknown}`);
+  const applyIndex = uniqueFlag(argv, '--apply');
+  const expectedRaw = requiredFlagValue(argv, '--expect-rows', false);
+  const valueIndices = new Set<number>();
+  if (expectedRaw !== undefined) valueIndices.add(argv.indexOf('--expect-rows') + 1);
+  const files = argv.filter((arg, index) => !arg.startsWith('--') && !valueIndices.has(index));
+  if (files.length !== 1) throw new Error('Exactly one normalized JSON file is required');
+  if (expectedRaw !== undefined && !/^\d+$/.test(expectedRaw)) throw new Error('--expect-rows value must be a non-negative integer');
+  return { file: files[0], ...(expectedRaw === undefined ? {} : { expectedRows: Number(expectedRaw) }), apply: applyIndex >= 0 };
+}
+
+export interface RollbackArgv { importBatchId: string; apply: boolean; reason?: string }
+export function parseRollbackArgv(argv: readonly string[]): RollbackArgv {
+  const allowed = new Set(['--apply', '--batch', '--reason']);
+  const unknown = argv.find(arg => arg.startsWith('--') && !allowed.has(arg));
+  if (unknown) throw new Error(`Unknown flag: ${unknown}`);
+  const apply = uniqueFlag(argv, '--apply') >= 0;
+  const importBatchId = requiredFlagValue(argv, '--batch', true)!;
+  if (!importBatchId.trim()) throw new Error('--batch value must be non-empty');
+  const reason = requiredFlagValue(argv, '--reason', false);
+  const consumed = new Set<number>();
+  for (const flag of ['--batch', '--reason']) { const index = argv.indexOf(flag); if (index >= 0) consumed.add(index + 1); }
+  const positional = argv.filter((arg, index) => !arg.startsWith('--') && !consumed.has(index));
+  if (positional.length) throw new Error(`Unexpected positional argument: ${positional[0]}`);
+  if (apply && !reason?.trim()) throw new Error('--apply requires --reason value');
+  if (!apply && reason !== undefined) throw new Error('--reason is valid only with --apply');
+  return { importBatchId, apply, ...(reason === undefined ? {} : { reason }) };
 }
 
 export function assertSandboxTarget(loadedPoolId: string, productionPoolId: string, stackName: string): void {
