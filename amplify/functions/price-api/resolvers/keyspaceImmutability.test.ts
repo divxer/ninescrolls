@@ -40,7 +40,11 @@ const cases = {
 
 const READ_OPERATIONS = [
   'pbListSuppliers', 'pbListCatalogItems', 'pbListCostVersions', 'pbGetPricingPolicy',
-  'pbGetQuotation', 'pbListQuotations',
+  'pbGetQuotation', 'pbListQuotations', 'pbListHistoricalQuotations', 'pbGetHistoricalQuotation',
+] as const;
+
+const TRUSTED_OPERATOR_MUTATIONS = [
+  'pbImportHistoricalQuotations', 'pbRollbackHistoricalQuotationImport',
 ] as const;
 
 const keyedObjects = (value: unknown): Array<{ PK: unknown }> => {
@@ -64,7 +68,9 @@ beforeEach(() => {
 
 describe('price mutation keyspace immutability', () => {
   it('classifies the complete real dispatch surface so any future operation causes drift', () => {
-    expect([...RESOLVER_FIELDS].sort()).toEqual([...READ_OPERATIONS, ...Object.keys(cases)].sort());
+    expect([...RESOLVER_FIELDS].sort()).toEqual([
+      ...READ_OPERATIONS, ...TRUSTED_OPERATOR_MUTATIONS, ...Object.keys(cases),
+    ].sort());
   });
 
   it.each(Object.entries(cases))('%s emits only owned keys for adversarial identifiers', async (_name, spec) => {
