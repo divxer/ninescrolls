@@ -4,6 +4,7 @@ import { SEO } from '../components/common/SEO';
 import { useCombinedAnalytics } from '../hooks/useCombinedAnalytics';
 import { behaviorAnalytics } from '../services/behaviorAnalytics';
 import { getVisitorId } from '../services/analyticsStorageService';
+import { describeSubmitError, type SubmitErrorBody } from './rfqSubmitError';
 import { parseRfqUrlParams } from './rfqUrlParams';
 import { ConversionCard, ConversionHero, TrustSignalList } from '../components/conversion';
 
@@ -574,8 +575,8 @@ export function RFQPage() {
       }
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.message || 'Failed to submit request. Please try again.');
+        const errorData = await response.json().catch(() => null) as SubmitErrorBody;
+        throw new Error(describeSubmitError(errorData));
       }
 
       const result = await response.json();

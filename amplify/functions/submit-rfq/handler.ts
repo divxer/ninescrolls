@@ -34,9 +34,11 @@ const ALLOWED_ORIGINS = [
     'http://localhost:5173',
 ];
 
+// Must stay in sync with EQUIPMENT_CATEGORIES in src/pages/RFQPage.tsx — a value
+// the form can send but this list omits is rejected as a generic 400.
 const EQUIPMENT_CATEGORIES = [
     'ICP', 'PECVD', 'Sputter', 'E-Beam', 'ALD', 'RIE', 'IBE', 'HDP-CVD',
-    'Plasma-Cleaner', 'Stripper', 'Coater-Developer', 'Other',
+    'Plasma-Cleaner', 'Stripper', 'Coater-Developer', 'Probe-Station', 'Other',
 ] as const;
 
 const ROLES = [
@@ -250,6 +252,7 @@ const equipmentCategoryLabels: Record<string, string> = {
     'IBE': 'Ion Beam Etching System',
     'HDP-CVD': 'HDP-CVD System',
     'Plasma-Cleaner': 'Plasma Cleaner',
+    'Probe-Station': 'Wafer Probe Station',
     'Other': 'Other / Need Recommendation',
 };
 
@@ -263,6 +266,7 @@ const equipmentGreetingPhrase: Record<string, string> = {
     'IBE': 'ion beam etching',
     'HDP-CVD': 'HDP-CVD',
     'Plasma-Cleaner': 'plasma cleaner',
+    'Probe-Station': 'wafer probing',
 };
 
 /** Send confirmation email to customer via SendGrid — §12.10.9 */
@@ -528,6 +532,12 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
             const errors = parseResult.error.issues.map(i => ({
                 field: i.path.join('.'),
                 message: i.message,
+            }));
+            // Log field names only (never values — the body carries customer PII).
+            // Without this a rejected RFQ is invisible in CloudWatch.
+            console.error(JSON.stringify({
+                event: 'submit-rfq.validation-failed',
+                fields: errors.map(e => e.field),
             }));
             return {
                 statusCode: 400,
