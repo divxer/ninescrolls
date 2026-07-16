@@ -165,6 +165,19 @@ describe('rfqSchema (Zod validation)', () => {
         }
     });
 
+    // Contract guard: the RFQ page's equipmentCategory <select> is the only
+    // source of this field, so every value it can emit must parse here. Drift
+    // returns a 400 the form renders as a generic retry message, which silently
+    // kills every RFQ for the drifted product line. See RFQPage.tsx
+    // EQUIPMENT_CATEGORIES / PRODUCT_CATEGORY_MAP.
+    it.each([
+        'ICP', 'PECVD', 'Sputter', 'E-Beam', 'ALD', 'RIE', 'IBE', 'HDP-CVD',
+        'Plasma-Cleaner', 'Stripper', 'Coater-Developer', 'Probe-Station', 'Other',
+    ])('accepts equipmentCategory offered by the RFQ form: %s', (category) => {
+        const result = rfqSchema.safeParse({ ...VALID_RFQ, equipmentCategory: category });
+        expect(result.success).toBe(true);
+    });
+
     it('rejects missing name', () => {
         const { name: _, ...noName } = VALID_RFQ;
         const result = rfqSchema.safeParse(noName);
