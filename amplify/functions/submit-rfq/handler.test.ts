@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { APIGatewayProxyEventV2 } from 'aws-lambda';
 import { rfqSchema } from './handler';
+import { RFQ_FIELD_LIMITS } from '../../lib/rfq/limits';
 import { PutCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 
 // ---------------------------------------------------------------------------
@@ -247,6 +248,66 @@ describe('rfqSchema (Zod validation)', () => {
             attachmentKeys: ['temp/a.pdf', 'temp/b.pdf', 'temp/c.docx'],
         });
         expect(result.success).toBe(true);
+    });
+
+    // --- Equipment category enum: client/server parity (Probe-Station drift) ---
+    it('accepts the Probe-Station equipment category', () => {
+        const result = rfqSchema.safeParse({ ...VALID_RFQ, equipmentCategory: 'Probe-Station' });
+        expect(result.success).toBe(true);
+    });
+
+    it('accepts the Coater-Developer equipment category', () => {
+        const result = rfqSchema.safeParse({ ...VALID_RFQ, equipmentCategory: 'Coater-Developer' });
+        expect(result.success).toBe(true);
+    });
+
+    // --- String length caps derive from the shared limits module ---
+    it('rejects specificModel over the shared max', () => {
+        const result = rfqSchema.safeParse({
+            ...VALID_RFQ,
+            specificModel: 'x'.repeat(RFQ_FIELD_LIMITS.specificModel.max + 1),
+        });
+        expect(result.success).toBe(false);
+    });
+
+    it('accepts specificModel exactly at the shared max', () => {
+        const result = rfqSchema.safeParse({
+            ...VALID_RFQ,
+            specificModel: 'x'.repeat(RFQ_FIELD_LIMITS.specificModel.max),
+        });
+        expect(result.success).toBe(true);
+    });
+
+    it('rejects department over the shared max', () => {
+        const result = rfqSchema.safeParse({
+            ...VALID_RFQ,
+            department: 'd'.repeat(RFQ_FIELD_LIMITS.department.max + 1),
+        });
+        expect(result.success).toBe(false);
+    });
+
+    it('rejects keySpecifications over the shared max', () => {
+        const result = rfqSchema.safeParse({
+            ...VALID_RFQ,
+            keySpecifications: 'k'.repeat(RFQ_FIELD_LIMITS.keySpecifications.max + 1),
+        });
+        expect(result.success).toBe(false);
+    });
+
+    it('rejects existingEquipment over the shared max', () => {
+        const result = rfqSchema.safeParse({
+            ...VALID_RFQ,
+            existingEquipment: 'e'.repeat(RFQ_FIELD_LIMITS.existingEquipment.max + 1),
+        });
+        expect(result.success).toBe(false);
+    });
+
+    it('rejects additionalComments over the shared max', () => {
+        const result = rfqSchema.safeParse({
+            ...VALID_RFQ,
+            additionalComments: 'c'.repeat(RFQ_FIELD_LIMITS.additionalComments.max + 1),
+        });
+        expect(result.success).toBe(false);
     });
 });
 

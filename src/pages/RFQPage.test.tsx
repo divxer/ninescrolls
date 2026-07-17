@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { RFQPage } from './RFQPage';
 import { parseRfqUrlParams } from './rfqUrlParams';
+import { RFQ_FIELD_LIMITS } from '../../amplify/lib/rfq/limits';
 
 const { trackCustomEvent, trackRFQSubmission, trackRFQSubmissionWithAnalysis } = vi.hoisted(() => ({
   trackCustomEvent: vi.fn(),
@@ -248,6 +249,59 @@ describe('RFQPage URL attribution contract', () => {
     expect(screen.getByLabelText(/^Email/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Institution/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Application \/ Research Goal/i)).toBeInTheDocument();
+  });
+
+  // Advance the form to step 2 with valid step-1 input.
+  async function goToStep2() {
+    fireEvent.change(screen.getByLabelText(/Full Name/i), { target: { value: 'Ada Lovelace' } });
+    fireEvent.change(screen.getByLabelText(/^Email/i), { target: { value: 'ada@example.edu' } });
+    fireEvent.change(screen.getByLabelText(/Institution/i), { target: { value: 'Example Lab' } });
+    fireEvent.change(screen.getByLabelText(/Equipment Category/i), { target: { value: 'ICP' } });
+    fireEvent.change(screen.getByLabelText(/Application \/ Research Goal/i), {
+      target: { value: 'Deep silicon etching process development for MEMS sensors.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Continue to Project Details/i }));
+    await waitFor(() => expect(screen.getByLabelText(/Preferred Model/i)).toBeInTheDocument());
+  }
+
+  it('caps step-1 text fields at the shared server length limits', () => {
+    renderRfq('/request-quote');
+    expect(screen.getByLabelText(/Full Name/i)).toHaveAttribute('maxlength', String(RFQ_FIELD_LIMITS.name.max));
+    expect(screen.getByLabelText(/^Email/i)).toHaveAttribute('maxlength', String(RFQ_FIELD_LIMITS.email.max));
+    expect(screen.getByLabelText(/Institution/i)).toHaveAttribute('maxlength', String(RFQ_FIELD_LIMITS.institution.max));
+    expect(screen.getByLabelText(/Department/i)).toHaveAttribute('maxlength', String(RFQ_FIELD_LIMITS.department.max));
+    expect(screen.getByLabelText(/Application \/ Research Goal/i)).toHaveAttribute('maxlength', String(RFQ_FIELD_LIMITS.applicationDescription.max));
+  });
+
+  it('caps step-2 optional text fields at the shared server length limits', async () => {
+    renderRfq('/request-quote');
+    await goToStep2();
+    expect(screen.getByLabelText(/Preferred Model/i)).toHaveAttribute('maxlength', String(RFQ_FIELD_LIMITS.specificModel.max));
+    expect(screen.getByLabelText(/Technical Requirements/i)).toHaveAttribute('maxlength', String(RFQ_FIELD_LIMITS.keySpecifications.max));
+    expect(screen.getByLabelText(/Existing Equipment/i)).toHaveAttribute('maxlength', String(RFQ_FIELD_LIMITS.existingEquipment.max));
+    expect(screen.getByLabelText(/Special Requirements/i)).toHaveAttribute('maxlength', String(RFQ_FIELD_LIMITS.additionalComments.max));
+  });
+
+  it('flags a specificModel that exceeds the shared max on blur', async () => {
+    renderRfq('/request-quote');
+    await goToStep2();
+    const model = screen.getByLabelText(/Preferred Model/i);
+    // fireEvent.change bypasses the maxLength attribute, simulating paste/prefill overflow
+    fireEvent.change(model, { target: { value: 'x'.repeat(RFQ_FIELD_LIMITS.specificModel.max + 1) } });
+    fireEvent.blur(model);
+    expect(await screen.findByText(/Preferred model must be under 100 characters/i)).toBeInTheDocument();
+  });
+
+  it('blocks submit when an optional capped field exceeds its max', async () => {
+    renderRfq('/request-quote');
+    await goToStep2();
+    fireEvent.change(screen.getByLabelText(/Existing Equipment/i), {
+      target: { value: 'e'.repeat(RFQ_FIELD_LIMITS.existingEquipment.max + 1) },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Request Proposal/i }));
+    // The over-max field must surface an inline error and the request must not fire.
+    expect(await screen.findByText(/under 2000 characters/i)).toBeInTheDocument();
+    expect(fetch).not.toHaveBeenCalled();
   });
 
   it('submits rendered URL attribution fields in the RFQ payload and analytics event', async () => {
