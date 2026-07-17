@@ -97,9 +97,16 @@ describe('cryogenic probe station buyer’s guide standalone article', () => {
     expect(coverMeta.width).toBe(1600);
     expect(coverMeta.height).toBe(900);
     expect(coverMeta.space).toBe('srgb');
-    for (const size of ['sm', 'md', 'lg', 'xl']) {
-      expect(existsSync(`public/assets/images/insights/cryo-buyers-guide-cover-${size}.webp`), `cover-${size}.webp on disk`).toBe(true);
-      expect(existsSync(`public/assets/images/insights/cryo-buyers-guide-cover-${size}.png`), `cover-${size}.png on disk`).toBe(true);
+    const coverSizes = { sm: [640, 360], md: [768, 432], lg: [1024, 576], xl: [1280, 720] } as const;
+    for (const [size, [width, height]] of Object.entries(coverSizes)) {
+      for (const extension of ['png', 'webp']) {
+        const variantPath = `public/assets/images/insights/cryo-buyers-guide-cover-${size}.${extension}`;
+        expect(existsSync(variantPath), `cover-${size}.${extension} on disk`).toBe(true);
+        const variantMeta = await sharp(variantPath).metadata();
+        expect(variantMeta.width, `${size}.${extension} width`).toBe(width);
+        expect(variantMeta.height, `${size}.${extension} height`).toBe(height);
+        expect(variantMeta.space, `${size}.${extension} colorspace`).toBe('srgb');
+      }
     }
   });
 
