@@ -7,10 +7,10 @@ Replace the existing three-card comparison with a publication-grade editorial fi
 ## Composition
 
 - Canvas: 1600 × 900 pixels, 16:9, sRGB.
-- Header: deep-navy band with the title `Three Cryogenic Cooling Architectures` and subtitle `Thermal paths and operating trade-offs for probe-station evaluation`.
+- Header: deep-navy `#1e3a5f` band occupying 18% of the canvas height, with the title `Three Cryogenic Cooling Architectures` and subtitle `Thermal paths and operating trade-offs for probe-station evaluation`.
 - Body: light editorial field with three equal architecture columns and no product-card framing.
-- Upper body: one simplified thermal-path diagram per architecture, using a single dark-blue outline icon system and thin directional arrows.
-- Lower body: a shared four-row comparison matrix aligned across the three columns.
+- Upper body: 42% of the body height, with one simplified thermal-path diagram per architecture using a single dark-blue outline icon system, `#3b82f6` accents, and thin directional arrows.
+- Lower body: 58% of the body height, with a shared four-row comparison matrix aligned across the three columns; the footer is contained within this allocation.
 
 ## Thermal Paths
 
@@ -43,13 +43,14 @@ The two Kelvin values are physical cryogen references, never stage-temperature o
 ## Visual and Typography Rules
 
 - Use `src/templates/equipmentGuide/fonts/SpaceGrotesk-Variable.woff2` for headings and the Inter WOFF2 files in the same directory for supporting copy.
+- Implement the deterministic renderer at `scripts/generate-cryo-architecture-figure.py`.
 - The PIL generator must not load WOFF2 directly. Use fontTools to convert WOFF2 to temporary TTF files, then load those TTF files with PIL.
 - Before drawing, assert the converted font cmap contains U+2082 (`₂`) and U+2019 (`’`).
 - Use correct LN₂ and LHe typography.
 - Use uniform outline icons and thin arrows; do not draw real products or recognizable vendor equipment.
 - Do not include brand names, certification marks, guarantees, or product performance claims.
 - Footer inside the image: `Illustrative comparison. Actual stage temperature depends on heat load, thermal links, and configuration.`
-- The image footer is supplemental. The adjacent HTML `<figcaption>` must remain present and continue to contain `Illustrative comparison`.
+- The image footer is supplemental. The adjacent HTML `<figcaption>` must remain present and continue to match `illustrative comparison` case-insensitively; its current `An illustrative comparison…` wording must not be changed merely to match the image footer's capitalization.
 
 ## HTML Alt Text
 
@@ -63,10 +64,16 @@ The alt contains no Kelvin figures, spelled temperature values, capability verbs
 
 ## Asset and Integration Contract
 
-- Generate a versioned candidate first; promote it only after full-size and small-size visual QA.
+- Generate the versioned candidate first at `public/assets/images/insights/cryo-cooling-architectures.v2-candidate.png`; promote it to the formal source only after full-size and small-size visual QA, then remove the candidate before committing.
 - Preserve the formal source filename `public/assets/images/insights/cryo-cooling-architectures.png`.
-- Regenerate and commit all eight responsive variants: sm/md/lg/xl PNG and WebP.
-- Validate all nine assets for decoding, expected dimensions, and sRGB.
+- Regenerate all eight responsive variants with the repository's established optimizer, not hand-written resize logic:
+
+```bash
+npm run optimize-images -- public/assets/images/insights/cryo-cooling-architectures.png
+```
+
+  This delegates to `scripts/optimize-images.js`, preserving its width-only `fit: 'contain'` resize behavior and WebP quality 80. Commit the resulting sm/md/lg/xl PNG and WebP variants.
+- Extend `src/pages/probeStations/cryoBuyersGuideArticle.test.ts` with Sharp metadata assertions for the formal source and all eight `cryo-cooling-architectures-*` variants. The assertions must verify decoding, exact 16:9 dimensions, and `metadata().space === 'srgb'`, providing an executable acceptance gate rather than relying on manual inspection.
 - Record old checksums before regeneration and require all eight responsive checksums to change after regeneration so stale assets cannot pass existence-only checks.
 - Commit the source, eight variants, generator, HTML alt update, and tests to `feature/cryo-buyers-guide-article` in PR #291.
 - Do not upload during implementation. During the first publication workflow, upload the inline figure exactly once with:
