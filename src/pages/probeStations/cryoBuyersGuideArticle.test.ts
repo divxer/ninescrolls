@@ -1,4 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
+import sharp from 'sharp';
 import { describe, expect, it } from 'vitest';
 import { parseArticleHtml } from '../../../scripts/lib/parseArticleHtml';
 import { FORBIDDEN_ATTESTATION_PATTERNS } from '../../data/probeStations/semishare';
@@ -43,7 +44,7 @@ describe('cryogenic probe station buyer’s guide standalone article', () => {
     expect(content).not.toMatch(/<h[23][^>]*>\s*(contents|in this (article|guide))\s*<\/h[23]>/i);
   });
 
-  it('embeds the cooling-architectures figure as its own <picture> block with slug-scoped CDN URLs, adjacent caption, and on-disk source assets', () => {
+  it('embeds the cooling-architectures figure as its own <picture> block with slug-scoped CDN URLs, adjacent caption, and on-disk source assets', async () => {
     const pictureBlocks = content.match(/<picture>[\s\S]*?<\/picture>/g) ?? [];
     const CDN = `https://cdn.ninescrolls.com/insights/${SLUG}`;
 
@@ -90,7 +91,12 @@ describe('cryogenic probe station buyer’s guide standalone article', () => {
 
     // Cover upload source (base + responsive variants) must be on disk too —
     // the create-insight cover step reads them.
-    expect(existsSync('public/assets/images/insights/cryo-buyers-guide-cover.png')).toBe(true);
+    const coverPath = 'public/assets/images/insights/cryo-buyers-guide-cover.png';
+    expect(existsSync(coverPath)).toBe(true);
+    const coverMeta = await sharp(coverPath).metadata();
+    expect(coverMeta.width).toBe(1600);
+    expect(coverMeta.height).toBe(900);
+    expect(coverMeta.space).toBe('srgb');
     for (const size of ['sm', 'md', 'lg', 'xl']) {
       expect(existsSync(`public/assets/images/insights/cryo-buyers-guide-cover-${size}.webp`), `cover-${size}.webp on disk`).toBe(true);
       expect(existsSync(`public/assets/images/insights/cryo-buyers-guide-cover-${size}.png`), `cover-${size}.png on disk`).toBe(true);
