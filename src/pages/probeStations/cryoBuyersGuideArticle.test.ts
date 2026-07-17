@@ -220,7 +220,14 @@ describe('cryogenic buyer’s guide accuracy constraints (editorial-review tripw
   // Unified kelvin token: digits OR spelled-out numbers, "K" or "kelvin" —
   // every family below (brand proximity AND capability promises) sees both
   // forms, so "four kelvin" is exactly as banned as "4 K".
-  const KELVIN_NUM = String.raw`(?:\d+(?:\.\d+)?|one|two|three|four|five|six|seven|eight|nine|ten|twenty|fifty|seventy)`;
+  // Spelled numbers use a composable grammar (ones, teens, tens with optional
+  // hyphen/space compounds, and "a/one hundred [and] …"), not an enumeration —
+  // "eleven kelvin" and "one hundred kelvin" are as banned as "4 K".
+  const ONES = String.raw`(?:one|two|three|four|five|six|seven|eight|nine)`;
+  const TEENS = String.raw`(?:ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen)`;
+  const TENS = String.raw`(?:twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety)`;
+  const SPELLED = String.raw`(?:(?:a|one)\s+hundred(?:\s+(?:and\s+)?(?:${TENS}(?:[-\s]${ONES})?|${TEENS}|${ONES}))?|${TENS}(?:[-\s]${ONES})?|${TEENS}|${ONES})`;
+  const KELVIN_NUM = String.raw`(?:\d+(?:\.\d+)?|${SPELLED})`;
   const KELVIN = String.raw`${KELVIN_NUM}\s?(?:k\b|kelvin\b)`;
   const GUARD_FAMILIES: Record<string, RegExp[]> = {
     // A product brand (SEMISHARE / CGX) within ±80 chars of any kelvin figure,
@@ -328,7 +335,10 @@ describe('cryogenic buyer’s guide accuracy constraints (editorial-review tripw
       // Each family has at least one row ONLY it catches, so deleting any
       // family (or its load-bearing pattern) fails this table:
       //  - brandNearKelvin uniquely: 'The CGX chuck stays below 20 K.'
-      //    ("stays below" is not a capability verb; no "guaranteed").
+      //    ("stays below" is not a capability verb; no "guaranteed"), and
+      //    its REVERSE branch uniquely: 'Four kelvin is the SEMISHARE
+      //    target.' / 'One hundred kelvin is the CGX target.' (temperature
+      //    precedes the brand, no capability verb).
       //    Brand rows with capability verbs ('CGX series reaches 4 K',
       //    'SEMISHARE stations cool to 77 K', 'CGX platform cools to four
       //    kelvin') are intentionally caught by BOTH families — the locked
@@ -342,6 +352,14 @@ describe('cryogenic buyer’s guide accuracy constraints (editorial-review tripw
       //    'Cooldown time is guaranteed.' (no kelvin figure, no brand,
       //    no "performance/base temperature" noun).
       'The CGX chuck stays below 20 K.',
+      // Reverse-direction regression lock: kelvin BEFORE the brand, no
+      // capability verb — ONLY brandNearKelvin's reverse alternation catches
+      // this row; deleting that branch fails the table.
+      'Four kelvin is the SEMISHARE target.',
+      'One hundred kelvin is the CGX target.',
+      // Composable spelled-number grammar coverage:
+      'This system reaches eleven kelvin.',
+      'SEMISHARE reaches twelve kelvin.',
       'The CGX series reaches 4 K.',
       'The CGX platform cools to four kelvin.',
       'This system reaches 4 K.',
