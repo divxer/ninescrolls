@@ -364,6 +364,12 @@ rfqResource.addMethod('POST', submitRfqIntegration);
 // Add OPTIONS method for CORS preflight
 rfqResource.addMethod('OPTIONS', submitRfqIntegration);
 
+// Create /api/rfq/upload-url resource for public RFQ attachment presigned URLs
+// (same submit-rfq Lambda; it dispatches on the body's `action` field)
+const rfqUploadUrlResource = rfqResource.addResource('upload-url');
+rfqUploadUrlResource.addMethod('POST', submitRfqIntegration);
+rfqUploadUrlResource.addMethod('OPTIONS', submitRfqIntegration);
+
 // Create /api/rfq/convert resource for converting RFQ to Order
 const rfqConvertResource = rfqResource.addResource('convert');
 const convertRfqIntegration = new LambdaIntegration(backend.convertRfqToOrder.resources.lambda, {

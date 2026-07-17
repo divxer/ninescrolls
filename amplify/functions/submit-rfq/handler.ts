@@ -1,7 +1,8 @@
 import type { APIGatewayProxyHandlerV2 } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
-import { S3Client, CopyObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, CopyObjectCommand, DeleteObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { z } from 'zod';
 import crypto from 'node:crypto';
 import { RFQ_FIELD_LIMITS as L } from '../../lib/rfq/limits';
@@ -85,6 +86,36 @@ const REFERRAL_SOURCES = [
 ] as const;
 
 // ---------------------------------------------------------------------------
+// Attachment upload constraints
+// Kept in lockstep with RFQPage.tsx (ALLOWED_FILE_TYPES / MAX_FILES / MAX_FILE_SIZE).
+// Divergence here silently rejects files the form accepted, so change both together.
+// ---------------------------------------------------------------------------
+const ALLOWED_ATTACHMENT_MIME_TYPES = [
+    'application/pdf',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'image/jpeg',
+    'image/png',
+] as const;
+
+const MAX_ATTACHMENTS = 3;
+const MAX_ATTACHMENT_SIZE = 10 * 1024 * 1024; // 10MB
+const PRESIGNED_URL_EXPIRY = 15 * 60; // 15 minutes
+
+/**
+ * Shape of every key this Lambda hands out: temp/rfq/<16 hex>/<sanitized name>.
+ * moveAttachments() feeds these straight into CopyObject + DeleteObject with
+ * bucket-wide write credentials, so anything not matching this exact shape must
+ * never reach it — otherwise a caller could name an arbitrary key (an order
+ * contract, say) and have the server relocate and delete it.
+ */
+const TEMP_ATTACHMENT_KEY_RE = /^temp\/rfq\/[a-f0-9]{16}\/[a-zA-Z0-9._-]{1,200}$/;
+
+export function isValidTempAttachmentKey(key: string): boolean {
+    return TEMP_ATTACHMENT_KEY_RE.test(key) && !key.includes('..');
+}
+
+// ---------------------------------------------------------------------------
 // Zod Schema — matches §12.10.3 API format
 // ---------------------------------------------------------------------------
 // Length caps derive from the shared source of truth (amplify/lib/rfq/limits)
@@ -110,8 +141,13 @@ export const rfqSchema = z.object({
     turnstileToken: z.string().min(1),
     // Browser visitor identity for the VISITOR# bridge (2C-analytics)
     visitorId: z.string().max(L.visitorId.max).optional(),
-    // S3 keys from presigned URL uploads (temp/ prefix)
-    attachmentKeys: z.array(z.string().max(500)).max(3).optional(),
+    // S3 keys from presigned URL uploads — must be temp/rfq/ keys this Lambda issued
+    attachmentKeys: z
+        .array(z.string().max(500).refine(isValidTempAttachmentKey, {
+            message: 'attachmentKeys must reference a temp/rfq/ upload',
+        }))
+        .max(MAX_ATTACHMENTS)
+        .optional(),
     // Budgetary quote with shipping address for tax calculation
     needsBudgetaryQuote: z.boolean().optional(),
     shippingAddress: z.string().max(L.shippingAddress.max).optional(),
@@ -209,6 +245,76 @@ async function verifyTurnstile(token: string): Promise<boolean> {
 }
 
 // ---------------------------------------------------------------------------
+// getUploadUrl — presigned PUT into temp/rfq/ for the public RFQ form
+//
+// Runs before Turnstile: files are uploaded while the visitor is still filling
+// the form, so there is no token to spend yet. Abuse is bounded by the signed
+// ContentLength (S3 rejects any body of a different size), the MIME allow-list,
+// and the bucket's 1-day temp/ expiry. Keys only become durable if a later
+// submit-RFQ call passes Turnstile and moves them to rfqs/<rfqId>/.
+// ---------------------------------------------------------------------------
+export const uploadUrlSchema = z.object({
+    action: z.literal('getUploadUrl'),
+    fileName: z.string().min(1).max(255),
+    mimeType: z.enum(ALLOWED_ATTACHMENT_MIME_TYPES),
+    fileSize: z.number().int().positive().max(MAX_ATTACHMENT_SIZE),
+});
+
+async function handleGetUploadUrl(
+    rawBody: unknown,
+    corsHeaders: Record<string, string>,
+) {
+    const parsed = uploadUrlSchema.safeParse(rawBody);
+    if (!parsed.success) {
+        return {
+            statusCode: 400,
+            headers: corsHeaders,
+            body: JSON.stringify({
+                success: false,
+                error: 'Invalid upload request',
+                details: parsed.error.flatten().fieldErrors,
+            }),
+        };
+    }
+
+    const { fileName, mimeType, fileSize } = parsed.data;
+
+    // Strip any path components before sanitizing, so a name like
+    // "../../etc/passwd" cannot contribute directory structure to the key.
+    const baseName = fileName.split('/').pop()!.split('\\').pop()!;
+    const safeName = baseName.replace(/\.\./g, '').replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 200) || 'upload';
+    const uploadId = crypto.randomBytes(8).toString('hex');
+    const s3Key = `temp/rfq/${uploadId}/${safeName}`;
+
+    const command = new PutObjectCommand({
+        Bucket: BUCKET_NAME(),
+        Key: s3Key,
+        ContentType: mimeType,
+        // Signed, so S3 rejects a PUT whose body length differs — this is what
+        // enforces MAX_ATTACHMENT_SIZE for an unauthenticated caller.
+        ContentLength: fileSize,
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- AWS SDK version mismatch between root and function deps
+    const uploadUrl = await getSignedUrl(s3Client as any, command as any, {
+        expiresIn: PRESIGNED_URL_EXPIRY,
+    });
+
+    console.log(`RFQ attachment presigned: ${s3Key}`);
+
+    return {
+        statusCode: 200,
+        headers: corsHeaders,
+        body: JSON.stringify({
+            success: true,
+            uploadUrl,
+            s3Key,
+            expiresAt: new Date(Date.now() + PRESIGNED_URL_EXPIRY * 1000).toISOString(),
+        }),
+    };
+}
+
+// ---------------------------------------------------------------------------
 // Move attachments from temp/ to rfqs/<rfqId>/
 // ---------------------------------------------------------------------------
 async function moveAttachments(rfqId: string, tempKeys: string[]): Promise<string[]> {
@@ -216,6 +322,13 @@ async function moveAttachments(rfqId: string, tempKeys: string[]): Promise<strin
     const finalKeys: string[] = [];
 
     for (const tempKey of tempKeys) {
+        // Re-checked here and not only at the schema: this loop deletes whatever
+        // key it is handed, so it must not depend on a caller having validated first.
+        if (!isValidTempAttachmentKey(tempKey)) {
+            console.error(`Refusing to move non-temp attachment key: ${tempKey.slice(0, 100)}`);
+            continue;
+        }
+
         const fileName = tempKey.split('/').pop() ?? tempKey;
         const destKey = `rfqs/${rfqId}/${fileName}`;
 
@@ -487,6 +600,14 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
                 headers: corsHeaders,
                 body: JSON.stringify({ success: false, error: 'Invalid JSON' }),
             };
+        }
+
+        // 0b. Attachment presign requests share this Lambda but skip the RFQ path.
+        // Dispatch on the body's `action` rather than the request path: this handler
+        // is typed for payload v2 but mounted on a v1 REST API, so the path shape
+        // differs between the two event formats while the body does not.
+        if ((rawBody as { action?: unknown } | null)?.action === 'getUploadUrl') {
+            return await handleGetUploadUrl(rawBody, corsHeaders);
         }
 
         // 1. Validate Turnstile CAPTCHA
