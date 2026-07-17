@@ -217,7 +217,11 @@ describe('cryogenic buyer’s guide accuracy constraints (editorial-review tripw
   // arrays. A weakened production guard therefore fails the mutation table —
   // there is no shadow copy that can stay green. NONE of these carry the /g
   // flag (stateful lastIndex would break repeated .test() calls).
-  const KELVIN = String.raw`\d+(?:\.\d+)?\s?k\b`;
+  // Unified kelvin token: digits OR spelled-out numbers, "K" or "kelvin" —
+  // every family below (brand proximity AND capability promises) sees both
+  // forms, so "four kelvin" is exactly as banned as "4 K".
+  const KELVIN_NUM = String.raw`(?:\d+(?:\.\d+)?|one|two|three|four|five|six|seven|eight|nine|ten|twenty|fifty|seventy)`;
+  const KELVIN = String.raw`${KELVIN_NUM}\s?(?:k\b|kelvin\b)`;
   const GUARD_FAMILIES: Record<string, RegExp[]> = {
     // A product brand (SEMISHARE / CGX) within ±80 chars of any kelvin figure,
     // in EITHER direction — the core "no brand-attributed temperature" ban.
@@ -230,10 +234,12 @@ describe('cryogenic buyer’s guide accuracy constraints (editorial-review tripw
     // are anchored to capability phrasings ("boils at 4.2 K" is a property of
     // the cryogen, not a capability promise, and must stay legal).
     capabilityTempPromise: [
-      new RegExp(`(?:will\\s+reach|achieves?|delivers?|guaranteed)[^.]{0,40}${KELVIN}`, 'i'),
+      // Verb set includes bare "reach(es)" — a system "reaches N K" is a
+      // capability promise with or without a brand in range.
+      new RegExp(`(?:will\\s+reach|reach(?:es|ing)?|achieves?|delivers?|guaranteed)[^.]{0,40}${KELVIN}`, 'i'),
       new RegExp(`\\b(?:operates?|cool(?:s|ing)?\\s+down|cools?)\\s+(?:at|to)[^.]{0,20}${KELVIN}`, 'i'),
-      new RegExp(`\\b(?:has|have|with)\\s+a?\\s?base\\s+temperature\\s+of[^.]{0,20}${KELVIN}`, 'i'),
-      /\b(?:will\s+reach|reach(?:es)?|achieves?|delivers?|operates?\s+at|cools?\s+(?:down\s+)?to)[^.]{0,25}\b(?:one|two|three|four|five|six|seven|eight|nine|ten|twenty|fifty|seventy)\b[^.]{0,15}kelvin/i,
+      // "base temperature is/of/at N K" — with or without a has/have prefix.
+      new RegExp(`\\bbase\\s+temperature\\s*(?:of|is|at|:)?[^.]{0,25}${KELVIN}`, 'i'),
     ],
     // "guaranteed performance / base temperature" and the bare word "guaranteed"
     // anywhere — temperature claims are acceptance criteria, never guarantees.
@@ -321,8 +327,13 @@ describe('cryogenic buyer’s guide accuracy constraints (editorial-review tripw
     const MUTATIONS = [
       // Each family has at least one row ONLY it catches, so deleting any
       // family (or its load-bearing pattern) fails this table:
-      //  - brandNearKelvin uniquely: 'The CGX series reaches 4 K.' (digit-form
-      //    "reaches" is not a capability verb pattern; no "guaranteed").
+      //  - brandNearKelvin uniquely: 'The CGX chuck stays below 20 K.'
+      //    ("stays below" is not a capability verb; no "guaranteed").
+      //    Brand rows with capability verbs ('CGX series reaches 4 K',
+      //    'SEMISHARE stations cool to 77 K', 'CGX platform cools to four
+      //    kelvin') are intentionally caught by BOTH families — the locked
+      //    requirement is that the capability guard covers "reaches N K"
+      //    regardless of brand presence.
       //  - capabilityTempPromise uniquely: 'This system achieves 3.5 K.',
       //    'This system operates at 4 K.', 'It cools down to 4 K.',
       //    'The station has a base temperature of 4 K.', and the spelled-out
@@ -330,7 +341,13 @@ describe('cryogenic buyer’s guide accuracy constraints (editorial-review tripw
       //  - guaranteedClaims (bare \bguaranteed\b) uniquely:
       //    'Cooldown time is guaranteed.' (no kelvin figure, no brand,
       //    no "performance/base temperature" noun).
+      'The CGX chuck stays below 20 K.',
       'The CGX series reaches 4 K.',
+      'The CGX platform cools to four kelvin.',
+      'This system reaches 4 K.',
+      'The base temperature is 4 K.',
+      'It reaches 4 kelvin.',
+      'The station has a base temperature of four kelvin.',
       'This system achieves 3.5 K.',
       'Guaranteed base temperature of 10 K.',
       'SEMISHARE stations cool to 77 K.',
