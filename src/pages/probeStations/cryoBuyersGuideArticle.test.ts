@@ -128,6 +128,18 @@ describe('cryogenic probe station buyer’s guide standalone article', () => {
     expect(content).not.toMatch(/SEMISHARE[^<.]{0,60}\d+\s?(K\b|mm|inch|"|µm|um)/i);
   });
 
+  it('mentions SEMISHARE exactly once across body AND metadata combined (locked scope)', () => {
+    // Locked scope: one brand mention total. Checked against the FULL HTML
+    // document (not just the parsed body) so a related-products JSON entry or
+    // meta tag cannot reintroduce a second mention invisibly. The canonical
+    // route href is excluded first — it is navigation, not brand copy.
+    const htmlSansRoute = html.replace(/href="\/wafer-probe-stations\/semishare"/g, '');
+    expect(
+      (htmlSansRoute.match(/semishare/gi) ?? []).length,
+      'SEMISHARE brand mentions across body + metadata',
+    ).toBe(1);
+  });
+
   it('exposes the authoring metadata the create-insight flow will write to DynamoDB', () => {
     expect(parsed.excerpt).toBe(
       'How to compare cryogenic probe station cooling architectures, read temperature and vibration specifications the way a metrologist does, and turn a vendor conversation into an acceptance-ready RFQ — base temperature under defined load, comparable vibration metrics, vacuum and interface dimensions, and total cost of ownership.'
@@ -147,9 +159,12 @@ describe('cryogenic probe station buyer’s guide standalone article', () => {
     expect(parsed.author).toBe('NineScrolls Engineering');
 
     expect(parsed.relatedProducts).toHaveLength(2);
+    // The brand page is deliberately NOT a related product — SEMISHARE appears
+    // exactly once (the body "Where NineScrolls fits" link); the second related
+    // slot cross-links the application page (lane companion) instead.
     expect(parsed.relatedProducts!.map((p) => p.href)).toEqual([
       '/wafer-probe-stations',
-      '/wafer-probe-stations/semishare',
+      '/applications/cryogenic-probing',
     ]);
   });
 
@@ -210,9 +225,15 @@ describe('cryogenic buyer’s guide accuracy constraints (editorial-review tripw
       new RegExp(`(?:semishare|cgx)[\\s\\S]{0,80}${KELVIN}|${KELVIN}[\\s\\S]{0,80}(?:semishare|cgx)`, 'i'),
     ],
     // Product-capability temperature PROMISES: a system "will reach / achieves /
-    // delivers / guaranteed" some kelvin figure.
+    // delivers / guaranteed / operates at / cools (down) to / has a base
+    // temperature of" some kelvin figure — in digits or spelled out. The verbs
+    // are anchored to capability phrasings ("boils at 4.2 K" is a property of
+    // the cryogen, not a capability promise, and must stay legal).
     capabilityTempPromise: [
       new RegExp(`(?:will\\s+reach|achieves?|delivers?|guaranteed)[^.]{0,40}${KELVIN}`, 'i'),
+      new RegExp(`\\b(?:operates?|cool(?:s|ing)?\\s+down|cools?)\\s+(?:at|to)[^.]{0,20}${KELVIN}`, 'i'),
+      new RegExp(`\\b(?:has|have|with)\\s+a?\\s?base\\s+temperature\\s+of[^.]{0,20}${KELVIN}`, 'i'),
+      /\b(?:will\s+reach|reach(?:es)?|achieves?|delivers?|operates?\s+at|cools?\s+(?:down\s+)?to)[^.]{0,25}\b(?:one|two|three|four|five|six|seven|eight|nine|ten|twenty|fifty|seventy)\b[^.]{0,15}kelvin/i,
     ],
     // "guaranteed performance / base temperature" and the bare word "guaranteed"
     // anywhere — temperature claims are acceptance criteria, never guarantees.
@@ -300,10 +321,12 @@ describe('cryogenic buyer’s guide accuracy constraints (editorial-review tripw
     const MUTATIONS = [
       // Each family has at least one row ONLY it catches, so deleting any
       // family (or its load-bearing pattern) fails this table:
-      //  - brandNearKelvin uniquely: 'SEMISHARE stations cool to 77 K.'
-      //    ("cool to" is not a capability verb; no "guaranteed").
-      //  - capabilityTempPromise uniquely: 'This system achieves 3.5 K.'
-      //    (no brand within range; no "guaranteed").
+      //  - brandNearKelvin uniquely: 'The CGX series reaches 4 K.' (digit-form
+      //    "reaches" is not a capability verb pattern; no "guaranteed").
+      //  - capabilityTempPromise uniquely: 'This system achieves 3.5 K.',
+      //    'This system operates at 4 K.', 'It cools down to 4 K.',
+      //    'The station has a base temperature of 4 K.', and the spelled-out
+      //    'This cryostat reaches ten kelvin.' (no brand within range).
       //  - guaranteedClaims (bare \bguaranteed\b) uniquely:
       //    'Cooldown time is guaranteed.' (no kelvin figure, no brand,
       //    no "performance/base temperature" noun).
@@ -312,6 +335,10 @@ describe('cryogenic buyer’s guide accuracy constraints (editorial-review tripw
       'Guaranteed base temperature of 10 K.',
       'SEMISHARE stations cool to 77 K.',
       'Cooldown time is guaranteed.',
+      'This system operates at 4 K.',
+      'It cools down to 4 K.',
+      'The station has a base temperature of 4 K.',
+      'This cryostat reaches ten kelvin.',
     ];
     for (const sentence of MUTATIONS) {
       const mutated = (content + ' ' + sentence).toLowerCase().replace(/\s+/g, ' ');
@@ -326,6 +353,7 @@ describe('cryogenic buyer’s guide accuracy constraints (editorial-review tripw
     // future "tightening" that flags these is itself a regression.
     const NEGATIVE_CONTROLS = [
       'Liquid nitrogen has a normal boiling point of 77.4 K at atmospheric pressure.',
+      'Liquid helium boils at 4.2 K at atmospheric pressure.',
       'Closed-cycle systems are often described as 10 K-class as a category orientation; the actual stage temperature depends on heat load, thermal links, and configuration.',
       'Frame these as acceptance criteria to be demonstrated, and both sides know what working means before the purchase order is issued.',
     ];

@@ -15,7 +15,7 @@
   <script type="application/json" data-related-products>
   [
     { "href": "/wafer-probe-stations", "label": "Wafer Probe Stations Hub", "subtitle": "Selection guide: manual, semi-automatic, cryogenic" },
-    { "href": "/wafer-probe-stations/semishare", "label": "SEMISHARE Probe Stations", "subtitle": "US & Canada procurement through NineScrolls" }
+    { "href": "/applications/cryogenic-probing", "label": "Cryogenic Probing Applications", "subtitle": "When low-temperature probing is the right tool" }
   ]
   </script>
 </head>
@@ -52,13 +52,13 @@
       </figure>
 
       <h3>LN₂-cooled flow or reservoir systems</h3>
-      <p>These systems cool with liquid nitrogen, either flowed through the stage or held in a reservoir. Liquid nitrogen has a normal boiling point of 77.4 K at atmospheric pressure, which sets the category's orientation — this is the family for research whose physics appears at moderate low temperature rather than the deepest cold. The medium is inexpensive and widely available, the facility burden is a nitrogen dewar and periodic refills, and the trade is that the coldest phenomena remain out of reach. Note that 77.4 K is the boiling point of the cryogen at atmospheric pressure, not a stage temperature you can assume; where a real sample and wiring sit is a separate question, addressed below.</p>
+      <p>These systems cool with liquid nitrogen, either flowed through the stage or held in a reservoir. Liquid nitrogen has a normal boiling point of 77.4 K at atmospheric pressure, which sets the category's orientation — this is the family for research whose physics appears at moderate low temperature rather than the deepest cold. For many institutional users it is the most accessible of the cryogens — confirm local supply and pricing with your own facility. The facility burden is a nitrogen dewar and periodic refills; the trade is that the coldest phenomena remain out of reach. Note that 77.4 K is the boiling point of the cryogen at atmospheric pressure, not a stage temperature you can assume; where a real sample and wiring sit is a separate question, addressed below.</p>
 
       <h3>Closed-cycle cryocooler systems</h3>
-      <p>A closed-cycle cryocooler cools mechanically, recirculating compressed helium gas through a cold head with no need to refill a liquid cryogen — hence the common description "cryogen-free." This is the architecture chosen for continuous, long-running operation and for labs that would rather not manage recurring cryogen deliveries. Closed-cycle systems are often described as 10 K-class as a category orientation; that phrase is a rough family label, and the actual stage temperature depends on heat load, thermal links, and configuration rather than on the label. The cost of the convenience is a compressor, cooling water or air, an electrical load, and — as the vibration section explains — mechanical motion that must be managed.</p>
+      <p>A closed-cycle cryocooler cools mechanically, recirculating compressed helium gas through a cold head with no need to refill a liquid cryogen — hence the common description "cryogen-free." Because there is no liquid cryogen to replenish during operation — the system runs on electricity — this is the architecture suited to continuous, long-running use and to labs that prefer not to manage recurring cryogen deliveries. Closed-cycle systems are often described as 10 K-class as a category orientation; that phrase is a rough family label, and the actual stage temperature depends on heat load, thermal links, and configuration rather than on the label. The cost of the convenience is a compressor, cooling water or air, an electrical load, and — as the vibration section explains — mechanical motion that must be managed.</p>
 
       <h3>LHe flow or bath systems</h3>
-      <p>Where the science demands the lowest temperatures in this comparison, systems cool with liquid helium, whose normal boiling point is 4.2 K at atmospheric pressure. Again, 4.2 K is the boiling point of the cryogen and a category orientation, not a promised stage temperature. Helium systems reach the deepest cold but carry the heaviest operating burden: liquid helium is expensive and supply is periodically constrained, so a serious helium plan includes recovery or a supply-risk contingency. Choose this family when the measurement genuinely requires it, not by default.</p>
+      <p>Where the science demands the lowest temperatures in this comparison, systems cool with liquid helium, whose normal boiling point is 4.2 K at atmospheric pressure — the lowest boiling point of the three cooling media (4.2 K against nitrogen's 77.4 K), which is why the LHe family serves the lowest-temperature work here [3]. Again, 4.2 K is the boiling point of the cryogen and a category orientation, not a promised stage temperature. The operating burden centers on the helium itself: helium is a traded commodity whose production and supply the US Geological Survey tracks in its annual commodity statistics [4], so a serious helium plan settles recovery or a supply contingency before the purchase, not after. Choose this family when the measurement genuinely requires it, not by default.</p>
 
       <h2>Base temperature under defined load — the spine of the comparison</h2>
       <p>The single most misread number on a cryogenic quote is "base temperature." A base temperature is only meaningful with the load it was measured against, and it refers to a specific place. Four locations get casually conflated, and a rigorous comparison keeps them separate:</p>
@@ -91,7 +91,7 @@
           <tr>
             <th scope="row">Actual sample or device</th>
             <td>The temperature the device under test actually reaches.</td>
-            <td>The only number your physics cares about — and the hardest to pin down, so it must be the one you specify.</td>
+            <td>The quantity your physics actually depends on. In practice, acceptance criteria specify a named sensor location and its known relationship to the device temperature, rather than the device temperature directly.</td>
           </tr>
         </tbody>
       </table>
@@ -130,15 +130,15 @@
       </ul>
 
       <h2>Total cost of ownership: a framework, not a price</h2>
-      <p>Purchase price is the smallest honest part of a cryogenic station's cost. The rest accrues over years, and it varies enough between institutions that no dollar figure would travel — so treat the following as a framework to fill in with your own numbers rather than a quote:</p>
+      <p>Purchase price is one component of a cryogenic station's cost. Much of the rest accrues over years, and it varies enough between institutions that no dollar figure would travel — so treat the following as a framework to fill in with your own numbers rather than a quote:</p>
       <ul>
         <li><strong>Cryogen logistics.</strong> Storage, refill cadence, venting, and the safety training and handling procedures your institution requires for nitrogen or helium.</li>
-        <li><strong>Helium supply risk.</strong> For helium systems, the cost and feasibility of recovery, and your exposure to periodic supply constraints.</li>
+        <li><strong>Helium supply risk.</strong> For helium systems, two questions to answer with your own facility: what would recovery cost, and is it feasible in your building? And how exposed is your program if helium supply or pricing shifts? USGS commodity statistics are a neutral starting point for current supply context [4].</li>
         <li><strong>Utilities and facility.</strong> Compressor and chiller power, cooling water or air, floor space, and any vibration-sensitive siting requirements.</li>
         <li><strong>Maintenance and service.</strong> Planned maintenance intervals, the realistic cost and duration of unplanned downtime, and the vendor's service response time and geography.</li>
-        <li><strong>Staff time.</strong> Runs per week multiplied by cooldown-and-warm-up time multiplied by the loaded cost of the people running them — often the largest line of all.</li>
+        <li><strong>Staff time.</strong> Runs per week multiplied by cooldown-and-warm-up time multiplied by the loaded cost of the people running them — a line item that can rival any other on this list.</li>
       </ul>
-      <p>Populate this framework for each shortlisted system with your institution's actual figures, and the true ranking frequently differs from the purchase-price ranking.</p>
+      <p>Populate this framework for each shortlisted system with your institution's actual figures; the resulting ranking may differ from the purchase-price ranking.</p>
 
       <h2>The acceptance-ready RFQ checklist</h2>
       <p>Everything above converges on one deliverable: a request for quotation written in <strong>acceptance criteria</strong> — conditions you can verify at delivery — rather than adjectives. For each item, ask the vendor to commit to a value <em>and</em> the method by which it will be demonstrated on your system:</p>
@@ -168,8 +168,7 @@
         <li>NIST, "A Model for the Transient Behavior of a Pulse Tube Cryocooler" — separates no-load temperature, added thermal mass, net cooling capacity, and cooldown time — <a href="https://www.nist.gov/publications/model-transient-behavior-pulse-tube-cryocooler" target="_blank" rel="noopener noreferrer">nist.gov/publications/model-transient-behavior-pulse-tube-cryocooler</a>. Accessed 2026-07-13.</li>
         <li>NASA, James Webb Space Telescope — Cryocooler (vibration management via balanced opposed pistons) — <a href="https://science.nasa.gov/mission/webb/cryocooler/" target="_blank" rel="noopener noreferrer">science.nasa.gov/mission/webb/cryocooler</a>. Accessed 2026-07-13.</li>
         <li>NIST, "About Cryogenics" — normal boiling points of common cryogenic fluids at atmospheric pressure (liquid nitrogen 77.4 K; liquid helium 4.2 K) — <a href="https://www.nist.gov/mml/acmd/cryogenic-technologies-project/about-cryogenics" target="_blank" rel="noopener noreferrer">nist.gov, About Cryogenics</a>. Accessed 2026-07-13.</li>
-        <li>NineScrolls, Cryogenic probe stations application page — when low-temperature probing is appropriate — <a href="/applications/cryogenic-probing">/applications/cryogenic-probing</a>.</li>
-        <li>NineScrolls, How to Choose a Wafer Probe Station for Your University Research Lab — <a href="/insights/how-to-choose-wafer-probe-station-university-lab">/insights/how-to-choose-wafer-probe-station-university-lab</a>.</li>
+        <li>USGS, Helium and Rare Gases Statistics and Information — annual Mineral Commodity Summaries and production/supply statistics for helium — <a href="https://www.usgs.gov/centers/national-minerals-information-center/helium-statistics-and-information" target="_blank" rel="noopener noreferrer">usgs.gov, Helium Statistics and Information</a>. Accessed 2026-07-13.</li>
       </ol>
       <p><em>Last reviewed: 2026-07-13.</em></p>
 </body>
