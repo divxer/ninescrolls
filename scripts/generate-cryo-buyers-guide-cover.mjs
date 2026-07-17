@@ -36,18 +36,18 @@ const overlay = Buffer.from(`
       @font-face { font-family: 'Space Grotesk'; src: url('${spaceGrotesk}') format('woff2'); font-weight: 300 700; }
       @font-face { font-family: 'Inter'; src: url('${interRegular}') format('woff2'); font-weight: 400; }
       @font-face { font-family: 'Inter'; src: url('${interSemiBold}') format('woff2'); font-weight: 600; }
-      .title { font-family: 'Space Grotesk', sans-serif; font-size: 70px; font-weight: 600; fill: #f8fbff; letter-spacing: -1.4px; }
+      .title-primary { font-family: 'Space Grotesk', sans-serif; font-size: 55px; font-weight: 600; fill: #f8fbff; letter-spacing: -1.1px; }
+      .title-secondary { font-family: 'Space Grotesk', sans-serif; font-size: 70px; font-weight: 600; fill: #f8fbff; letter-spacing: -1.4px; }
       .eyebrow { font-family: 'Inter', sans-serif; font-size: 24px; font-weight: 600; fill: #4aa8f5; letter-spacing: 3px; }
       .subtitle { font-family: 'Inter', sans-serif; font-size: 28px; font-weight: 400; fill: #c8d8eb; }
     </style>
   </defs>
   <rect width="790" height="900" fill="url(#copyField)"/>
   <rect x="58" y="46" width="284" height="108" rx="14" fill="#f8fbff" fill-opacity="0.94" stroke="#d6e5f5" stroke-opacity="0.55"/>
-  <text x="70" y="230" class="eyebrow">BUYER’S GUIDE</text>
+  <text x="70" y="230" class="eyebrow">METROLOGY &amp; TESTING</text>
   <rect x="70" y="252" width="118" height="6" rx="3" fill="#4aa8f5"/>
-  <text x="70" y="350" class="title">Cryogenic Probe</text>
-  <text x="70" y="432" class="title">Station</text>
-  <text x="70" y="514" class="title">Buyer’s Guide</text>
+  <text x="70" y="390" class="title-primary">Cryogenic Probe Station</text>
+  <text x="70" y="490" class="title-secondary">Buyer’s Guide</text>
   <text x="72" y="603" class="subtitle">Architectures, Specifications,</text>
   <text x="72" y="643" class="subtitle">and an Acceptance-Ready RFQ</text>
 </svg>`);
