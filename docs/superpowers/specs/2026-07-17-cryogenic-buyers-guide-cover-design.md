@@ -20,17 +20,18 @@ Replace the current typography-only cover with a publication-grade hero that imm
   - `Cryogenic Probe Station`
   - `Buyer’s Guide`
 - Subtitle, verbatim: `Architectures, Specifications, and an Acceptance-Ready RFQ`
-- Use the correct repository NineScrolls logo at the upper left, smaller and quieter than the title.
+- Use the unmodified official `public/assets/images/logo-with-text.svg` at the upper left, smaller and quieter than the title. Place it on a restrained pale translucent plaque so its original brand color remains legible; do not tint, redraw, or approximate it.
 - Render title, subtitle, and logo deterministically after image generation so spelling and brand geometry remain exact.
+- Pin typography to the repository fonts: Space Grotesk for the title and Inter for subtitle/supporting text. Explicitly verify the U+2019 curly apostrophe in `Buyer’s Guide` after rendering.
 - Do not show vendor logos, product model names, temperature figures, certification seals, or guaranteed-performance language.
 
 ## Production Method
 
 1. Generate the photographic right-side laboratory/instrument scene without embedded text or logos.
 2. Inspect the generated scene for plausible probe-station geometry and absence of proprietary product resemblance.
-3. Composite the approved scene with the navy copy field, exact typography, and repository logo.
-4. Save non-destructively as a versioned source image before replacing the article's formal cover.
-5. Produce the established `sm`, `md`, `lg`, and `xl` PNG/WebP responsive variants with the repository image pipeline.
+3. Composite the approved scene with the navy copy field, exact typography, and repository logo into the versioned candidate `cryo-buyers-guide-cover-v2.png`.
+4. Inspect the versioned candidate; only after approval copy it over the article's formal `cryo-buyers-guide-cover.png` source.
+5. Convert the accepted source to sRGB and produce the established `sm`, `md`, `lg`, and `xl` PNG/WebP responsive variants with the repository image pipeline.
 
 ## Acceptance Criteria
 

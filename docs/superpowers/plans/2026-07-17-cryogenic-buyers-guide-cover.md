@@ -4,26 +4,71 @@
 
 **Goal:** Replace the typography-only cryogenic buyer's-guide cover with a photographic, brand-correct 1600×900 hero while preserving the existing filename and responsive asset contract.
 
-**Architecture:** Generate only the unbranded laboratory/instrument scene with ImageGen. Composite the exact title, subtitle, navy copy field, and repository logo deterministically with Sharp, then use the existing optimization pipeline for responsive variants. Visual review and automated asset tests gate replacement.
+**Architecture:** Generate only the unbranded laboratory/instrument scene with ImageGen. Composite the exact title, subtitle, navy copy field, and unmodified repository logo deterministically with Sharp into a versioned candidate, then promote it to the formal filename only after visual approval. Use the existing optimization pipeline for responsive variants; visual review and automated asset tests gate replacement.
 
 **Tech Stack:** built-in ImageGen, Node.js, Sharp, repository SVG logo, Vitest, `scripts/optimize-images.js`
 
 ## Global Constraints
 
 - Keep the formal source filename exactly `public/assets/images/insights/cryo-buyers-guide-cover.png`.
+- Execute in an isolated worktree attached to `feature/cryo-buyers-guide-article`, the PR #291 head branch; never commit implementation work from a detached HEAD. Cherry-pick the two reviewed documentation commits into that branch before implementation and push the final cover commit to the same branch before merge.
 - Preserve a 1600×900, 16:9 canvas with approximately 43% copy area and 57% photographic area.
 - Use exact copy: `Cryogenic Probe Station`, `Buyer’s Guide`, and `Architectures, Specifications, and an Acceptance-Ready RFQ`.
-- Use `public/assets/images/logo.svg`; never generate or redraw the logo.
+- Use the unmodified `public/assets/images/logo-with-text.svg` on a restrained pale translucent plaque; never tint, generate, or redraw the logo.
+- Pin title typography to `src/templates/equipmentGuide/fonts/SpaceGrotesk-Variable.woff2` and supporting typography to `src/templates/equipmentGuide/fonts/Inter-Regular.woff2` / `Inter-SemiBold.woff2`.
 - Show a generic cryogenic vacuum probe station, not a recognizable vendor product and not a conventional microscope.
 - No temperature numbers, vendor logos, certification seals, guarantees, exaggerated frost, dense fog, or science-fiction effects.
 - Replace the formal source only after visual approval; regenerate `sm`, `md`, `lg`, and `xl` PNG/WebP variants before commit.
 
 ---
 
+### Task 0: Attach execution to the PR branch
+
+**Files:**
+- Integrate: `docs/superpowers/specs/2026-07-17-cryogenic-buyers-guide-cover-design.md`
+- Integrate: `docs/superpowers/plans/2026-07-17-cryogenic-buyers-guide-cover.md`
+
+**Interfaces:**
+- Consumes: reviewed documentation commits `66466227` and `1de6a406`.
+- Produces: an isolated worktree whose HEAD is attached to `feature/cryo-buyers-guide-article`.
+
+- [ ] **Step 1: Verify the PR branch and current shared checkout**
+
+Run from the main repository:
+
+```bash
+git fetch origin
+git branch --show-current
+git rev-parse feature/cryo-buyers-guide-article
+git rev-parse origin/feature/cryo-buyers-guide-article
+```
+
+Expected: the shared checkout remains `feature/quotation-pricebook`; local and remote cryogenic article branch SHAs match before creating the execution worktree.
+
+- [ ] **Step 2: Create an attached execution worktree**
+
+```bash
+git worktree add /tmp/ninescrolls-cryo-cover-exec feature/cryo-buyers-guide-article
+cd /tmp/ninescrolls-cryo-cover-exec
+git symbolic-ref --short HEAD
+```
+
+Expected: `feature/cryo-buyers-guide-article`, never `HEAD` or a detached state.
+
+- [ ] **Step 3: Integrate the reviewed design and plan**
+
+```bash
+git cherry-pick 66466227 1de6a406
+git status --short
+```
+
+Expected: both documentation commits are now ancestors of the attached PR branch and the worktree is clean.
+
 ### Task 1: Generate and approve the unbranded scene
 
 **Files:**
 - Create: `tmp/cryo-cover/generated-scene.png`
+- Create: `tmp/cryo-cover/cryo-buyers-guide-cover-v2.png`
 - Inspect: `public/assets/images/insights/cryo-buyers-guide-cover.png`
 
 **Interfaces:**
@@ -79,7 +124,7 @@ left copy field remains quiet
 
 - [ ] **Step 1: Extend the asset test before replacement**
 
-Add Sharp metadata assertions to the existing cover-asset test:
+Add `import sharp from 'sharp';` with the existing imports, make the cover-asset test callback `async`, and add Sharp metadata assertions:
 
 ```ts
 const coverMeta = await sharp('public/assets/images/insights/cryo-buyers-guide-cover.png').metadata();
@@ -103,10 +148,12 @@ Implement `scripts/generate-cryo-buyers-guide-cover.mjs` with Sharp. It must:
 
 ```text
 resize/crop generated-scene.png to 1600×900
-apply a navy left-to-right gradient over the left 48% for contrast
-render the exact three text strings via an SVG overlay
-render public/assets/images/logo.svg at the upper left, tinted light blue
-write only to public/assets/images/insights/cryo-buyers-guide-cover.png
+apply a navy left-to-right gradient over the left 43% for contrast
+embed the repository Space Grotesk and Inter WOFF2 files in the SVG overlay
+render the exact three text strings via that pinned SVG typography
+render public/assets/images/logo-with-text.svg unmodified on a pale translucent plaque
+convert the output to sRGB
+write only to tmp/cryo-cover/cryo-buyers-guide-cover-v2.png
 ```
 
 Use these layout constants:
@@ -128,11 +175,33 @@ Run:
 node scripts/generate-cryo-buyers-guide-cover.mjs tmp/cryo-cover/generated-scene.png
 ```
 
-Expected: the formal source is rewritten as a 1600×900 PNG with exact deterministic copy.
+Expected: the versioned candidate is written as a 1600×900 sRGB PNG; the formal source remains untouched.
 
 - [ ] **Step 5: Perform full-resolution visual QA**
 
-Reject and iterate if the title overlaps the instrument, the subtitle is clipped, the logo is distorted, the chamber reads as a microscope, or the system resembles a named vendor product.
+Reject and iterate unless every item passes:
+
+```text
+title and subtitle match the approved copy exactly
+the U+2019 curly apostrophe in “Buyer’s Guide” renders correctly, not as a missing-glyph box
+the official logo geometry and original color are unchanged
+title does not overlap the instrument and subtitle is not clipped
+the chamber reads as a cryogenic probe station, not a microscope
+the system does not resemble a recognizable vendor product
+no temperature numbers, vendor marks, certification seals, guarantee language, watermark, exaggerated frost, dense fog, or science-fiction effects appear
+the left copy field occupies approximately 43%, not 48%
+embedded color profile/output colorspace is sRGB
+```
+
+- [ ] **Step 6: Promote the approved candidate to the formal filename**
+
+Only after Step 5 passes:
+
+```bash
+cp tmp/cryo-cover/cryo-buyers-guide-cover-v2.png public/assets/images/insights/cryo-buyers-guide-cover.png
+```
+
+Expected: the approved candidate and formal source have identical SHA-256 hashes; the versioned candidate remains available until commit review completes.
 
 ### Task 3: Generate responsive assets and verify the article contract
 
@@ -173,7 +242,7 @@ git diff --check
 git status --short
 ```
 
-Expected: only the compositor, article test, cover source, responsive cover variants, design specification, and implementation plan are changed; no unrelated checkout files appear.
+Expected: only the compositor, article test, cover source, responsive cover variants, design specification, and implementation plan are changed; no unrelated checkout files appear. `git symbolic-ref --short HEAD` still returns `feature/cryo-buyers-guide-article`.
 
 - [ ] **Step 4: Commit the cover implementation**
 
@@ -186,6 +255,8 @@ git add scripts/generate-cryo-buyers-guide-cover.mjs \
   docs/superpowers/plans/2026-07-17-cryogenic-buyers-guide-cover.md
 git commit -m "feat(article): upgrade cryogenic buyer guide cover"
 ```
+
+Expected: the commit is on `feature/cryo-buyers-guide-article` and is pushed to the PR #291 branch with `git push origin feature/cryo-buyers-guide-article`. Do not upload CDN assets before merge.
 
 - [ ] **Step 5: Request code and visual review before pushing or replacing CDN assets**
 
