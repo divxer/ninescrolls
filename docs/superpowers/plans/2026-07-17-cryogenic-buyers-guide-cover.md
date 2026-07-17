@@ -29,7 +29,7 @@
 - Integrate: `docs/superpowers/plans/2026-07-17-cryogenic-buyers-guide-cover.md`
 
 **Interfaces:**
-- Consumes: reviewed documentation commits `66466227` and `1de6a406`.
+- Consumes: the reviewed documentation series on local ref `codex/cryo-cover-plan`, based on article commit `1730681a`.
 - Produces: an isolated worktree whose HEAD is attached to `feature/cryo-buyers-guide-article`.
 
 - [ ] **Step 1: Verify the PR branch and current shared checkout**
@@ -58,7 +58,7 @@ Expected: `feature/cryo-buyers-guide-article`, never `HEAD` or a detached state.
 - [ ] **Step 3: Integrate the reviewed design and plan**
 
 ```bash
-git cherry-pick 66466227 1de6a406
+git cherry-pick 1730681a..codex/cryo-cover-plan
 git status --short
 ```
 
@@ -119,7 +119,7 @@ left copy field remains quiet
 - Test: `src/pages/probeStations/cryoBuyersGuideArticle.test.ts`
 
 **Interfaces:**
-- Consumes: `tmp/cryo-cover/generated-scene.png`, `public/assets/images/logo.svg`.
+- Consumes: `tmp/cryo-cover/generated-scene.png`, `public/assets/images/logo-with-text.svg`.
 - Produces: deterministic `public/assets/images/insights/cryo-buyers-guide-cover.png`.
 
 - [ ] **Step 1: Extend the asset test before replacement**
