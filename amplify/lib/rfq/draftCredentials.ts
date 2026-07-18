@@ -31,3 +31,28 @@ export function decodeCredential(value: string): Buffer {
   }
   return bytes;
 }
+
+const DRAFT_TOKEN_INFO = 'ninescrolls/rfq-draft-token/v1';
+const DRAFT_ID_INFO = 'ninescrolls/rfq-draft-id/v1';
+
+/**
+ * Bearer token = HKDF-SHA-256(ikm=nonce, info=domain). Deterministic and
+ * independent of the pepper, so an identical create retry returns the same token.
+ */
+export function deriveDraftToken(nonce: Buffer): Buffer {
+  return Buffer.from(
+    crypto.hkdfSync('sha256', nonce, Buffer.alloc(0), Buffer.from(DRAFT_TOKEN_INFO), CREDENTIAL_BYTES),
+  );
+}
+
+/**
+ * Non-enumerable rfqId = base64url(SHA-256(domain || nonce)). Deterministic and
+ * distinct from the token (different domain, different primitive).
+ */
+export function deriveDraftId(nonce: Buffer): string {
+  const digest = crypto.createHash('sha256')
+    .update(DRAFT_ID_INFO)
+    .update(nonce)
+    .digest();
+  return digest.toString('base64url');
+}
