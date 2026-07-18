@@ -9,6 +9,7 @@ import { serverTrack } from './functions/server-track/resource';
 import { classifyOrg } from './functions/classify-org/resource';
 import { generateArticleMeta } from './functions/generate-article-meta/resource';
 import { submitRfq } from './functions/submit-rfq/resource';
+import { rfqDraftApi } from './functions/rfq-draft-api/resource';
 import { convertRfqToOrder } from './functions/convert-rfq-to-order/resource';
 import { updateOrderStatus } from './functions/update-order-status/resource';
 import { documentUpload } from './functions/document-upload/resource';
@@ -47,6 +48,7 @@ import { MetricFilter, FilterPattern } from 'aws-cdk-lib/aws-logs';
 import { Topic } from 'aws-cdk-lib/aws-sns';
 import { LambdaIntegration } from 'aws-cdk-lib/aws-apigateway';
 import { Stack } from 'aws-cdk-lib';
+import { CfnWebACL, CfnWebACLAssociation } from 'aws-cdk-lib/aws-wafv2';
 import { Table, AttributeType, BillingMode, ProjectionType } from 'aws-cdk-lib/aws-dynamodb';
 import { Bucket, BlockPublicAccess, BucketEncryption, HttpMethods } from 'aws-cdk-lib/aws-s3';
 import { Duration } from 'aws-cdk-lib';
@@ -85,6 +87,7 @@ const backend = defineBackend({
     classifyOrg,
     generateArticleMeta,
     submitRfq,
+    rfqDraftApi,
     convertRfqToOrder,
     updateOrderStatus,
     documentUpload,
@@ -171,8 +174,68 @@ const restApi = new RestApi(apiStack, 'RestApi', {
                 throttlingRateLimit: 10,
                 throttlingBurstLimit: 20,
             },
+            // Public secure-drafts API. Creates are the scarcer, heavier op (mint a
+            // record); reads/updates are more frequent (autosave). Aggregate ceilings
+            // here; a per-IP WAF rate rule is the same follow-on the routes above note.
+            '/api/rfq/draft/POST': {
+                throttlingRateLimit: 5,
+                throttlingBurstLimit: 10,
+            },
+            '/api/rfq/draft/{rfqId}/GET': {
+                throttlingRateLimit: 20,
+                throttlingBurstLimit: 40,
+            },
+            '/api/rfq/draft/{rfqId}/PATCH': {
+                throttlingRateLimit: 20,
+                throttlingBurstLimit: 40,
+            },
         },
     },
+});
+
+// Edge telemetry for the anonymous draft API. Count-only avoids WAF's fixed 403 and
+// header-less response violating the API contract; the Lambda's atomic DynamoDB
+// counter is authoritative and returns the required safe 429 response.
+const draftWafVisibility = (name: string) => ({
+    cloudWatchMetricsEnabled: true, metricName: name, sampledRequestsEnabled: true,
+});
+const byteMatch = (fieldToMatch: Record<string, unknown>, value: string, positionalConstraint = 'EXACTLY') => ({
+    byteMatchStatement: {
+        fieldToMatch, positionalConstraint, searchString: value,
+        textTransformations: [{ priority: 0, type: 'NONE' }],
+    },
+});
+const draftWebAcl = new CfnWebACL(apiStack, 'RfqDraftWebAcl', {
+    scope: 'REGIONAL',
+    defaultAction: { allow: {} },
+    visibilityConfig: draftWafVisibility('rfq-draft-web-acl'),
+    rules: [
+        {
+            name: 'RfqDraftCreatePerIp', priority: 0, action: { count: {} },
+            statement: { rateBasedStatement: {
+                aggregateKeyType: 'IP', limit: 10, evaluationWindowSec: 300,
+                scopeDownStatement: { andStatement: { statements: [
+                    byteMatch({ uriPath: {} }, '/api/rfq/draft'), byteMatch({ method: {} }, 'POST'),
+                ] } },
+            } },
+            visibilityConfig: draftWafVisibility('rfq-draft-create-per-ip'),
+        },
+        {
+            name: 'RfqDraftAccessPerIp', priority: 1, action: { count: {} },
+            statement: { rateBasedStatement: {
+                aggregateKeyType: 'IP', limit: 120, evaluationWindowSec: 300,
+                scopeDownStatement: { andStatement: { statements: [
+                    byteMatch({ uriPath: {} }, '/api/rfq/draft/', 'STARTS_WITH'),
+                    { orStatement: { statements: [byteMatch({ method: {} }, 'GET'), byteMatch({ method: {} }, 'PATCH')] } },
+                ] } },
+            } },
+            visibilityConfig: draftWafVisibility('rfq-draft-access-per-ip'),
+        },
+    ],
+});
+new CfnWebACLAssociation(apiStack, 'RfqDraftWebAclAssociation', {
+    resourceArn: `arn:${Stack.of(restApi).partition}:apigateway:${Stack.of(restApi).region}::/restapis/${restApi.restApiId}/stages/${restApi.deploymentStage.stageName}`,
+    webAclArn: draftWebAcl.attrArn,
 });
 
 // Create /checkout/session resource for Stripe Checkout
@@ -409,6 +472,19 @@ const rfqUploadUrlResource = rfqResource.addResource('upload-url');
 rfqUploadUrlResource.addMethod('POST', submitRfqIntegration);
 rfqUploadUrlResource.addMethod('OPTIONS', submitRfqIntegration);
 
+// Create /api/rfq/draft (POST create) and /api/rfq/draft/{rfqId} (GET/PATCH) for
+// the public secure-drafts API — a separate Lambda from submit-rfq, gated by the
+// three-credential model (see rfq-draft-api/handler.ts). CAPTCHA is not required
+// to save a draft; formal submission still is.
+const rfqDraftIntegration = new LambdaIntegration(backend.rfqDraftApi.resources.lambda, { proxy: true });
+const rfqDraftResource = rfqResource.addResource('draft');
+rfqDraftResource.addMethod('POST', rfqDraftIntegration);
+rfqDraftResource.addMethod('OPTIONS', rfqDraftIntegration);
+const rfqDraftItemResource = rfqDraftResource.addResource('{rfqId}');
+rfqDraftItemResource.addMethod('GET', rfqDraftIntegration);
+rfqDraftItemResource.addMethod('PATCH', rfqDraftIntegration);
+rfqDraftItemResource.addMethod('OPTIONS', rfqDraftIntegration);
+
 // Create /api/rfq/convert resource for converting RFQ to Order
 const rfqConvertResource = rfqResource.addResource('convert');
 const convertRfqIntegration = new LambdaIntegration(backend.convertRfqToOrder.resources.lambda, {
@@ -563,6 +639,11 @@ backend.submitRfq.addEnvironment('INTELLIGENCE_TABLE', intelligenceTable.tableNa
 
 orderDocumentsBucket.grantReadWrite(backend.submitRfq.resources.lambda);
 backend.submitRfq.addEnvironment('DOCUMENTS_BUCKET', orderDocumentsBucket.bucketName);
+
+// Grant rfq-draft-api Lambda access to the Intelligence table (drafts live at
+// PK=RFQ#<id>, SK=META alongside formal RFQs). No S3 — drafts carry no attachments.
+intelligenceTable.grantReadWriteData(backend.rfqDraftApi.resources.lambda);
+backend.rfqDraftApi.addEnvironment('INTELLIGENCE_TABLE', intelligenceTable.tableName);
 
 // Grant convert-rfq-to-order Lambda access
 intelligenceTable.grantReadWriteData(backend.convertRfqToOrder.resources.lambda);
