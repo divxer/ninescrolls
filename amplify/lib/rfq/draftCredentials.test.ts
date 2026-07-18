@@ -5,6 +5,8 @@ import {
   decodeCredential,
   deriveDraftToken,
   deriveDraftId,
+  hashDraftToken,
+  verifyDraftToken,
   InvalidCredentialError,
 } from './draftCredentials';
 
@@ -53,5 +55,39 @@ describe('draft token + id derivation', () => {
     const other = crypto.randomBytes(32);
     expect(deriveDraftToken(nonce).equals(deriveDraftToken(other))).toBe(false);
     expect(deriveDraftId(nonce)).not.toBe(deriveDraftId(other));
+  });
+});
+
+describe('peppered hash + verify', () => {
+  const pepperV1 = crypto.randomBytes(32);
+  const pepperV2 = crypto.randomBytes(32);
+  const resolve = (v: number) => (v === 1 ? pepperV1 : v === 2 ? pepperV2 : undefined);
+  const nonce = crypto.randomBytes(32);
+  const token = deriveDraftToken(nonce);
+
+  it('stores a versioned hex hash and verifies the matching token', () => {
+    const stored = hashDraftToken(pepperV1, 1, token);
+    expect(stored).toMatch(/^v1:[0-9a-f]{64}$/);
+    expect(verifyDraftToken(stored, token, resolve)).toBe(true);
+  });
+
+  it('rejects a wrong token', () => {
+    const stored = hashDraftToken(pepperV1, 1, token);
+    const wrong = deriveDraftToken(crypto.randomBytes(32));
+    expect(verifyDraftToken(stored, wrong, resolve)).toBe(false);
+  });
+
+  it('selects the pepper by stored version', () => {
+    const stored = hashDraftToken(pepperV2, 2, token);
+    expect(verifyDraftToken(stored, token, resolve)).toBe(true);
+    // verifying a v2 hash with only v1 available must fail, not throw
+    expect(verifyDraftToken(stored, token, (v) => (v === 1 ? pepperV1 : undefined))).toBe(false);
+  });
+
+  it('returns false (never throws) for missing or malformed stored hashes', () => {
+    expect(verifyDraftToken(undefined, token, resolve)).toBe(false);
+    expect(verifyDraftToken('', token, resolve)).toBe(false);
+    expect(verifyDraftToken('garbage', token, resolve)).toBe(false);
+    expect(verifyDraftToken('v9:deadbeef', token, resolve)).toBe(false); // unknown version
   });
 });

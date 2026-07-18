@@ -56,3 +56,37 @@ export function deriveDraftId(nonce: Buffer): string {
     .digest();
   return digest.toString('base64url');
 }
+
+const HASH_HEX_LEN = 64; // SHA-256 hex
+const DUMMY_HASH = '0'.repeat(HASH_HEX_LEN);
+// Fixed dummy pepper for the non-disclosing path; never used for real storage.
+const DUMMY_PEPPER = Buffer.alloc(CREDENTIAL_BYTES, 0);
+
+/** Peppered token hash, stored as `v<keyVersion>:<hmac-sha256 hex>`. */
+export function hashDraftToken(pepper: Buffer, keyVersion: number, token: Buffer): string {
+  const mac = crypto.createHmac('sha256', pepper).update(token).digest('hex');
+  return `v${keyVersion}:${mac}`;
+}
+
+/**
+ * Constant-time verification. Any missing/malformed/unknown-version input still
+ * computes an HMAC and compares against a fixed dummy so the caller cannot infer
+ * draft existence from timing or from which branch returned false.
+ */
+export function verifyDraftToken(
+  storedHash: string | undefined,
+  token: Buffer,
+  resolvePepper: (keyVersion: number) => Buffer | undefined,
+): boolean {
+  const parsed = typeof storedHash === 'string' ? /^v(\d+):([0-9a-f]{64})$/.exec(storedHash) : null;
+  const version = parsed ? Number(parsed[1]) : -1;
+  const expectedHex = parsed ? parsed[2] : DUMMY_HASH;
+  const pepper = version >= 0 ? resolvePepper(version) : undefined;
+  // Always run the HMAC (dummy pepper if unresolved) to keep timing uniform.
+  const actualHex = crypto
+    .createHmac('sha256', pepper ?? DUMMY_PEPPER)
+    .update(token)
+    .digest('hex');
+  const match = crypto.timingSafeEqual(Buffer.from(actualHex, 'hex'), Buffer.from(expectedHex, 'hex'));
+  return match && parsed !== null && pepper !== undefined;
+}
