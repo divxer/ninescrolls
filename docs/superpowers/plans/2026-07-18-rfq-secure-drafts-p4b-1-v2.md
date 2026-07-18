@@ -42,13 +42,14 @@ The draft and pending RFQ share `RFQ#<rfqId>/META` (verified: `draftStore.ts` `d
 | Direct | `attribute_not_exists(PK)` |
 | Draft upgrade | `#status = :draft AND draftTokenHash = :h AND draftVersion = :v AND expiresAt > :now` |
 
+- The draft-upgrade condition **must keep `#status = :draft` as its first atom.** Under `FakeDdb`, a `>` atom on a missing item throws a generic error rather than a cancellation; leading with the status atom short-circuits `.every()` on a missing/absent draft so the transaction cancels as intended (Task 11's missing-draft test). Do not reorder to lead with `expiresAt > :now`.
 - **D3a:** a `Put` replaces the whole item, so the upgrade erases every draft-only attribute (no REMOVE list) — #311 finding 3 made structurally impossible.
 - **D3b:** the pending item is built from the validated formal submission only, never the draft's stored partial fields.
 - **D3c:** `:h` is the **exact** stored `draftTokenHash` from the strongly-consistent authenticated read — never recomputed from the request token — so a rotated-but-still-supported pepper key still upgrades.
 - **D3d:** `draftVersion = :v` guards against silently clobbering an autosave `PATCH` between the read and the commit. `v`/`h` come from the authenticated read (P4b-3), not this phase.
-- **D3e:** `buildPendingRfqItem` consumes a narrow `PendingRfqSource` that structurally excludes `turnstileToken`, credentials, and the raw `attachmentKeys`. `PendingRfqSource.email` is the **already validated/normalized** value (`normalizeRfqEmail` lowercases + NFC — `contract.ts:94`); the item stores it verbatim, so the item's `email` is lowercase.
+- **D3e:** `buildPendingRfqItem` consumes a narrow `PendingRfqSource` that structurally excludes `turnstileToken`, credentials, and the raw `attachmentKeys`. `PendingRfqSource.email` is the **already validated/normalized** value (`normalizeRfqEmail` lowercases + NFC — `contract.ts:94`). The builder derives one `normalizedEmail` (`trim().toLowerCase()`) and uses it for **both** `item.email` and `GSI4PK`, so the two cannot diverge; for a normalized input this is a no-op and byte-identical to the live item.
 - **D3f:** the item omits `matchedOrgId`/`GSI2PK` and `attachmentKeys` — these are **effect backfills** (below), applied identically on both paths, so parity holds.
-- **D3g:** `deriveReferenceNumber(rfqId, submittedAt)` is shared; a legacy direct id yields the byte-identical historical `RFQ-YYYYMMDD-<4 hex>`, a base64url draft id yields `RFQ-<submittedAt date>-<4 hex of SHA-256(rfqId)>`. The reference is a **display** value only — the 4-hex suffix is 16 bits and not collision-proof; `rfqId` is the authoritative identifier.
+- **D3g:** `deriveReferenceNumber(rfqId, submittedAt)` is shared; a legacy direct id yields the byte-identical historical `RFQ-YYYYMMDD-<4 hex>`, a base64url draft id yields `RFQ-<submittedAt date>-<4 hex of SHA-256(rfqId)>`. The reference is a **display** value only — the 4-hex suffix is 16 bits and not collision-proof; `rfqId` is the authoritative identifier. **Precondition:** every historical direct id is canonical `rfq-<8 digits>-<lowercase hex>` (`generateRfqId` = date + `randomBytes(3).toString('hex')`, `handler.ts:180-184`), which the strict legacy regex matches exactly. A non-canonical id (extra hyphens / uppercase) would route to the draft-digest branch and produce a *different* reference — but no such id exists in production.
 
 ### D4 — Receipt as a transaction item (shared builder)
 `recordReceipt` is a standalone conditional `PutCommand` and is not transaction-composable. A pure `buildReceiptItem()` is shared by `recordReceipt` and the submit transaction so the two cannot drift. The receipt stores only terminal fields, never PII.
@@ -608,6 +609,15 @@ describe('buildPendingRfqItem', () => {
     expect(Object.values(item).every((v) => v !== undefined)).toBe(true);
   });
 
+  it('normalizes email from a single source (item.email and GSI4PK never diverge)', () => {
+    const item = buildPendingRfqItem({
+      name: 'Bo', email: 'MiXeD@Example.EDU', institution: 'Gov Lab', equipmentCategory: 'ICP',
+      applicationDescription: 'A minimal but valid application description.', quantity: 1,
+    }, META);
+    expect(item.email).toBe('mixed@example.edu');
+    expect(item.GSI4PK).toBe('EMAIL#mixed@example.edu');
+  });
+
   it('cannot read turnstileToken or attachmentKeys (structural whitelist)', () => {
     const withExtras = { ...FULL, turnstileToken: 'secret', attachmentKeys: ['temp/rfq/x/f'] };
     const item = buildPendingRfqItem(withExtras as PendingRfqSource, META) as Record<string, unknown>;
@@ -666,7 +676,10 @@ export function buildPendingRfqItem(source: PendingRfqSource, meta: PendingRfqMe
     GSI4PK: `EMAIL#${normalizedEmail}`, GSI4SK: `RFQ#${meta.submittedAt}`, GSI2SK: `RFQ#${meta.submittedAt}`,
     rfqId: meta.rfqId, referenceNumber: meta.referenceNumber, status: 'pending',
     submittedAt: meta.submittedAt, ipHash: meta.ipHash,
-    name: source.name, email: source.email, institution: source.institution,
+    // Single source: item.email and GSI4PK both come from normalizedEmail, so they
+    // cannot diverge even if an un-normalized value ever reaches the builder. For the
+    // already-normalized rfqSchema email this is a no-op (byte-identical to the live item).
+    name: source.name, email: normalizedEmail, institution: source.institution,
     equipmentCategory: source.equipmentCategory, applicationDescription: source.applicationDescription,
     quantity: source.quantity, needsBudgetaryQuote: source.needsBudgetaryQuote ?? false, TTL: 0,
   };
@@ -1593,9 +1606,9 @@ git commit -m "test(rfq): fakeDdb integration for full submit+outbox lifecycle"
 
 - [ ] **Step 1: Confirm the live handler imports none of the new modules**
 
-Run:
+Run (match import statements from the new module paths — NOT bare identifiers; `referenceNumber` is an existing local variable in the handler, so a bare-identifier grep never confirms dark):
 ```bash
-grep -nE "referenceNumber|clientRequestToken|outboxEffects|dynamoItemSize|pendingRfq|submitTransaction|effectTransitions|buildReceiptItem" amplify/functions/submit-rfq/handler.ts || echo "DARK: no P4b-1 imports in submit-rfq handler"
+grep -nE "from '[^']*/(referenceNumber|clientRequestToken|outboxEffects|dynamoItemSize|pendingRfq|submitTransaction|effectTransitions)'|import[^;]*buildReceiptItem" amplify/functions/submit-rfq/handler.ts || echo "DARK: no P4b-1 imports in submit-rfq handler"
 ```
 Expected: `DARK: no P4b-1 imports in submit-rfq handler`.
 
