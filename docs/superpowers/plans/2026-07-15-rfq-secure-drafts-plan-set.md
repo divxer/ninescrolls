@@ -34,7 +34,12 @@ So the plans below **extend** the existing contract module and single-table mode
 | **P5 — Admin drafts + scheduled cleanup** | 3, 6 | Cognito groups `RFQDraftViewer`/`RFQDraftManager`; `listRfqDrafts`/`getRfqDraft`/`deleteRfqDraft` order-api resolvers (group-claim gated); existing `listRfqs/getRfq` reject `status=draft`; audit log; admin "Unsubmitted drafts" view; daily conditional-delete cleanup over `GSI1 RFQ_STATUS#draft` with checkpoint/DLQ/alarms. | P2 |
 | **P6 — Frontend autosave** | 5 | Step-2 draft create; debounced serialized PATCH; sessionStorage-only credentials; submission fence; conflict merge; save-status UI; privacy copy. Feature-flagged. | P3, P4 |
 
-Sequencing follows the spec's rollout: **P1 → P2 → P4 (submission idempotency, dark) → P5 (admin/cleanup, observe-only) → P3 (public draft endpoints) → P6 (autosave, flagged) → enable deletion.** P1 and P2 are pure prerequisites; the higher-risk public + submission-refactor work comes after the model and idempotency are proven.
+**Actual status (supersedes the original spec-rollout ordering, which is now out of date):**
+
+- **Completed & merged (all dark — no production behavior change):** P1 → P2 → P3 → P4a.
+- **Future work:** the blocked P4b (re-split into P4b-1…P4b-4, none written/reviewed yet — the live `submit-rfq` cutover), then P5 (admin/cleanup) and P6 (frontend autosave) once their dependencies on the merged P3/P4a are re-confirmed.
+
+The original spec sequenced P4/P5 before P3; that no longer holds — P3 and P4a shipped first because they were the pure, lower-risk prerequisites. The remaining production-path work (P4b) is deliberately last and gated on per-phase review.
 
 ## Detailed plans
 

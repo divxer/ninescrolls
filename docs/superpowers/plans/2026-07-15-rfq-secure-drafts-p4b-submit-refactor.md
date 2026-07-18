@@ -19,16 +19,24 @@
 >    A new helper must build the receipt as a `TransactWrite` **Put** item; `recordReceipt` cannot
 >    be composed into the transaction.
 > 3. **Live success response is `200 { success: true, message, referenceNumber, rfqId }`** — not
->    `{ referenceNumber, rfqId }` and not `201`. The idempotent path (and any replay) must return
->    the identical shape; the smoke test must assert 200.
+>    `{ referenceNumber, rfqId }` and not `201`. The receipt (P4a) stores **only the terminal fields**
+>    `status`, `rfqId`, `referenceNumber` — not the whole response body. A replay therefore
+>    **reconstructs** the identical `200 { success: true, message, referenceNumber, rfqId }` from the
+>    stored terminal fields plus the fixed `success: true` + standard confirmation `message`. The
+>    smoke test asserts 200 and the reconstructed shape.
 > 4. **Do not hardcode "129 tests."** Require the *entire existing `handler.test.ts` suite to pass
 >    unchanged* and record the actual count at execution time.
-> 5. **Draft-upgrade is authoritative from the submitted payload, not the draft.** The upgrade
->    builds the *complete* pending RFQ item from the validated formal submission, then conditionally
->    `Update`s the draft's `rfqId` under `status = 'draft' AND draftTokenHash = <computed-from-request-token>
->    AND expiresAt > now`. On success it sets `status = 'pending'` + the pending index keys and
->    **removes** `draftTokenHash`, `TTL`, and the draft `GSI1*` index attributes. The draft's stored
->    partial fields are not trusted as the RFQ of record.
+> 5. **Draft-upgrade is authoritative from the submitted payload, and pepper-rotation-safe.** The
+>    upgrade must (a) **strongly-consistent read** the draft; (b) verify the request token with
+>    `verifyDraftToken(storedHash, token, resolvePepper)` — which selects the pepper by the stored
+>    hash's `v<n>` prefix, so a draft signed under an older *still-supported* key still validates;
+>    (c) build the *complete* pending RFQ item from the validated formal submission; then (d)
+>    conditionally `Update` the draft's `rfqId` under `status = 'draft' AND draftTokenHash = <the
+>    exact stored hash just read> AND expiresAt > now`. **Use the stored hash verbatim as the
+>    condition value — never a hash recomputed from the request token** (recomputing assumes the
+>    current pepper and would wrongly reject a rotated-but-valid draft). On success set
+>    `status = 'pending'` + the pending index keys and **remove** `draftTokenHash`, `TTL`, and the
+>    draft `GSI1*` index attributes. The draft's stored partial fields are not trusted as the RFQ of record.
 >
 > ## Blocking architectural fixes folded into the revision
 >
@@ -42,7 +50,7 @@
 >
 > | Signal | Classification | Response |
 > |---|---|---|
-> | Receipt exists · binding matches · within 7d | replay | stored `200 {success,message,referenceNumber,rfqId}` |
+> | Receipt exists · binding matches · within 7d | replay | `200`, reconstructed `{success:true, message, referenceNumber, rfqId}` from the stored terminal fields |
 > | Receipt exists · binding differs | conflict | `409` idempotency conflict |
 > | Receipt exists · `now ≥ replayExpiresAt` | window-expired | stable `409` window-expired |
 > | Draft-upgrade condition failed (token / status / expiry) | unavailable | uniform `404 Draft unavailable` |
