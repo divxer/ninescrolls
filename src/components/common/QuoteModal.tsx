@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useCombinedAnalytics } from '../../hooks/useCombinedAnalytics';
 import { getVisitorId } from '../../services/analyticsStorageService';
+import { describeSubmitError } from '../../pages/rfqSubmitError';
 
 interface QuoteModalProps {
   isOpen: boolean;
@@ -117,7 +118,7 @@ export function QuoteModal({ isOpen, onClose, onDownloadBrochure, productName, d
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(rfqPayload)
       });
       const data = await res.json().catch(() => null);
-      if (!res.ok) throw new Error(data?.error || 'Failed');
+      if (!res.ok) throw new Error(describeSubmitError(data));
       setReferenceNumber(data?.referenceNumber || null);
       setIsSuccess(true); setIsSubmitting(false);
       // Send to both Google Analytics and Segment

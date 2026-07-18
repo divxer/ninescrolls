@@ -7,6 +7,7 @@
  */
 
 import { getVisitorId } from './analyticsStorageService';
+import { describeSubmitError } from '../pages/rfqSubmitError';
 
 const LEADS_API_URL = 'https://api.ninescrolls.com/api/leads';
 
@@ -76,7 +77,10 @@ export async function submitLead(data: LeadRequest): Promise<LeadResponse> {
     const body = await response.json() as LeadResponse;
 
     if (!response.ok) {
-        throw new Error(body.error || 'Failed to submit lead');
+        // The leads API rejects with { success:false, error, details? } — same
+        // contract as the RFQ API — so reuse its renderer to name the offending
+        // field instead of dropping details[] into a bare "Validation failed".
+        throw new Error(describeSubmitError(body));
     }
 
     return body;
