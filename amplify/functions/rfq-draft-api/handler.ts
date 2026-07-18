@@ -1,3 +1,6 @@
+import { createDraft, getDraft, updateDraft, type DraftStoreDeps } from '../../lib/rfq/draftStore';
+import { draftCreateSchema, draftPatchRequestSchema, normalizeDraftPatch } from '../../lib/rfq/draftContract';
+
 const ALLOWED_ORIGINS = [
   'https://ninescrolls.com',
   'https://www.ninescrolls.com',
@@ -38,4 +41,71 @@ export function jsonResponse(
 /** The single non-disclosing failure for missing/wrong-token/expired/non-draft. */
 export function DRAFT_UNAVAILABLE_RESPONSE(origin: string): ApiResponse {
   return jsonResponse(404, { error: 'Draft unavailable' }, origin, { credential: true });
+}
+
+interface DraftEvent {
+  requestContext?: { http?: { method?: string; path?: string; sourceIp?: string } };
+  httpMethod?: string;
+  rawPath?: string;
+  path?: string;
+  pathParameters?: { rfqId?: string } | null;
+  headers?: Record<string, string | undefined>;
+  body?: string | null;
+}
+
+const parseBody = (event: DraftEvent): unknown => {
+  if (!event.body) return {};
+  try { return JSON.parse(event.body); } catch { return null; }
+};
+
+/** Build the handler from injected deps (unit-tested). The deployed entry supplies real deps. */
+export function makeHandler(deps: DraftStoreDeps) {
+  return async (event: DraftEvent): Promise<ApiResponse> => {
+    const method = event.requestContext?.http?.method ?? event.httpMethod ?? 'GET';
+    const path = event.requestContext?.http?.path ?? event.rawPath ?? event.path ?? '';
+    const origin = allowedOrigin(header(event.headers, 'origin'));
+    if (method === 'OPTIONS') return jsonResponse(200, {}, origin);
+    const rfqId = event.pathParameters?.rfqId ?? path.split('/').filter(Boolean).pop();
+
+    // POST /api/rfq/draft — create
+    if (method === 'POST') {
+      const nonce = header(event.headers, 'x-rfq-draft-create-nonce');
+      const parsed = draftCreateSchema.safeParse(parseBody(event));
+      if (!nonce || !parsed.success) return DRAFT_UNAVAILABLE_RESPONSE(origin);
+      try {
+        const r = await createDraft(deps, nonce, parsed.data);
+        return jsonResponse(201, r, origin, { credential: true });
+      } catch { return DRAFT_UNAVAILABLE_RESPONSE(origin); }
+    }
+
+    const token = header(event.headers, 'x-rfq-draft-token');
+    if (!rfqId || !token) return DRAFT_UNAVAILABLE_RESPONSE(origin);
+
+    // GET /api/rfq/draft/{rfqId}
+    if (method === 'GET') {
+      const r = await getDraft(deps, rfqId, token);
+      if (!r.ok) return DRAFT_UNAVAILABLE_RESPONSE(origin);
+      return jsonResponse(200, {
+        fields: r.fields, draftVersion: r.draftVersion, expiresAt: r.expiresAt,
+      }, origin, { credential: true });
+    }
+
+    // PATCH /api/rfq/draft/{rfqId}
+    if (method === 'PATCH') {
+      const body = parseBody(event) as { draftVersion?: unknown; patch?: unknown } | null;
+      if (!body || typeof body.draftVersion !== 'number') return DRAFT_UNAVAILABLE_RESPONSE(origin);
+      const parsed = draftPatchRequestSchema.safeParse(body.patch);
+      if (!parsed.success) return jsonResponse(400, { error: 'Invalid draft fields' }, origin, { credential: true });
+      const r = await updateDraft(deps, rfqId, token, body.draftVersion, normalizeDraftPatch(parsed.data));
+      if (r.status === 'unavailable') return DRAFT_UNAVAILABLE_RESPONSE(origin);
+      if (r.status === 'conflict') {
+        return jsonResponse(409, { error: 'Version conflict', fields: r.fields, draftVersion: r.draftVersion }, origin, { credential: true });
+      }
+      return jsonResponse(200, {
+        fields: r.status === 'updated' ? r.fields : undefined, draftVersion: r.draftVersion,
+      }, origin, { credential: true });
+    }
+
+    return jsonResponse(405, { error: 'Method not allowed' }, origin);
+  };
 }
