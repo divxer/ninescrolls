@@ -70,9 +70,9 @@ The outbox is not just control flow — every effect must carry a **durable inpu
 **Durable results (types match the real helpers — verified):**
 - `org-upsert`: `{ matchedOrgId: string | null }` (`invoke-org-api.ts:27`).
 - `visitor-bridge`: `{ created: boolean; orgUpgraded: boolean }` (`visitor-bridge.ts:38`).
-- `crm-emit`: `{ emitted: true }` — the CRM helpers return `Promise<void>` (`invoke-crm-api.ts:42,51`); there is **no** `eventId` to persist. Deterministic CRM event IDs are computed CRM-side from the emit args, not returned.
+- `crm-emit`: `{ accepted: true }` — the CRM helpers return `Promise<void>` and a 202 means only that the Lambda *accepted* the event, not that the projection succeeded (`invoke-crm-api.ts:8-11`); there is **no** `eventId`. The P4b-2 crm-emit effect MUST invoke with `{ sync: true }` so dispatch/`FunctionError` propagates and the completion runs only after acceptance — the default fire-and-forget path (which logs+swallows) must not be used, or `accepted` would be a false fact. Acceptance ≠ projection; the CRM reconciliation sweep heals projection.
 - `attachment-move`: `{ movedKeys: string[]; failedKeys: string[] }` (`MoveAttachmentsResult`, `handler.ts:297-302`).
-- `confirmation-email`/`internal-email`: `{ attempted: true; sentAt: string }`.
+- `confirmation-email`/`internal-email`: `{ attemptedAt: string; outcome: 'accepted' | 'failed' | 'unknown' }` — the outcome is observed from the send call (SendGrid non-2xx → `failed`, timeout/unknown-ack → `unknown`); a `send-claimed` crash leaves no `done`/result and is alarmed (P4b-2).
 
 **Lifecycle (normal effect)** — `pending → processing → done`:
   `status`, `version`, and `result` are DynamoDB reserved words, so every expression below aliases them (`#status`/`#version`/`#result`), matching `draftStore.ts`.
@@ -82,12 +82,13 @@ The outbox is not just control flow — every effect must carry a **durable inpu
   2. *(effects that backfill)* `Update RFQ#<id>/META` condition `attribute_exists(PK) AND #status = :pendingRfq`: org sets `matchedOrgId`+`GSI2PK` **only when non-null**; attachment sets `attachmentKeys = movedKeys`. `failedKeys` are **not** projected onto the RFQ (parity with today) — emails read them from the attachment effect item's `result`.
   3. `Put OUTBOX#<successor>` each with `attribute_not_exists(PK)`.
 - **Fencing:** an expired-lease re-claim bumps `version`, so a stale worker's completion (holding the old `claimedVersion`) cancels — no double result, no double successor, no double backfill.
-- **D6a — side-effect duplicate window:** the data plane guarantees exactly-once **result persistence + progression**, NOT exactly-once external side effects. A worker that performs a side effect then crashes before its completion transaction will re-run it after re-claim. Non-email effects must therefore be **destination-idempotent** (org upsert keyed by email; attachment move checks the deterministic destination before deleting the source; CRM uses a deterministic event id). Those idempotency mechanisms live in the effect implementations (P4b-2); this phase only defines the durable contract that makes them expressible.
+- **D6a — side-effect duplicate window:** the data plane guarantees exactly-once **result persistence + progression**, NOT exactly-once external side effects. A worker that performs a side effect then crashes before its completion transaction will re-run it after re-claim. Non-email effects must therefore be **destination-idempotent** (org upsert keyed by email; attachment move checks the deterministic destination before deleting the source; CRM heals via its reconciliation sweep). Those idempotency mechanisms live in the effect implementations (P4b-2); this phase only defines the durable contract that makes them expressible.
+- **D6b — expired leases do not self-wake.** A DynamoDB Stream event fires on a write, never on the passage of time. A worker that claims an effect (writing `processing`) then crashes leaves it `processing` with an expired lease and **no** event to re-trigger it. The expired-lease re-claim path exists in the builder, but something must *invoke* it. **P4b-2 MUST run a scheduled lease sweeper/reconciler** (e.g. an EventBridge-scheduled scan for `processing` items past `leaseExpiresAt`) that re-claims and re-drives them. Stream-only progression is insufficient; this is a hard requirement, not an optimization.
 
 ### D7 — Email at-most-once claim-before-send latch
 Email effects encode "at most one automatic send attempt, delivery may be lost, never auto-resent." Lifecycle `pending → send-claimed → done`, with **no** lease-expiry re-claim:
 - **Claim** (`buildEmailClaimItems`): `Update` condition `#status = :pending`; sets `status='send-claimed'`, `claimedAt`, `leaseOwner`. Committed **before** the send.
-- **Finalize** (`buildEmailFinalizeItems`): `Update` condition `#status = :sendClaimed AND leaseOwner = :owner`; sets `status='done'`, `result` (`{attempted:true, sentAt}`), `completedAt`.
+- **Finalize** (`buildEmailFinalizeItems`): `Update` condition `#status = :sendClaimed AND leaseOwner = :owner`; sets `status='done'`, `result` (`{attemptedAt, outcome}`), `completedAt`. The outcome (`accepted`/`failed`/`unknown`) is recorded whether or not the send succeeded — the latch guarantees at most one attempt, not delivery.
 - A crash while `send-claimed` is terminal — the email is never re-attempted; an operator alarm (P4b-2) inspects delivery. Email effects have no successors and no RFQ backfill.
 
 ---
@@ -292,6 +293,17 @@ describe('estimateDynamoItemBytes', () => {
     expect(() => estimateDynamoItemBytes({ big: BigInt(1) })).toThrow(/unsupported/i);
     expect(() => estimateDynamoItemBytes({ set: new Set([1]) })).toThrow(/unsupported/i);
   });
+
+  it('rejects undefined (not storable) but accepts null', () => {
+    expect(() => estimateDynamoItemBytes({ u: undefined })).toThrow(/undefined/i);
+    expect(() => estimateDynamoItemBytes({ nested: { u: undefined } })).toThrow(/undefined/i);
+    expect(() => estimateDynamoItemBytes({ n: null })).not.toThrow();
+  });
+
+  it('rejects non-finite numbers', () => {
+    expect(() => estimateDynamoItemBytes({ n: NaN })).toThrow(/non-finite/i);
+    expect(() => estimateDynamoItemBytes({ n: Infinity })).toThrow(/non-finite/i);
+  });
 });
 
 describe('assertWithinItemLimits', () => {
@@ -321,7 +333,9 @@ describe('assertWithinItemLimits', () => {
  * large payload past the limit.
  */
 const PER_ATTRIBUTE_OVERHEAD = 1;
-const NUMBER_BYTES = 21;      // DynamoDB numbers cap at 38 digits ≈ 21 bytes
+// DynamoDB numbers cap at 38 significant digits (~21 bytes stored). Over-count to 38 so
+// the guard can never be defeated by a large number; item numbers here are tiny anyway.
+const NUMBER_BYTES = 38;
 const STRUCTURAL_OVERHEAD = 3;
 
 export const MAX_ITEM_BYTES = 400 * 1024;             // DynamoDB item hard limit
@@ -330,10 +344,18 @@ export const MAX_TRANSACTION_BYTES = 4 * 1024 * 1024; // TransactWrite payload h
 function utf8Bytes(s: string): number { return Buffer.byteLength(s, 'utf8'); }
 
 function valueBytes(value: unknown): number {
-  if (value === null || value === undefined) return 1;
+  // Fail closed: `undefined` is not a storable DynamoDB value — its presence signals a
+  // marshalling bug and must be rejected, not silently counted. `null` IS storable (NULL).
+  if (value === undefined) throw new TypeError('dynamoItemSize: undefined is not a storable value');
+  if (value === null) return 1;
   const t = typeof value;
   if (t === 'string') return utf8Bytes(value as string);
-  if (t === 'number') return NUMBER_BYTES;
+  if (t === 'number') {
+    if (!Number.isFinite(value as number)) {
+      throw new TypeError('dynamoItemSize: non-finite numbers (NaN/Infinity) are not storable');
+    }
+    return NUMBER_BYTES;
+  }
   if (t === 'boolean') return 1;
   if (Array.isArray(value)) {
     return value.reduce<number>((sum, el) => sum + STRUCTURAL_OVERHEAD + valueBytes(el), 0);
@@ -432,8 +454,29 @@ describe('buildOutboxEffectItem', () => {
   });
 
   it('copies successors (not a shared reference to the frozen graph)', () => {
-    const item = buildOutboxEffectItem({ rfqId: 'rfq-1', effect: 'attachment-move', now: 'n' });
+    const item = buildOutboxEffectItem({
+      rfqId: 'rfq-1', effect: 'attachment-move', now: 'n',
+      input: { tempKeys: ['temp/rfq/aaaaaaaaaaaaaaaa/f.pdf'] },
+    });
     expect(item.successors).not.toBe(EFFECT_SUCCESSORS['attachment-move']);
+  });
+
+  it('rejects input on a non-attachment effect', () => {
+    expect(() => buildOutboxEffectItem({
+      rfqId: 'rfq-1', effect: 'org-upsert', now: 'n',
+      input: { tempKeys: ['temp/rfq/aaaaaaaaaaaaaaaa/f.pdf'] } as never,
+    })).toThrow(/only valid for attachment-move/);
+  });
+
+  it('requires non-empty, shape-valid tempKeys for attachment-move', () => {
+    expect(() => buildOutboxEffectItem({ rfqId: 'rfq-1', effect: 'attachment-move', now: 'n' }))
+      .toThrow(/non-empty tempKeys/);
+    expect(() => buildOutboxEffectItem({
+      rfqId: 'rfq-1', effect: 'attachment-move', now: 'n', input: { tempKeys: [] },
+    })).toThrow(/non-empty tempKeys/);
+    expect(() => buildOutboxEffectItem({
+      rfqId: 'rfq-1', effect: 'attachment-move', now: 'n', input: { tempKeys: ['rfqs/rfq-1/evil.pdf'] },
+    })).toThrow(/invalid temp attachment key/);
   });
 });
 ```
@@ -472,12 +515,27 @@ export function submitRootEffects(hasAttachments: boolean): readonly OutboxEffec
 // Typed durable inputs (only attachment-move has one).
 export interface AttachmentMoveInput { tempKeys: string[] }
 
+// Re-validate temp keys at the builder boundary (the handler validates at the schema and
+// again in moveAttachments; the outbox persists them, so it must not trust the caller).
+const TEMP_ATTACHMENT_KEY_RE = /^temp\/rfq\/[a-f0-9]{16}\/[a-zA-Z0-9._-]{1,200}$/;
+export function isValidTempAttachmentKey(key: unknown): key is string {
+  return typeof key === 'string' && TEMP_ATTACHMENT_KEY_RE.test(key) && !key.includes('..');
+}
+
 // Typed durable results — shapes verified against the real helpers.
 export interface OrgUpsertResult { matchedOrgId: string | null }
 export interface VisitorBridgeResult { created: boolean; orgUpgraded: boolean }
-export interface CrmEmitResult { emitted: true }
+// The CRM helper's 202 means the Lambda ACCEPTED the event, NOT that the projection
+// succeeded (invoke-crm-api.ts:8-11); the strongest durable fact is acceptance. The
+// P4b-2 crm-emit effect MUST call with { sync: true } so a dispatch/FunctionError
+// propagates and completion runs only after acceptance — never the default swallow path.
+export interface CrmEmitResult { accepted: true }
 export interface AttachmentMoveResult { movedKeys: string[]; failedKeys: string[] }
-export interface EmailResult { attempted: true; sentAt: string }
+// Claim-before-send guarantees at most ONE automatic attempt, never delivery/acceptance.
+// The result records the attempt time + an explicit outcome (a sync failure or ambiguous
+// timeout is 'failed'/'unknown', not silent success).
+export type EmailOutcome = 'accepted' | 'failed' | 'unknown';
+export interface EmailResult { attemptedAt: string; outcome: EmailOutcome }
 
 export type EmailEffectName = 'confirmation-email' | 'internal-email';
 export function isEmailEffect(effect: OutboxEffectName): effect is EmailEffectName {
@@ -512,6 +570,17 @@ export function buildOutboxEffectItem(args: {
   rfqId: string; effect: OutboxEffectName; now: string; input?: AttachmentMoveInput;
 }): OutboxEffectItem {
   const { rfqId, effect, now, input } = args;
+  // Input boundary: only attachment-move may carry input; it MUST carry a non-empty,
+  // shape-valid tempKeys list. A silently-ignored input on another effect is a bug.
+  if (input && effect !== 'attachment-move') {
+    throw new Error(`input is only valid for attachment-move, not ${effect}`);
+  }
+  if (effect === 'attachment-move') {
+    if (!input || input.tempKeys.length === 0) throw new Error('attachment-move requires a non-empty tempKeys input');
+    for (const k of input.tempKeys) {
+      if (!isValidTempAttachmentKey(k)) throw new Error(`invalid temp attachment key: ${String(k).slice(0, 80)}`);
+    }
+  }
   const item: OutboxEffectItem = {
     ...outboxEffectKey(rfqId, effect),
     effect,
@@ -1154,9 +1223,15 @@ describe('buildEffectCompletionItems', () => {
   });
 
   it('marks a leaf effect (crm-emit) done with no backfill and no successors', () => {
-    const items = buildEffectCompletionItems({ ...CBASE, effect: 'crm-emit', result: { emitted: true } });
+    const items = buildEffectCompletionItems({ ...CBASE, effect: 'crm-emit', result: { accepted: true } });
     expect(items).toHaveLength(1);
     expect(items[0].Update!.Key).toEqual({ PK: 'RFQ#rfq-1', SK: 'OUTBOX#crm-emit' });
+  });
+
+  it('rejects an email effect — it must use the claim-before-send latch', () => {
+    expect(() => buildEffectCompletionItems({
+      ...CBASE, effect: 'confirmation-email' as never, result: { attemptedAt: 'x', outcome: 'accepted' } as never,
+    })).toThrow(/latch/);
   });
 });
 ```
@@ -1166,22 +1241,29 @@ describe('buildEffectCompletionItems', () => {
 - [ ] **Step 3: Write minimal implementation** (append to `effectTransitions.ts`)
 
 ```ts
-// amplify/lib/rfq/effectTransitions.ts  (append)
+// amplify/lib/rfq/effectTransitions.ts  (append — do NOT re-import outboxEffectKey/OutboxEffectName;
+// they are already imported by Task 8 in this same file. A second import of an existing symbol is a
+// duplicate-identifier compile error.)
 import type { TransactWriteCommandInput } from '@aws-sdk/lib-dynamodb';
 import {
-  EFFECT_SUCCESSORS, buildOutboxEffectItem, outboxEffectKey,
-  type AttachmentMoveResult, type CrmEmitResult, type EmailResult,
+  EFFECT_SUCCESSORS, buildOutboxEffectItem, isEmailEffect,
+  type AttachmentMoveResult, type CrmEmitResult,
   type OrgUpsertResult, type VisitorBridgeResult,
 } from './outboxEffects';
 
 type TransactItem = NonNullable<TransactWriteCommandInput['TransactItems']>[number];
 
+/**
+ * Discriminated union — each non-email effect is locked to its own result type, so a
+ * caller cannot pair (e.g.) an org effect with an attachment result. Email effects are
+ * DELIBERATELY absent: they must use the claim-before-send latch (buildEmailClaimItems /
+ * buildEmailFinalizeItems), never this normal completion path.
+ */
 type CompletionResult =
   | { effect: 'org-upsert'; result: OrgUpsertResult }
   | { effect: 'attachment-move'; result: AttachmentMoveResult }
   | { effect: 'visitor-bridge'; result: VisitorBridgeResult }
-  | { effect: 'crm-emit'; result: CrmEmitResult }
-  | { effect: 'confirmation-email' | 'internal-email'; result: EmailResult };
+  | { effect: 'crm-emit'; result: CrmEmitResult };
 
 export type CompletionParams = {
   tableName: string; rfqId: string; owner: string; claimedVersion: number; now: string;
@@ -1208,6 +1290,11 @@ function rfqBackfill(p: CompletionParams): { UpdateExpression: string; values: R
  * fails clause 1, cancelling the whole transaction — no double result/backfill/successor.
  */
 export function buildEffectCompletionItems(p: CompletionParams): TransactItem[] {
+  // Defense in depth: email effects must never reach normal completion (the type union
+  // already excludes them; this guards a widened/`as`-cast call site).
+  if (isEmailEffect(p.effect)) {
+    throw new Error(`${p.effect} must use the email claim-before-send latch, not buildEffectCompletionItems`);
+  }
   const items: TransactItem[] = [
     {
       Update: {
@@ -1286,16 +1373,16 @@ describe('email claim-before-send latch', () => {
     });
   });
 
-  it('finalizes send-claimed→done with the attempted result, fenced on owner', () => {
+  it('finalizes send-claimed→done recording attemptedAt + outcome, fenced on owner', () => {
     const cmd = buildEmailFinalizeItems({
       tableName: 'T', rfqId: 'rfq-1', effect: 'internal-email', owner: 'worker-A',
-      now: '2026-07-18T00:00:05.000Z', sentAt: '2026-07-18T00:00:05.000Z',
+      now: '2026-07-18T00:00:05.000Z', attemptedAt: '2026-07-18T00:00:05.000Z', outcome: 'failed',
     });
     expect(cmd.Update!.ConditionExpression).toBe('#status = :claimed AND leaseOwner = :owner');
     expect(cmd.Update!.UpdateExpression).toBe('SET #status = :done, #result = :result, completedAt = :now');
     expect(cmd.Update!.ExpressionAttributeValues).toMatchObject({
       ':claimed': 'send-claimed', ':owner': 'worker-A', ':done': 'done',
-      ':result': { attempted: true, sentAt: '2026-07-18T00:00:05.000Z' },
+      ':result': { attemptedAt: '2026-07-18T00:00:05.000Z', outcome: 'failed' },
     });
   });
 });
@@ -1306,8 +1393,9 @@ describe('email claim-before-send latch', () => {
 - [ ] **Step 3: Write minimal implementation** (append to `effectTransitions.ts`)
 
 ```ts
-// amplify/lib/rfq/effectTransitions.ts  (append)
-import type { EmailEffectName } from './outboxEffects';
+// amplify/lib/rfq/effectTransitions.ts  (append — EmailEffectName/EmailOutcome are new symbols,
+// not previously imported, so this import statement is fine.)
+import type { EmailEffectName, EmailOutcome } from './outboxEffects';
 
 /**
  * At-most-once latch: pending → send-claimed, committed BEFORE the send. Conditioned
@@ -1327,9 +1415,14 @@ export function buildEmailClaimItems(p: {
   });
 }
 
-/** send-claimed → done after the single send attempt, recording the attempted result. */
+/**
+ * send-claimed → done after the single send attempt, recording attemptedAt + the
+ * observed outcome (`accepted`/`failed`/`unknown`). The latch guarantees at most one
+ * attempt, not delivery — so a non-success outcome is recorded, never retried.
+ */
 export function buildEmailFinalizeItems(p: {
-  tableName: string; rfqId: string; effect: EmailEffectName; owner: string; now: string; sentAt: string;
+  tableName: string; rfqId: string; effect: EmailEffectName; owner: string; now: string;
+  attemptedAt: string; outcome: EmailOutcome;
 }): UpdateCommand {
   return new UpdateCommand({
     TableName: p.tableName,
@@ -1340,7 +1433,7 @@ export function buildEmailFinalizeItems(p: {
     ExpressionAttributeNames: { '#status': 'status', '#result': 'result' },
     ExpressionAttributeValues: {
       ':claimed': 'send-claimed', ':owner': p.owner, ':done': 'done',
-      ':result': { attempted: true, sentAt: p.sentAt }, ':now': p.now,
+      ':result': { attemptedAt: p.attemptedAt, outcome: p.outcome }, ':now': p.now,
     },
   });
 }
@@ -1361,9 +1454,9 @@ git commit -m "feat(rfq): email at-most-once claim-before-send latch"
 
 **Files:** Test `amplify/lib/rfq/submitLifecycle.integration.test.ts` (new)
 
-Proves the composed builders behave correctly against real conditional-write semantics. **`FakeDdb` fidelity is partial** — it does NOT validate `ClientRequestToken`, duplicate targets, `TableName`, transaction byte size, or undefined marshalling (those are guarded in the builders + unit-tested separately). This suite exercises the state machine: commit, claim, complete, backfill, successor creation, retry cancellation, fencing, and the email latch.
+Proves the composed builders behave correctly against real conditional-write semantics. **`FakeDdb` fidelity is partial** — it does NOT validate `ClientRequestToken`, duplicate targets, `TableName`, transaction byte size, or undefined marshalling (those are guarded in the builders + unit-tested separately). This suite exercises the state machine: commit, claim, complete, backfill, successor creation, retry cancellation, fencing, recovery, and the email latch.
 
-- [ ] **Step 1: Write the failing test**
+- [ ] **Step 1: Write the lifecycle characterization tests** (these characterize the already-built Tasks 7–10 behavior end-to-end; they are not a red phase)
 
 ```ts
 // amplify/lib/rfq/submitLifecycle.integration.test.ts
@@ -1538,6 +1631,41 @@ describe('effect lifecycle — org branch', () => {
   });
 });
 
+describe('effect lifecycle — recovery scenarios', () => {
+  it('a re-issued fresh claim after a committed claim fails (worker reconciles, no double-claim)', async () => {
+    const f = new FakeDdb();
+    await submit(f, directParams());
+    const freshClaim = () => buildEffectClaimItems({
+      tableName: 'T', rfqId: RFQ_ID, effect: 'org-upsert', owner: 'W', leaseMs: 30000,
+      now: '2026-07-18T09:30:10.000Z', from: 'pending', expectedVersion: 0,
+    });
+    await f.send(freshClaim());
+    // The commit ack was lost; replaying the identical fresh claim must fail — status is 'processing'.
+    await expect(f.send(freshClaim())).rejects.toMatchObject({ name: 'ConditionalCheckFailedException' });
+    expect(f.store.get(`RFQ#${RFQ_ID}|OUTBOX#org-upsert`)!.version).toBe(1); // not double-bumped
+  });
+
+  it('completion cancels all-or-nothing if a successor already exists (no partial backfill)', async () => {
+    const f = new FakeDdb();
+    await submit(f, directParams());
+    await f.send(buildEffectClaimItems({
+      tableName: 'T', rfqId: RFQ_ID, effect: 'org-upsert', owner: 'W', leaseMs: 30000,
+      now: '2026-07-18T09:30:10.000Z', from: 'pending', expectedVersion: 0,
+    }));
+    // Anomalous pre-existing successor → the attribute_not_exists Put conflicts.
+    f.seed([{ PK: `RFQ#${RFQ_ID}`, SK: 'OUTBOX#visitor-bridge', status: 'pending' } as never]);
+    await expect(f.send(new TransactWriteCommand({
+      TransactItems: buildEffectCompletionItems({
+        tableName: 'T', rfqId: RFQ_ID, owner: 'W', claimedVersion: 1, now: '2026-07-18T09:30:11.000Z',
+        effect: 'org-upsert', result: { matchedOrgId: 'org-123' },
+      }),
+    }))).rejects.toMatchObject({ name: 'TransactionCanceledException' });
+    // All-or-nothing: org still processing, backfill NOT applied.
+    expect(f.store.get(`RFQ#${RFQ_ID}|OUTBOX#org-upsert`)!.status).toBe('processing');
+    expect('matchedOrgId' in f.store.get(`RFQ#${RFQ_ID}|META`)!).toBe(false);
+  });
+});
+
 describe('effect lifecycle — attachment branch', () => {
   it('completes with partial failure: RFQ gets moved keys, effect result keeps failed keys, emails created', async () => {
     const f = new FakeDdb();
@@ -1575,11 +1703,11 @@ describe('email latch', () => {
     await expect(f.send(claim())).rejects.toMatchObject({ name: 'ConditionalCheckFailedException' });
     await f.send(buildEmailFinalizeItems({
       tableName: 'T', rfqId: RFQ_ID, effect: 'confirmation-email', owner: 'W',
-      now: '2026-07-18T09:30:11.000Z', sentAt: '2026-07-18T09:30:11.000Z',
+      now: '2026-07-18T09:30:11.000Z', attemptedAt: '2026-07-18T09:30:11.000Z', outcome: 'accepted',
     }));
     const done = f.store.get(`RFQ#${RFQ_ID}|OUTBOX#confirmation-email`)!;
     expect(done.status).toBe('done');
-    expect(done.result).toEqual({ attempted: true, sentAt: '2026-07-18T09:30:11.000Z' });
+    expect(done.result).toEqual({ attemptedAt: '2026-07-18T09:30:11.000Z', outcome: 'accepted' });
   });
 });
 ```
@@ -1604,23 +1732,33 @@ git commit -m "test(rfq): fakeDdb integration for full submit+outbox lifecycle"
 
 **Files:** none (verification only)
 
-- [ ] **Step 1: Confirm the live handler imports none of the new modules**
+- [ ] **Step 1: Confirm NO production entrypoint imports the new modules**
 
-Run (match import statements from the new module paths — NOT bare identifiers; `referenceNumber` is an existing local variable in the handler, so a bare-identifier grep never confirms dark):
+Grep every production Lambda (not just submit-rfq) for import statements from the new module paths — NOT bare identifiers (`referenceNumber` is an existing handler local, so a bare-identifier grep never confirms dark). `buildReceiptItem` is exported from the pre-existing `receiptStore` (already imported by the dark rfq-draft-api), so scope its check to a NEW import of it:
 ```bash
-grep -nE "from '[^']*/(referenceNumber|clientRequestToken|outboxEffects|dynamoItemSize|pendingRfq|submitTransaction|effectTransitions)'|import[^;]*buildReceiptItem" amplify/functions/submit-rfq/handler.ts || echo "DARK: no P4b-1 imports in submit-rfq handler"
+grep -rnE "from '[^']*/(referenceNumber|clientRequestToken|outboxEffects|dynamoItemSize|pendingRfq|submitTransaction|effectTransitions)'" amplify/functions \
+  || echo "DARK: no production entrypoint imports the P4b-1 modules"
 ```
-Expected: `DARK: no P4b-1 imports in submit-rfq handler`.
+Expected: `DARK: no production entrypoint imports the P4b-1 modules`. (The frontend under `src/` cannot import server-only `amplify/lib` modules; the only consumer of `buildReceiptItem` remains `recordReceipt` within `receiptStore.ts` itself.)
 
 - [ ] **Step 2: Full suite + typecheck green**
 
 Run: `npx vitest run amplify/lib/rfq/ --exclude '**/.claude/**'` → PASS.
 Run: `npx tsc -p amplify --noEmit` (or the repo's configured `amplify/` typecheck) → no errors in the new files.
 
-- [ ] **Step 3: Commit any typecheck fixups (explicit paths only — never `git add -A`)**
+- [ ] **Step 3: Commit any typecheck fixups (explicit files only — never `git add -A` or a bare directory)**
 
 ```bash
-git add amplify/lib/rfq
+git add \
+  amplify/lib/rfq/referenceNumber.ts amplify/lib/rfq/referenceNumber.test.ts \
+  amplify/lib/rfq/clientRequestToken.ts amplify/lib/rfq/clientRequestToken.test.ts \
+  amplify/lib/rfq/dynamoItemSize.ts amplify/lib/rfq/dynamoItemSize.test.ts \
+  amplify/lib/rfq/outboxEffects.ts amplify/lib/rfq/outboxEffects.test.ts \
+  amplify/lib/rfq/pendingRfq.ts amplify/lib/rfq/pendingRfq.test.ts \
+  amplify/lib/rfq/receiptStore.ts amplify/lib/rfq/receiptStore.test.ts \
+  amplify/lib/rfq/submitTransaction.ts amplify/lib/rfq/submitTransaction.test.ts \
+  amplify/lib/rfq/effectTransitions.ts amplify/lib/rfq/effectTransitions.test.ts \
+  amplify/lib/rfq/submitLifecycle.integration.test.ts
 git commit -m "chore(rfq): typecheck fixups for P4b-1 primitives" || echo "nothing to commit"
 ```
 
@@ -1629,17 +1767,18 @@ git commit -m "chore(rfq): typecheck fixups for P4b-1 primitives" || echo "nothi
 ## Self-review
 
 **1. Effect data plane (D6) — the critical gap from review 2:**
-- [x] `attachment-move` root carries durable `input.tempKeys` (Task 4 + Task 7 + Task 11 attachment test) — the worker can find the files.
-- [x] Typed results match real helpers: org `{matchedOrgId:string|null}`, visitor `{created,orgUpgraded}`, crm `{emitted:true}` (void helper — no invented `eventId`), attachment `{movedKeys,failedKeys}`, email `{attempted,sentAt}` (Task 4).
+- [x] `attachment-move` root carries durable `input.tempKeys`, re-validated at the builder boundary; input rejected on other effects (Task 4 boundary tests + Task 7 + Task 11).
+- [x] Typed results match real helpers: org `{matchedOrgId:string|null}`, visitor `{created,orgUpgraded}`, crm `{accepted:true}` (void helper, 202=accepted≠projected — no invented `eventId`; P4b-2 must call `{sync:true}`), attachment `{movedKeys,failedKeys}`, email `{attemptedAt,outcome}` (Task 4).
 - [x] Completion atomically marks done + persists result + backfills RFQ + creates successors (Task 9 + Task 11).
 - [x] Emails read attachment outcome from the durable effect result; `failedKeys` not projected onto the RFQ (Task 9 + Task 11 attachment test).
-- [x] Side-effect duplicate window named (D6a) and left to destination-idempotent effect impls (P4b-2).
+- [x] Side-effect duplicate window named (D6a); expired leases don't self-wake → P4b-2 sweeper mandated (D6b).
 
 **2. Lifecycle & fencing (D6/D7):**
-- [x] Three-state lease lifecycle with claim (Task 8) and completion (Task 9); email latch is separate, no re-claim (Task 10).
+- [x] Three-state lease lifecycle with claim (Task 8) and completion (Task 9); completion is a discriminated union that **excludes** email effects + a runtime guard, so the email latch can't be bypassed (Task 9 reject test); email latch is separate, no re-claim (Task 10).
 - [x] Version fencing proven: stale completion cancels (Task 11 replay + expired-lease tests).
 - [x] Lease timestamps are epoch-ms numbers so `leaseExpiresAt < :nowMs` is testable under FakeDdb.
-- [x] Email double-claim blocked; single send attempt (Task 11 latch test).
+- [x] Email double-claim blocked; single attempt with recorded outcome (Task 11 latch test).
+- [x] Recovery scenarios: claim response-loss (no double-claim) + successor-conflict all-or-nothing cancel (Task 11 recovery tests).
 
 **3. Parity & draft erasure (D3):**
 - [x] Both paths write one `buildPendingRfqItem` output; byte-equal (Task 11 parity).
@@ -1649,7 +1788,7 @@ git commit -m "chore(rfq): typecheck fixups for P4b-1 primitives" || echo "nothi
 **4. Transaction integrity (D5):**
 - [x] Stable ≤36-char `ClientRequestToken` (Task 2); its DynamoDB effect is not FakeDdb-tested (fidelity honestly scoped in Task 11 preamble).
 - [x] Discriminated union — direct forbids precondition, upgrade requires it; `hasAttachments` derived from `tempKeys` (Task 7 types).
-- [x] Duplicate-target guard + per-item + 4 MB transaction-total guards, all builder-side (Task 7); size estimator fails closed on unsupported types (Task 3).
+- [x] Duplicate-target guard + per-item + 4 MB transaction-total guards, all builder-side (Task 7); size estimator fails closed on unsupported types **and on `undefined`/non-finite numbers** (Task 3).
 
 **5. Graph & receipt (D1/D2/D4):**
 - [x] Frozen, not-caller-supplied graph; no fan-in; no-attachment root promotion (Task 4).
@@ -1662,4 +1801,4 @@ git commit -m "chore(rfq): typecheck fixups for P4b-1 primitives" || echo "nothi
 ---
 
 ## Out of scope — P4b-2 (worker runtime only)
-The DynamoDB Streams + Lambda event-source mapping; the claim→side-effect→complete loop that *calls* these builders; destination-idempotency in each effect impl (org by email, attachment destination-check-before-delete, CRM deterministic event id); email send + the `send-claimed` crash **alarm**; partial-batch responses, retries/backoff, DLQ, metrics. **P4b-3:** frontend `X-RFQ-Submit-Key` (compat → opt-in), the authenticated draft read producing `{storedHash, expectedVersion}`, canonicalization + binding, the strongly-consistent receipt read that disambiguates a cancelled transaction, `200 {success,message,referenceNumber,rfqId}` replay reconstruction, legacy `handler.test.ts` unchanged (record the count at execution). **P4b-4:** mandatory header, soak, remove legacy branch + flag; rollback = receipt-aware routing + paused producer + drained outbox.
+The DynamoDB Streams + Lambda event-source mapping; the claim→side-effect→complete loop that *calls* these builders; the **scheduled lease sweeper/reconciler** required by D6b (re-claims expired-lease `processing` effects — mandatory, since streams never fire on elapsed time); the crm-emit effect invoking `emitTimelineEventToCrm(args, { sync: true })` so dispatch failure propagates before recording `accepted`; destination-idempotency in each effect impl (org by email, attachment destination-check-before-delete); email send + outcome capture + the `send-claimed` crash **alarm**; partial-batch responses, retries/backoff, DLQ, metrics. **P4b-3:** frontend `X-RFQ-Submit-Key` (compat → opt-in), the authenticated draft read producing `{storedHash, expectedVersion}`, canonicalization + binding, the strongly-consistent receipt read that disambiguates a cancelled transaction, `200 {success,message,referenceNumber,rfqId}` replay reconstruction, legacy `handler.test.ts` unchanged (record the count at execution). **P4b-4:** mandatory header, soak, remove legacy branch + flag; rollback = receipt-aware routing + paused producer + drained outbox.
