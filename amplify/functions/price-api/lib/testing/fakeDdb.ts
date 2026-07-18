@@ -42,7 +42,7 @@ function applyUpdate(expr: string, item: Item, values: Record<string, unknown>, 
   if (addMatch) {
     item[addMatch[1]] = ((item[addMatch[1]] as number) ?? 0) + (values[addMatch[2]] as number);
   }
-  const setMatch = e.match(/SET (.+?)(?:\sADD\s|$)/);
+  const setMatch = e.match(/SET (.+?)(?:\sADD\s|\sREMOVE\s|$)/);
   if (setMatch) {
     for (const clause of setMatch[1].split(',').map((c) => c.trim())) {
       const incr = clause.match(/^(\w+) = (\w+) \+ (:\w+)$/);
@@ -50,6 +50,12 @@ function applyUpdate(expr: string, item: Item, values: Record<string, unknown>, 
       const assign = clause.match(/^(\w+) = (:\w+)$/);
       if (assign) { item[assign[1]] = values[assign[2]]; continue; }
       throw new Error(`fakeDdb: unsupported SET clause: ${clause}`);
+    }
+  }
+  const removeMatch = e.match(/(?:^|\s)REMOVE (.+?)(?:\sSET\s|\sADD\s|$)/);
+  if (removeMatch) {
+    for (const field of removeMatch[1].split(',').map((f) => f.trim())) {
+      if (field) delete item[field];
     }
   }
 }
