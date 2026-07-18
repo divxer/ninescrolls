@@ -19,7 +19,7 @@ describe('CryogenicProbingPage', () => {
     renderPage();
     await waitFor(() => {
       expect(document.title).toBe(
-        'Cryogenic Probe Stations: Low-Temperature Wafer Probing Guide | NineScrolls LLC'
+        'Cryogenic Probe Stations: When Your Research Needs Low-Temperature Probing | NineScrolls LLC'
       );
     });
   });
@@ -31,6 +31,7 @@ describe('CryogenicProbingPage', () => {
     expect(screen.getByText(/liquid helium/i)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /probe station selection hub/i })).toHaveAttribute('href', '/wafer-probe-stations');
     expect(screen.getByRole('link', { name: /SEMISHARE product lines/i })).toHaveAttribute('href', '/wafer-probe-stations/semishare');
+    expect(screen.getByRole('link', { name: /cryogenic probe station buyer.s guide/i })).toHaveAttribute('href', '/insights/cryogenic-probe-station-buyers-guide');
     expect(screen.getByRole('link', { name: /Request a quote/i })).toHaveAttribute('href', '/request-quote?products=cryogenic-probe-station');
   });
 

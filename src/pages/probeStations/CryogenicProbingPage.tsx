@@ -9,8 +9,8 @@ export function CryogenicProbingPage() {
   return (
     <div className="bg-white text-slate-950">
       <SEO
-        title="Cryogenic Probe Stations: Low-Temperature Wafer Probing Guide"
-        description="When your science lives at low temperature — superconductors, quantum transport, 2D materials — the cryogenic stage is the most important part of the probe station. A buyer's guide for research labs."
+        title="Cryogenic Probe Stations: When Your Research Needs Low-Temperature Probing"
+        description="When superconductors, quantum transport, or 2D materials only show their physics cold, here is when a cryogenic-vacuum probe station is the right tool — and when a thermal chuck is enough."
         keywords="cryogenic probe station, low temperature probe station, vacuum probe station, quantum transport measurement"
         url="/applications/cryogenic-probing"
       />
@@ -74,6 +74,13 @@ export function CryogenicProbingPage() {
             SEMISHARE product lines
           </Link>{' '}
           — including cryogenic vacuum systems — available with US procurement and support.
+        </p>
+        <p className="mt-4 text-slate-700">
+          Ready to compare systems? Read the full{' '}
+          <Link to="/insights/cryogenic-probe-station-buyers-guide" className="font-semibold text-sky-700 underline">
+            cryogenic probe station buyer&rsquo;s guide
+          </Link>{' '}
+          for cooling architectures, spec interpretation, and an acceptance-ready RFQ checklist.
         </p>
       </section>
 
