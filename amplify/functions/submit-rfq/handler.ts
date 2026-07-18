@@ -11,6 +11,7 @@ import {
     RFQ_ATTACHMENT_MIME_TYPES,
     MAX_RFQ_ATTACHMENTS,
     MAX_RFQ_ATTACHMENT_SIZE,
+    type RfqEquipmentCategory,
 } from '../../lib/rfq/contract';
 import { invokeOrganizationApi } from '../../lib/organization/invoke-org-api';
 import { computeRfqScore } from '../../lib/organization/lead-score';
@@ -349,30 +350,40 @@ async function moveAttachments(rfqId: string, tempKeys: string[]): Promise<strin
 // Notifications
 // ---------------------------------------------------------------------------
 
+// Total map: every RfqEquipmentCategory must have a friendly label, so a newly
+// added category is a compile error here rather than a raw enum value in the email.
 /** Human-readable labels for equipment category values (used in Request Summary) */
-const equipmentCategoryLabels: Record<string, string> = {
+export const equipmentCategoryLabels: Record<RfqEquipmentCategory, string> = {
     'ICP': 'ICP Etching System',
     'PECVD': 'PECVD System',
     'Sputter': 'Sputter Deposition System',
+    'E-Beam': 'E-Beam Evaporation System',
     'ALD': 'ALD System',
     'RIE': 'RIE System',
     'IBE': 'Ion Beam Etching System',
     'HDP-CVD': 'HDP-CVD System',
     'Plasma-Cleaner': 'Plasma Cleaner',
+    'Stripper': 'Photoresist Stripping System',
+    'Coater-Developer': 'Coater / Developer',
     'Probe-Station': 'Wafer Probe Station',
     'Other': 'Other / Need Recommendation',
 };
 
+// Intentionally Partial: 'Other' has no sensible product-family phrase and falls
+// back to "plasma processing systems" in the greeting. Real categories should map.
 /** Short product-family phrase for the greeting line (no trailing "system/systems") */
-const equipmentGreetingPhrase: Record<string, string> = {
+export const equipmentGreetingPhrase: Partial<Record<RfqEquipmentCategory, string>> = {
     'ICP': 'ICP etching',
     'PECVD': 'PECVD',
     'Sputter': 'sputter deposition',
+    'E-Beam': 'e-beam evaporation',
     'ALD': 'ALD',
     'RIE': 'RIE',
     'IBE': 'ion beam etching',
     'HDP-CVD': 'HDP-CVD',
     'Plasma-Cleaner': 'plasma cleaner',
+    'Stripper': 'photoresist stripping',
+    'Coater-Developer': 'coater/developer',
     'Probe-Station': 'wafer probing',
 };
 
@@ -385,6 +396,8 @@ async function sendConfirmationEmail(data: RfqInput, referenceNumber: string): P
     }
 
     const equipmentLabel = equipmentCategoryLabels[data.equipmentCategory] ?? data.equipmentCategory;
+    // Partial map: undefined for 'Other', which falls back to the generic greeting.
+    const greetingPhrase = equipmentGreetingPhrase[data.equipmentCategory];
 
     // Build summary rows — only include fields that have values
     const summaryRows = [
@@ -413,7 +426,7 @@ async function sendConfirmationEmail(data: RfqInput, referenceNumber: string): P
 
 <p>Dear ${sanitize(data.name)},</p>
 
-<p>Thank you for your interest in our ${equipmentGreetingPhrase[data.equipmentCategory] ? sanitize(equipmentGreetingPhrase[data.equipmentCategory]) + ' systems' : 'plasma processing systems'}.</p>
+<p>Thank you for your interest in our ${greetingPhrase ? sanitize(greetingPhrase) + ' systems' : 'plasma processing systems'}.</p>
 
 <p>Your request has been logged under reference number <strong>${referenceNumber}</strong>. Our sales and technical team will review the submitted requirements and respond with the appropriate recommendation and quotation within 1–2 business days.</p>
 

@@ -1,6 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { APIGatewayProxyEventV2 } from 'aws-lambda';
-import { rfqSchema, uploadUrlSchema, isValidTempAttachmentKey } from './handler';
+import {
+    rfqSchema,
+    uploadUrlSchema,
+    isValidTempAttachmentKey,
+    equipmentCategoryLabels,
+    equipmentGreetingPhrase,
+} from './handler';
 import { RFQ_FIELD_LIMITS } from '../../lib/rfq/limits';
 import {
     RFQ_EQUIPMENT_CATEGORY_VALUES,
@@ -433,6 +439,33 @@ describe('isValidTempAttachmentKey', () => {
         ['an empty string', ''],
     ])('rejects %s', (_label, key) => {
         expect(isValidTempAttachmentKey(key)).toBe(false);
+    });
+});
+
+describe('equipmentCategoryLabels', () => {
+    // Every real category must render a friendly label in the confirmation and
+    // internal emails — a missing entry falls back to the raw enum value
+    // (e.g. "E-Beam"), which is the copy bug this map guards against. 'Other' is
+    // allowed to equal its own generic label; every other value must differ from
+    // the raw enum so we know a real friendly label was supplied.
+    const realCategories = RFQ_EQUIPMENT_CATEGORY_VALUES.filter((c) => c !== 'Other');
+
+    it.each(realCategories)('has a non-fallback label for %s', (category) => {
+        const label = equipmentCategoryLabels[category];
+        expect(label).toBeTruthy();
+        expect(label).not.toBe(category);
+    });
+
+    // equipmentGreetingPhrase is a Partial map, so the compiler cannot catch a
+    // newly added category that forgets a phrase — it would silently fall back to
+    // "plasma processing systems" in the greeting. This test guards that hole.
+    // 'Other' is intentionally omitted (no sensible product family).
+    it.each(realCategories)('has a greeting phrase for %s', (category) => {
+        expect(equipmentGreetingPhrase[category]).toBeTruthy();
+    });
+
+    it('intentionally omits a greeting phrase for Other', () => {
+        expect(equipmentGreetingPhrase['Other']).toBeUndefined();
     });
 });
 
