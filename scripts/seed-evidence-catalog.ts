@@ -11,18 +11,18 @@
  * DOI is Crossref-verified. A verbatim full-text instrument-string re-quote is
  * recommended before PUBLISH (Phase 2). NO dynamic citation counts stored.
  *
- * Usage:  set -a; source .env; set +a; npx tsx scripts/seed-evidence-catalog.ts
+ * Usage:  set -a; source .env; set +a; npx tsx scripts/seed-evidence-catalog.ts --apply
  * Raw GraphQL (local amplify_outputs.json introspection lacks Evidence).
- * Idempotent by slug.
+ * Duplicate-safe by slug: existing records are left untouched.
  */
 import { Amplify } from 'aws-amplify';
 import { generateClient } from 'aws-amplify/data';
 import { authenticate } from './lib/auth';
+import { createEvidenceIfMissing, requireApply } from './lib/evidenceSeedOperations';
 import amplifyOutputs from '../amplify_outputs.json';
 
 Amplify.configure(amplifyOutputs as any);
 const client: any = generateClient();
-const AUTH = { authMode: 'userPool' as const };
 
 const DISCLOSURE =
   'NineScrolls is the authorized distributor of this platform (Tailong Electronics / Beijing Zhongke Tailong Electronic Technology).';
@@ -66,23 +66,13 @@ const ROWS: Row[] = [
   ['pub-tailong-icpm100-pecvd-ga2o3-uv-mattod-2026', 'Solar-blind deep UV photodetector based on beta-Ga2O3/AlN/p-Si nBp tunneling photodiode for extreme temperature applications', ['icp-etcher', 'pecvd'], '10.1016/j.mattod.2026.103220', 'ICP-M-100; PECVD', 'Materials Today', 2026],
   // Sputter -> sputter
   ['pub-tailong-sputter100-cu-catalysis-acsami-2024', 'Tuning the Catalytic Selectivity Toward C2+ Oxygenate Products by Manipulating Cu Oxidation States in CO Electroreduction', ['sputter'], '10.1021/acsami.3c18238', 'Sputter 100', 'ACS Applied Materials & Interfaces', 2024],
-  ['pub-tailong-sputter-cu-nanotwin-mi-2024', 'A Study on Regulating the Residual Stress of Electroplated Cu by Manipulating the Nanotwin Directions', ['sputter'], '10.3390/mi15111370', 'Sputter (Tailong)', 'Micromachines', 2024],
-  ['pub-tailong-sputter-wo3-sensor-sensors-2025', 'Fabrication of Oxygen Vacancy-Rich WO3 Porous Thin Film by Sputter Deposition for Ultrasensitive Mustard-Gas Simulants Sensor', ['sputter'], '10.3390/s25103049', 'Sputter (Tailong)', 'Sensors', 2025],
 ];
 
-const BY_SLUG = `query BySlug($slug: String!){ listEvidenceBySlug(slug: $slug, limit: 1){ items { id } } }`;
-const CREATE = `mutation Create($input: CreateEvidenceInput!){ createEvidence(input: $input){ id slug status } }`;
-
-async function slugExists(slug: string): Promise<boolean> {
-  const res = await client.graphql({ query: BY_SLUG, variables: { slug }, ...AUTH });
-  return (res?.data?.listEvidenceBySlug?.items ?? []).length > 0;
-}
-
 async function main() {
+  requireApply(process.argv.slice(2), 'seed-evidence-catalog');
   await authenticate();
-  let created = 0, skipped = 0, failed = 0;
+  let created = 0, skipped = 0;
   for (const [slug, title, products, doi, instrument, journal, year] of ROWS) {
-    if (await slugExists(slug)) { console.log(`skip (exists): ${slug}`); skipped++; continue; }
     const meta = {
       manufacturerAsNamed: 'Tailong Electronics',
       manufacturerLegalName: 'Beijing Zhongke Tailong Electronic Technology Corporation (Nano-Promiso)',
@@ -100,12 +90,15 @@ async function main() {
       sourceUrl: `https://doi.org/${doi}`,
       meta: JSON.stringify(meta),
     };
-    const res = await client.graphql({ query: CREATE, variables: { input }, ...AUTH });
-    if (res?.errors?.length) { console.error(`FAIL ${slug}:`, JSON.stringify(res.errors)); failed++; continue; }
-    console.log(`created: ${slug}  (${products.join('+')})`);
-    created++;
+    const outcome = await createEvidenceIfMissing(client, input);
+    if (outcome === 'created') {
+      console.log(`created: ${slug}  (${products.join('+')})`);
+      created++;
+    } else {
+      console.log(`skip (exists): ${slug}`);
+      skipped++;
+    }
   }
-  console.log(`\nDone. created=${created} skipped=${skipped} failed=${failed} total=${ROWS.length}`);
-  if (failed) process.exitCode = 1;
+  console.log(`\nDone. created=${created} skipped=${skipped} total=${ROWS.length}`);
 }
 main().catch((e) => { console.error(e); process.exit(1); });

@@ -15,19 +15,28 @@ of this platform, so each `meta.relationshipDisclosure` states that honestly.
    (`client.graphql`) against the deployed schema rather than the typed client.
 2. Admin Cognito creds in `.env`: `ADMIN_EMAIL`, `ADMIN_PASSWORD`.
 
+These scripts write to the backend named by `amplify_outputs.json` (currently
+production). Verify that file before running. Every new mutating script requires
+an explicit `--apply` argument and rejects unknown arguments.
+
 ## Run
 
 ```bash
 set -a; source .env; set +a
 npx tsx scripts/seed-evidence.ts                  # 2  — first ICP-100A drafts (merged in #284)
-npx tsx scripts/seed-evidence-spotlights.ts       # 5  — Publication Spotlight articles
-npx tsx scripts/seed-evidence-catalog.ts          # 26 — internal Tailong citation catalog
-npx tsx scripts/seed-evidence-scholar-verified.ts # 12 new + 3 refinements
-npx tsx scripts/seed-evidence-fulltext.ts         # 6 new + 1 refinement
+npx tsx scripts/seed-evidence-spotlights.ts --apply       # 5  — Publication Spotlight articles
+npx tsx scripts/seed-evidence-catalog.ts --apply          # 24 — vetted internal citation catalog
+npx tsx scripts/correct-evidence-false-positives.ts --apply # archive 2 records from older runs
+npx tsx scripts/seed-evidence-scholar-verified.ts --apply # 12 new + 3 refinements
+npx tsx scripts/seed-evidence-fulltext.ts --apply         # 6 new + 1 refinement
+npx tsx scripts/classify-evidence-publish-priority.ts --apply # classify only explicit known slugs
 ```
 
-All scripts are **idempotent** (skip a slug that already exists via
-`listEvidenceBySlug`), so re-running is safe.
+Create steps are **duplicate-safe by slug**: an existing record is skipped and
+left untouched. Refinements, the false-positive correction, and the classifier
+are deterministically convergent and skip records already at the desired state.
+The classifier preflights all active publications and aborts before any write if
+it encounters a slug not in its explicit classification table.
 
 ## What each seeds & its verification tier
 
@@ -35,7 +44,7 @@ All scripts are **idempotent** (skip a slug that already exists via
 |---|---|---|
 | `seed-evidence.ts` | 2 | ICP-100A papers, full-text-verified quotes (PhotoniX 2022, Nanomaterials 2020) |
 | `seed-evidence-spotlights.ts` | 5 | Our own DynamoDB **"Publication Spotlight"** insight articles; instrument quoted verbatim from article bodies (written from full text) |
-| `seed-evidence-catalog.ts` | 26 | Internal catalog `泰龙电子产品Google_Scholar引用文献统计.md`; **DOIs Crossref-verified**; verbatim full-text re-quote recommended before publish |
+| `seed-evidence-catalog.ts` | 24 | Vetted internal catalog `泰龙电子产品Google_Scholar引用文献统计.md`; **DOIs Crossref-verified**; verbatim full-text re-quote recommended before publish |
 | `seed-evidence-scholar-verified.ts` | 12 (+3 refine) | Google Scholar re-verification (keyword "Tailong Electronics"); **verbatim Scholar snippet** stored in `meta.verification`; DOIs Crossref-verified |
 | `seed-evidence-fulltext.ts` | 6 (+1 refine) | Exhaustive full-text pass (open-access PDFs / PMC / Nature Protocols); each has a verbatim quote from full text |
 
@@ -62,7 +71,8 @@ quote). **No dynamic "cited-by" counts are stored** (they change over time).
   re-quote pass, 2026-07-13): `sputter-cu-nanotwin-mi-2024` (uses a non-Tailong
   "VCT 300" sputter) and `sputter-wo3-sensor-sensors-2025` ("Tailong" there is a
   **gas supplier**, "Anxing Tailong Gas Chemical", ≠ Beijing Zhongke Tailong).
-  Set to `status: archived` with `meta.removedReason`; recommend hard delete.
+  `correct-evidence-false-positives.ts` repeatably converges any records from
+  older runs to `status: archived` with a checked `meta.removedReason`.
 
 ## Result (verified 2026-07-13)
 
@@ -92,7 +102,7 @@ wave1 **6** · wave2 **32** · wave3 **14**; tier A **45** / B **7**; launchElig
 their product pages show no Evidence module at launch (by design — "no strong evidence,
 don't show" beats forcing coverage with an incidental-use paper). "One record per product
 line" is a **soft** goal; tier-A + non-incidental are the **hard** gates. Re-run anytime
-(idempotent; recomputes the 4 fields).
+(deterministically convergent; unknown active publication slugs abort before writes).
 
 ## Before publishing (Phase 2)
 

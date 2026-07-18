@@ -7,17 +7,22 @@
  * (2) Apply 3 model-string refinements to already-seeded records where Scholar
  *     showed a more specific model than the catalog had.
  *
- * Usage:  set -a; source .env; set +a; npx tsx scripts/seed-evidence-scholar-verified.ts
- * Raw GraphQL (Evidence not in local introspection). Idempotent create by slug.
+ * Usage:  set -a; source .env; set +a; npx tsx scripts/seed-evidence-scholar-verified.ts --apply
+ * Raw GraphQL (Evidence not in local introspection). Creates are duplicate-safe
+ * by slug; refinements converge to deterministic metadata and summary values.
  */
 import { Amplify } from 'aws-amplify';
 import { generateClient } from 'aws-amplify/data';
 import { authenticate } from './lib/auth';
+import {
+  createEvidenceIfMissing,
+  refineEvidence,
+  requireApply,
+} from './lib/evidenceSeedOperations';
 import amplifyOutputs from '../amplify_outputs.json';
 
 Amplify.configure(amplifyOutputs as any);
 const client: any = generateClient();
-const AUTH = { authMode: 'userPool' as const };
 const DISCLOSURE =
   'NineScrolls is the authorized distributor of this platform (Tailong Electronics / Beijing Zhongke Tailong Electronic Technology).';
 const toolType = (p: string[]) =>
@@ -43,29 +48,20 @@ const NEW: Row[] = [
   ['pub-tailong-sputter-tio2-cuox-robots-raits-2026', 'TiO2-CuOx Coatings with Self-Cleaning and Antibacterial Functions and Their Potential Applications in Medical Robots', ['sputter'], '10.1109/RAITS68656.2026.11580152', 'HighThroughput100-6A', '2026 International Conference (IEEE)', 2026, 'the HighThroughput100-6A high-throughput magnetron sputtering coating machine manufactured by Tailong Electronics.'],
 ];
 
-// [slug, newInstrument] — refine to Scholar's exact model
-const REFINE: [string, string][] = [
-  ['pub-tailong-icp-si3d-ao-2017', 'ICP-100A'],       // "ICP-100A, TAILONG ELECTRONICS"
-  ['pub-tailong-pecvd-sio2-tft-tsf-2024', 'ICP-PECVD-150'], // "TAILONG ELECTRONICS ICP-PECVD-150"
-  ['pub-tailong-rie-2d-logic-acsami-2024', 'RIE-100'],      // "argon plasma etching machine (Tailong Electronics RIE 100)"
+// [slug, newInstrument, originalInstrument] — refine to Scholar's exact model
+const REFINE: [string, string, string][] = [
+  ['pub-tailong-icp-si3d-ao-2017', 'ICP-100A', 'ICP (Tailong)'],
+  ['pub-tailong-pecvd-sio2-tft-tsf-2024', 'ICP-PECVD-150', 'PECVD (Tailong)'],
+  ['pub-tailong-rie-2d-logic-acsami-2024', 'RIE-100', 'RIE (Tailong)'],
 ];
 
-const BY_SLUG = `query B($s:String!){ listEvidenceBySlug(slug:$s, limit:1){ items{ id slug meta summary products } } }`;
-const CREATE = `mutation C($i:CreateEvidenceInput!){ createEvidence(input:$i){ id slug } }`;
-const UPDATE = `mutation U($i:UpdateEvidenceInput!){ updateEvidence(input:$i){ id slug } }`;
-
-async function bySlug(slug: string) {
-  const r = await client.graphql({ query: BY_SLUG, variables: { s: slug }, ...AUTH });
-  return r?.data?.listEvidenceBySlug?.items?.[0] ?? null;
-}
-
 async function main() {
+  requireApply(process.argv.slice(2), 'seed-evidence-scholar-verified');
   await authenticate();
 
   // (1) seed new
   let created = 0, skipped = 0;
   for (const [slug, title, products, doi, instrument, journal, year, snippet] of NEW) {
-    if (await bySlug(slug)) { console.log(`skip (exists): ${slug}`); skipped++; continue; }
     const meta = {
       manufacturerAsNamed: 'Tailong Electronics',
       manufacturerLegalName: 'Beijing Zhongke Tailong Electronic Technology Corporation (Nano-Promiso)',
@@ -77,27 +73,36 @@ async function main() {
       verification: `Google Scholar (keyword "Tailong Electronics", verified 2026-07-13) snippet: "${snippet}" DOI Crossref-verified.`,
     };
     const input = { slug, title, type: 'publication', status: 'draft', products, summary: summaryFor(journal, year, instrument, products), sourceUrl: `https://doi.org/${doi}`, meta: JSON.stringify(meta) };
-    const r = await client.graphql({ query: CREATE, variables: { i: input }, ...AUTH });
-    if (r?.errors?.length) { console.error(`FAIL ${slug}:`, JSON.stringify(r.errors)); continue; }
-    console.log(`created: ${slug}  (${products.join('+')}, ${instrument})`); created++;
+    const outcome = await createEvidenceIfMissing(client, input);
+    if (outcome === 'created') {
+      console.log(`created: ${slug}  (${products.join('+')}, ${instrument})`);
+      created++;
+    } else {
+      console.log(`skip (exists): ${slug}`);
+      skipped++;
+    }
   }
 
   // (2) refine existing
-  let refined = 0;
-  for (const [slug, newInstrument] of REFINE) {
-    const rec = await bySlug(slug);
-    if (!rec) { console.log(`refine skip (not found): ${slug}`); continue; }
-    const meta = rec.meta ? JSON.parse(rec.meta) : {};
-    const before = meta.instrumentAsNamed;
-    meta.instrumentAsNamed = newInstrument;
-    meta.instrumentRefinedFrom = before;
-    meta.instrumentRefinedVia = 'Google Scholar "Tailong Electronics" verbatim snippet, 2026-07-13';
-    const summary = summaryFor(meta.journal, meta.year, newInstrument, rec.products ?? []);
-    const r = await client.graphql({ query: UPDATE, variables: { i: { id: rec.id, meta: JSON.stringify(meta), summary } }, ...AUTH });
-    if (r?.errors?.length) { console.error(`REFINE FAIL ${slug}:`, JSON.stringify(r.errors)); continue; }
-    console.log(`refined: ${slug}  ${before} -> ${newInstrument}`); refined++;
+  let refined = 0, converged = 0;
+  for (const [slug, newInstrument, originalInstrument] of REFINE) {
+    const outcome = await refineEvidence(client, {
+      slug,
+      instrument: newInstrument,
+      originalInstrument,
+      via: 'Google Scholar "Tailong Electronics" verbatim snippet, 2026-07-13',
+      summaryFor: (record, meta) => summaryFor(
+        meta.journal,
+        meta.year,
+        newInstrument,
+        record.products ?? [],
+      ),
+    });
+    if (outcome === 'missing') console.log(`refine skip (not found): ${slug}`);
+    if (outcome === 'converged') { console.log(`refine converged: ${slug}`); converged++; }
+    if (outcome === 'refined') { console.log(`refined: ${slug}  ${originalInstrument} -> ${newInstrument}`); refined++; }
   }
 
-  console.log(`\nDone. created=${created} skipped=${skipped} refined=${refined}`);
+  console.log(`\nDone. created=${created} skipped=${skipped} refined=${refined} converged=${converged}`);
 }
 main().catch((e) => { console.error(e); process.exit(1); });

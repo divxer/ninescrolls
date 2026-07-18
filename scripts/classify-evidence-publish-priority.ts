@@ -13,16 +13,17 @@
  * rest of the launch-eligible set; wave3 = everything else (B-tier awaiting re-quote,
  * incidental usage, snippet-tier). ibe-ribe/striper/ald stay wave3 (soft-goal only).
  *
- * Usage: set -a; source .env; set +a; npx tsx scripts/classify-evidence-publish-priority.ts
- * Idempotent (recomputes + overwrites the 4 fields each run). Raw GraphQL.
+ * Usage: set -a; source .env; set +a; npx tsx scripts/classify-evidence-publish-priority.ts --apply
+ * Deterministically convergent: preflights the complete active publication set,
+ * refuses unknown slugs before any write, and skips already-converged records.
  */
 import { Amplify } from 'aws-amplify';
 import { generateClient } from 'aws-amplify/data';
 import { authenticate } from './lib/auth';
+import { classifyPublications, requireApply } from './lib/evidenceSeedOperations';
 import amplifyOutputs from '../amplify_outputs.json';
 Amplify.configure(amplifyOutputs as any);
 const client: any = generateClient();
-const AUTH = { authMode: 'userPool' as const };
 
 // slug -> [verificationTier, capabilityRole]
 const CLASS: Record<string, ['A' | 'B', 'primary' | 'substantial' | 'incidental']> = {
@@ -99,37 +100,14 @@ const WAVE1 = new Set([
   'pub-tailong-sputter100-cu-catalysis-acsami-2024',
 ]);
 
-const LIST = `query L($t:String){ listEvidences(limit:200,nextToken:$t){ items{ id slug type status meta } nextToken } }`;
-const UPDATE = `mutation U($i:UpdateEvidenceInput!){ updateEvidence(input:$i){ id } }`;
-
 async function main() {
+  requireApply(process.argv.slice(2), 'classify-evidence-publish-priority');
   await authenticate();
-  let items: any[] = [], t: string | null = null;
-  do {
-    const r: any = await client.graphql({ query: LIST, variables: { t }, ...AUTH });
-    items.push(...(r.data.listEvidences.items ?? [])); t = r.data.listEvidences.nextToken;
-  } while (t);
-  const pubs = items.filter((i) => i.type === 'publication' && i.status !== 'archived');
-
-  const tally: any = { wave1: 0, wave2: 0, wave3: 0, A: 0, B: 0, primary: 0, substantial: 0, incidental: 0, eligible: 0 };
-  const unmapped: string[] = [];
-  for (const rec of pubs) {
-    const cls = CLASS[rec.slug];
-    if (!cls) { unmapped.push(rec.slug); }
-    const [tier, role] = cls ?? ['B', 'incidental'];
-    const launchEligible = tier === 'A' && role !== 'incidental';
-    const publishPriority = WAVE1.has(rec.slug) ? 'wave1' : launchEligible ? 'wave2' : 'wave3';
-    const meta = rec.meta ? JSON.parse(rec.meta) : {};
-    meta.verificationTier = tier; meta.capabilityRole = role;
-    meta.launchEligible = launchEligible; meta.publishPriority = publishPriority;
-    await client.graphql({ query: UPDATE, variables: { i: { id: rec.id, meta: JSON.stringify(meta) } }, ...AUTH });
-    tally[publishPriority]++; tally[tier]++; tally[role]++; if (launchEligible) tally.eligible++;
-  }
-  console.log(`classified ${pubs.length} publication records`);
+  const { classified, updated, converged, tally } = await classifyPublications(client, CLASS, WAVE1);
+  console.log(`classified ${classified} publication records (${updated} updated, ${converged} converged)`);
   console.log('  publishPriority:', JSON.stringify({ wave1: tally.wave1, wave2: tally.wave2, wave3: tally.wave3 }));
   console.log('  verificationTier:', JSON.stringify({ A: tally.A, B: tally.B }));
   console.log('  capabilityRole:', JSON.stringify({ primary: tally.primary, substantial: tally.substantial, incidental: tally.incidental }));
   console.log('  launchEligible:', tally.eligible);
-  if (unmapped.length) console.log('  ⚠ UNMAPPED (defaulted B/incidental/wave3):', JSON.stringify(unmapped));
 }
 main().catch((e) => { console.error(e); process.exit(1); });

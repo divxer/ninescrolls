@@ -4,15 +4,20 @@
  * search index snippet, each naming a Tailong / Beijing Zhongke Tailong tool
  * verbatim (quote in meta.verification). Opens `striper` + `ibe-ribe` lines.
  * Also refines the ZnS record (RIE -> RIE-100, per Zhongke-Tailong snippet).
- * status:draft. Raw GraphQL. Idempotent by slug.
+ * status:draft. Raw GraphQL. Usage requires --apply. Creates are duplicate-safe
+ * by slug; the refinement converges without replacing original provenance.
  */
 import { Amplify } from 'aws-amplify';
 import { generateClient } from 'aws-amplify/data';
 import { authenticate } from './lib/auth';
+import {
+  createEvidenceIfMissing,
+  refineEvidence,
+  requireApply,
+} from './lib/evidenceSeedOperations';
 import amplifyOutputs from '../amplify_outputs.json';
 Amplify.configure(amplifyOutputs as any);
 const client: any = generateClient();
-const AUTH = { authMode: 'userPool' as const };
 const DISCLOSURE = 'NineScrolls is the authorized distributor of this platform (Tailong Electronics / Beijing Zhongke Tailong Electronic Technology).';
 
 // [slug, title, products, doi, instrument, journal, year, quote, tier]
@@ -26,8 +31,8 @@ const NEW: Row[] = [
   ['pub-tailong-rie-graphene-molecule-junction-natprotoc-2023', 'Graphene-molecule-graphene single-molecule junctions to detect electronic reactions at the molecular scale', ['rie-etcher'], '10.1038/s41596-023-00822-x', 'RIE (Tailong, no model given)', 'Nature Protocols', 2023, 'Reactive ion etching machine (Tailong Electronics)', "full-text (author open-access PDF)"],
 ];
 
-const REFINE: [string, string, string][] = [
-  ['pub-tailong-rie-zns-antireflection-oe-2021', 'RIE-100', 'Beijing Zhongke Tailong Electronic Technology Co. Ltd RIE-100 (Optics Express 2021, verbatim)'],
+const REFINE: [string, string, string, string][] = [
+  ['pub-tailong-rie-zns-antireflection-oe-2021', 'RIE-100', 'RIE (Tailong)', 'Beijing Zhongke Tailong Electronic Technology Co. Ltd RIE-100 (Optics Express 2021, verbatim)'],
 ];
 
 const toolType = (p: string[]) => {
@@ -43,16 +48,11 @@ const toolType = (p: string[]) => {
 const summaryFor = (j: string, y: number, inst: string, p: string[]) =>
   `${j} (${y}) — peer-reviewed research that used Tailong Electronics process equipment (${inst}; ${toolType(p)}). NineScrolls is the authorized distributor of this platform.`;
 
-const BY_SLUG = `query B($s:String!){ listEvidenceBySlug(slug:$s,limit:1){ items{ id meta products } } }`;
-const CREATE = `mutation C($i:CreateEvidenceInput!){ createEvidence(input:$i){ id slug } }`;
-const UPDATE = `mutation U($i:UpdateEvidenceInput!){ updateEvidence(input:$i){ id slug } }`;
-const bySlug = async (s: string) => (await client.graphql({ query: BY_SLUG, variables: { s }, ...AUTH }))?.data?.listEvidenceBySlug?.items?.[0] ?? null;
-
 async function main() {
+  requireApply(process.argv.slice(2), 'seed-evidence-fulltext');
   await authenticate();
-  let created = 0, skipped = 0, refined = 0;
+  let created = 0, skipped = 0, refined = 0, converged = 0;
   for (const [slug, title, products, doi, instrument, journal, year, quote, tier] of NEW) {
-    if (await bySlug(slug)) { console.log(`skip (exists): ${slug}`); skipped++; continue; }
     const meta = {
       manufacturerAsNamed: 'Beijing Zhongke Tailong Electronic Technology', manufacturerLegalName: 'Beijing Zhongke Tailong Electronic Technology Corporation (Nano-Promiso)',
       instrumentAsNamed: instrument, relationshipDisclosure: DISCLOSURE, journal, year, doi, verifiedAt: '2026-07-13',
@@ -60,20 +60,32 @@ async function main() {
       verification: `Full-text verified (${tier}): "${quote}" DOI: ${doi}.`,
     };
     const input = { slug, title, type: 'publication', status: 'draft', products, summary: summaryFor(journal, year, instrument, products), sourceUrl: `https://doi.org/${doi}`, meta: JSON.stringify(meta) };
-    const r = await client.graphql({ query: CREATE, variables: { i: input }, ...AUTH });
-    if (r?.errors?.length) { console.error(`FAIL ${slug}:`, JSON.stringify(r.errors)); continue; }
-    console.log(`created: ${slug}  (${products.join('+')}, ${instrument})`); created++;
+    const outcome = await createEvidenceIfMissing(client, input);
+    if (outcome === 'created') {
+      console.log(`created: ${slug}  (${products.join('+')}, ${instrument})`);
+      created++;
+    } else {
+      console.log(`skip (exists): ${slug}`);
+      skipped++;
+    }
   }
-  for (const [slug, newInstrument, note] of REFINE) {
-    const rec = await bySlug(slug);
-    if (!rec) { console.log(`refine skip (not found): ${slug}`); continue; }
-    const meta = rec.meta ? JSON.parse(rec.meta) : {};
-    const before = meta.instrumentAsNamed; meta.instrumentAsNamed = newInstrument; meta.instrumentRefinedFrom = before; meta.instrumentRefinedVia = note;
-    const summary = summaryFor(meta.journal, meta.year, newInstrument, rec.products ?? []);
-    const r = await client.graphql({ query: UPDATE, variables: { i: { id: rec.id, meta: JSON.stringify(meta), summary } }, ...AUTH });
-    if (r?.errors?.length) { console.error(`REFINE FAIL ${slug}:`, JSON.stringify(r.errors)); continue; }
-    console.log(`refined: ${slug}  ${before} -> ${newInstrument}`); refined++;
+  for (const [slug, newInstrument, originalInstrument, note] of REFINE) {
+    const outcome = await refineEvidence(client, {
+      slug,
+      instrument: newInstrument,
+      originalInstrument,
+      via: note,
+      summaryFor: (record, meta) => summaryFor(
+        meta.journal,
+        meta.year,
+        newInstrument,
+        record.products ?? [],
+      ),
+    });
+    if (outcome === 'missing') console.log(`refine skip (not found): ${slug}`);
+    if (outcome === 'converged') { console.log(`refine converged: ${slug}`); converged++; }
+    if (outcome === 'refined') { console.log(`refined: ${slug}  ${originalInstrument} -> ${newInstrument}`); refined++; }
   }
-  console.log(`\nDone. created=${created} skipped=${skipped} refined=${refined}`);
+  console.log(`\nDone. created=${created} skipped=${skipped} refined=${refined} converged=${converged}`);
 }
 main().catch((e) => { console.error(e); process.exit(1); });

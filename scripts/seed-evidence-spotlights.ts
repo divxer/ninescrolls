@@ -10,18 +10,18 @@
  * is undefined. The GraphQL endpoint + userPool auth ARE present, so raw mutations
  * validate against the deployed schema. Same workaround used for the first 2 drafts.
  *
- * Usage:  set -a; source .env; set +a; npx tsx scripts/seed-evidence-spotlights.ts
- * Idempotent: skips a record whose slug already exists (listEvidenceBySlug).
+ * Usage:  set -a; source .env; set +a; npx tsx scripts/seed-evidence-spotlights.ts --apply
+ * Duplicate-safe: skips a record whose slug already exists (listEvidenceBySlug).
  * NO dynamic citation counts stored.
  */
 import { Amplify } from 'aws-amplify';
 import { generateClient } from 'aws-amplify/data';
 import { authenticate } from './lib/auth';
+import { createEvidenceIfMissing, requireApply } from './lib/evidenceSeedOperations';
 import amplifyOutputs from '../amplify_outputs.json';
 
 Amplify.configure(amplifyOutputs as any);
 const client: any = generateClient();
-const AUTH = { authMode: 'userPool' as const };
 
 const DISCLOSURE =
   'NineScrolls is the authorized distributor of this platform (Beijing Zhongke Tailong Electronics).';
@@ -136,30 +136,12 @@ const RECORDS: Seed[] = [
   },
 ];
 
-const BY_SLUG = /* GraphQL */ `
-  query BySlug($slug: String!) {
-    listEvidenceBySlug(slug: $slug, limit: 1) { items { id slug } }
-  }`;
-const CREATE = /* GraphQL */ `
-  mutation Create($input: CreateEvidenceInput!) {
-    createEvidence(input: $input) { id slug status type }
-  }`;
-
-async function slugExists(slug: string): Promise<boolean> {
-  const res = await client.graphql({ query: BY_SLUG, variables: { slug }, ...AUTH });
-  return (res?.data?.listEvidenceBySlug?.items ?? []).length > 0;
-}
-
 async function main() {
+  requireApply(process.argv.slice(2), 'seed-evidence-spotlights');
   await authenticate();
   let created = 0;
   let skipped = 0;
   for (const rec of RECORDS) {
-    if (await slugExists(rec.slug)) {
-      console.log(`skip (exists): ${rec.slug}`);
-      skipped++;
-      continue;
-    }
     const input = {
       slug: rec.slug,
       title: rec.title,
@@ -171,15 +153,14 @@ async function main() {
       sourceUrl: rec.sourceUrl,
       meta: JSON.stringify(rec.meta), // AWSJSON must be a JSON string
     };
-    const res = await client.graphql({ query: CREATE, variables: { input }, ...AUTH });
-    if (res?.errors?.length) {
-      console.error(`FAIL ${rec.slug}:`, JSON.stringify(res.errors));
-      process.exitCode = 1;
-      continue;
+    const outcome = await createEvidenceIfMissing(client, input);
+    if (outcome === 'created') {
+      console.log(`created: ${rec.slug}`);
+      created++;
+    } else {
+      console.log(`skip (exists): ${rec.slug}`);
+      skipped++;
     }
-    const c = res.data.createEvidence;
-    console.log(`created: ${c.slug}  (id ${c.id}, ${c.type}/${c.status})`);
-    created++;
   }
   console.log(`\nDone. created=${created} skipped=${skipped} total=${RECORDS.length}`);
 }
