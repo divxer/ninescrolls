@@ -49,6 +49,12 @@ describe('canonicalizeRfqPayload', () => {
   it('rejects non-JSON payload values instead of silently changing the binding', () => {
     expect(() => canonicalizeRfqPayload({ ...PAYLOAD, bad: Number.NaN })).toThrow();
     expect(() => canonicalizeRfqPayload({ ...PAYLOAD, bad: () => undefined })).toThrow();
+    expect(() => canonicalizeRfqPayload({ ...PAYLOAD, bad: new Array(1) })).toThrow();
+  });
+
+  it('uses locale-independent code-unit ordering for object keys', () => {
+    expect(canonicalizeRfqPayload({ a: 2, Z: 1, '!': 0 }))
+      .toBe('{"!":0,"Z":1,"a":2}');
   });
 });
 

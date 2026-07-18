@@ -35,12 +35,13 @@ export function canonicalizeRfqPayload(payload: Record<string, unknown>): string
     seen.add(value);
     let result: unknown;
     if (Array.isArray(value)) {
+      if (Object.keys(value).length !== value.length) throw new TypeError('RFQ payload arrays must not be sparse');
       result = value.map(canonicalize);
     } else {
       if (Object.getPrototypeOf(value) !== Object.prototype) throw new TypeError('RFQ payload objects must be plain');
       result = Object.fromEntries(Object.entries(value as Record<string, unknown>)
         .filter(([key, child]) => !EXCLUDED_FROM_BINDING.has(key) && child !== undefined)
-        .sort(([a], [b]) => a.localeCompare(b))
+        .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
         .map(([key, child]) => [key, canonicalize(child)]));
     }
     seen.delete(value);
