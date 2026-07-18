@@ -1,5 +1,49 @@
 # RFQ Secure Drafts P4b — Idempotent Submission & Draft→Pending Upgrade Plan
 
+> # ⛔ BLOCKED — DO NOT IMPLEMENT THE TASKS BELOW AS WRITTEN
+>
+> Independent plan review (2026-07-15) returned **Not ready to merge — architectural**, and
+> the specific claims were verified against merged `origin/main`. This draft references a P4a
+> API that does not exist and mis-orders the live cutover. **Superseded by the four-phase
+> restructure in "Revised architecture" immediately below**; the original tasks are kept only
+> as raw material. The detailed P4b-1…P4b-4 task plans will be written from the revised
+> architecture and re-reviewed before any code.
+>
+> ## Verified corrections (checked against `origin/main`)
+>
+> 1. **`checkReceipt(deps, receiptId, binding)` now *requires* `binding`** (the #309 review made
+>    it mandatory; it dereferences `binding` unconditionally). The plan's "no-binding pre-probe"
+>    does not exist — the submit path must canonicalize + compute the binding *before* the single
+>    receipt check.
+> 2. **`recordReceipt` is a standalone conditional `PutCommand`**, not a transaction-op builder.
+>    A new helper must build the receipt as a `TransactWrite` **Put** item; `recordReceipt` cannot
+>    be composed into the transaction.
+> 3. **Live success response is `200 { success: true, message, referenceNumber, rfqId }`** — not
+>    `{ referenceNumber, rfqId }` and not `201`. The idempotent path (and any replay) must return
+>    the identical shape; the smoke test must assert 200.
+> 4. **Do not hardcode "129 tests."** Require the *entire existing `handler.test.ts` suite to pass
+>    unchanged* and record the actual count at execution time.
+>
+> ## Blocking architectural fixes folded into the revision
+>
+> - **Effect dependency order is real and must be preserved:** `org-upsert → (visitor-bridge, CRM-emit) → attachment-move → emails`. Six independent outbox records are wrong — the outbox is a **dependency-ordered state machine** (a stage completes before its dependents are eligible), not a flat fan-out.
+> - **Cutover ordering must be frontend-first.** Requiring `X-RFQ-Submit-Key` before P6 sends it 400s **every** live submission — the exact outage class #296 fixed. Order: (a) frontend sends the key (compat, ignored server-side), (b) handler *opt-in* accepts it, (c) only later make it mandatory.
+> - **Flag rollback must not duplicate.** A receipt-bearing retry that falls back to the legacy random-id path creates a duplicate RFQ + duplicate effects. The legacy branch must stay reachable by receipt, or rollback must drain in-flight receipts first — rollback semantics are a design task, not an afterthought.
+> - **Email promise, stated precisely:** claim-before-send guarantees *at most one automatic send attempt, delivery may be lost, never auto-resent* — it does **not** guarantee SendGrid at-most-once delivery.
+> - **Executable design required for:** attachment-move idempotency, `TransactionCanceledException` cause classification, stream poison-record handling, DLQ, retry/backoff, and observability/alarms.
+>
+> ## Revised structure — four phases, split into four PRs (reviewer's conclusion)
+>
+> - **P4b-1** — receipt-as-transaction-item builder (new helper, not `recordReceipt`) + the atomic submit transaction builder (direct `Put` / draft-upgrade conditional `Update`) + the **dependency-ordered outbox state machine** model. Pure, `fakeDdb`-tested, dark.
+> - **P4b-2** — `rfq-outbox-worker` (DynamoDB Streams + Lambda event-source mapping — **not** an EventBridge Pipe), stage-ordered drain, DLQ, retries, alarms, at-most-once email claim. Deployed **dark**.
+> - **P4b-3** — frontend sends `X-RFQ-Submit-Key` (compat) + handler **opt-in** accepts the idempotent path; mandatory validation stays OFF; full legacy suite unchanged.
+> - **P4b-4** — make the header mandatory, soak, then remove the legacy branch + flag. Rollback drains in-flight receipts.
+>
+> Review conclusions on the four questions: (1) full RFQ Put/Update + receipt conditional Put + a *minimal* outbox stage in one transaction, ambiguous result resolved by a **strongly-consistent** receipt read; (2) claim-before-send with the precise promise above; (3) **must split** — not one PR; (4) **DynamoDB Streams + Lambda event-source mapping**, not a Pipe.
+>
+> ---
+> _Original (flawed) draft below — retained for reference only, NOT for implementation._
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 >
 > **⚠️ This is the only plan in the RFQ-drafts series that changes the LIVE production `submit-rfq` path** (the Lambda whose Probe-Station outage was fixed in #296). Treat every task as touching revenue-critical code: the full 129-test `handler.test.ts` suite must pass after each task, and a post-deploy smoke test on real submission is mandatory before removing the feature flag.
