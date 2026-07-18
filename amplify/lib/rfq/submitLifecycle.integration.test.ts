@@ -35,7 +35,10 @@ function upgradeParams(over: Partial<Extract<SubmitTransactionParams, { kind: 'd
     draftPrecondition: { storedHash: STORED_HASH, expectedVersion: 1 }, ...over,
   };
 }
-const submit = (f: FakeDdb, p: SubmitTransactionParams) => f.send(new TransactWriteCommand(buildSubmitTransaction(p)));
+// FakeDdb.send takes a restrictive CommandLike (input typed Record<string, never>); the
+// established repo convention casts real commands with `as never` (see draftStore.test.ts).
+const send = (f: FakeDdb, cmd: unknown) => f.send(cmd as never);
+const submit = (f: FakeDdb, p: SubmitTransactionParams) => send(f, new TransactWriteCommand(buildSubmitTransaction(p)));
 
 function seedDraftWithStaleFields(f: FakeDdb) {
   const item = buildDraftItem({
@@ -111,12 +114,12 @@ describe('effect lifecycle — org branch', () => {
   it('claim → complete backfills matchedOrgId and creates visitor+crm successors', async () => {
     const f = new FakeDdb();
     await submit(f, directParams());
-    await f.send(buildEffectClaimItems({
+    await send(f, buildEffectClaimItems({
       tableName: 'T', rfqId: RFQ_ID, effect: 'org-upsert', owner: 'W', leaseMs: 30000,
       now: '2026-07-18T09:30:10.000Z', from: 'pending', expectedVersion: 0,
     }));
     expect(f.store.get(`RFQ#${RFQ_ID}|OUTBOX#org-upsert`)!.status).toBe('processing');
-    await f.send(new TransactWriteCommand({
+    await send(f, new TransactWriteCommand({
       TransactItems: buildEffectCompletionItems({
         tableName: 'T', rfqId: RFQ_ID, owner: 'W', claimedVersion: 1, now: '2026-07-18T09:30:11.000Z',
         effect: 'org-upsert', result: { matchedOrgId: 'org-123' },
@@ -132,7 +135,7 @@ describe('effect lifecycle — org branch', () => {
   it('a replayed completion (stale claimedVersion) cancels — no double successors', async () => {
     const f = new FakeDdb();
     await submit(f, directParams());
-    await f.send(buildEffectClaimItems({
+    await send(f, buildEffectClaimItems({
       tableName: 'T', rfqId: RFQ_ID, effect: 'org-upsert', owner: 'W', leaseMs: 30000,
       now: '2026-07-18T09:30:10.000Z', from: 'pending', expectedVersion: 0,
     }));
@@ -142,26 +145,26 @@ describe('effect lifecycle — org branch', () => {
         effect: 'org-upsert', result: { matchedOrgId: 'org-123' },
       }),
     });
-    await f.send(complete());
-    await expect(f.send(complete())).rejects.toMatchObject({ name: 'TransactionCanceledException' });
+    await send(f, complete());
+    await expect(send(f, complete())).rejects.toMatchObject({ name: 'TransactionCanceledException' });
   });
 
   it('fences a stale worker after an expired-lease re-claim', async () => {
     const f = new FakeDdb();
     await submit(f, directParams());
     // Worker A claims (v0→v1) with a short lease.
-    await f.send(buildEffectClaimItems({
+    await send(f, buildEffectClaimItems({
       tableName: 'T', rfqId: RFQ_ID, effect: 'org-upsert', owner: 'A', leaseMs: 1000,
       now: '2026-07-18T09:30:10.000Z', from: 'pending', expectedVersion: 0,
     }));
     // Worker B re-claims the expired lease (v1→v2).
-    await f.send(buildEffectClaimItems({
+    await send(f, buildEffectClaimItems({
       tableName: 'T', rfqId: RFQ_ID, effect: 'org-upsert', owner: 'B', leaseMs: 30000,
       now: '2026-07-18T09:31:00.000Z', from: 'expired-lease', expectedVersion: 1,
     }));
     expect(f.store.get(`RFQ#${RFQ_ID}|OUTBOX#org-upsert`)!.leaseOwner).toBe('B');
     // Worker A (holding claimedVersion 1) now completes → cancels.
-    await expect(f.send(new TransactWriteCommand({
+    await expect(send(f, new TransactWriteCommand({
       TransactItems: buildEffectCompletionItems({
         tableName: 'T', rfqId: RFQ_ID, owner: 'A', claimedVersion: 1, now: '2026-07-18T09:31:05.000Z',
         effect: 'org-upsert', result: { matchedOrgId: 'org-123' },
@@ -178,22 +181,22 @@ describe('effect lifecycle — recovery scenarios', () => {
       tableName: 'T', rfqId: RFQ_ID, effect: 'org-upsert', owner: 'W', leaseMs: 30000,
       now: '2026-07-18T09:30:10.000Z', from: 'pending', expectedVersion: 0,
     });
-    await f.send(freshClaim());
+    await send(f, freshClaim());
     // The commit ack was lost; replaying the identical fresh claim must fail — status is 'processing'.
-    await expect(f.send(freshClaim())).rejects.toMatchObject({ name: 'ConditionalCheckFailedException' });
+    await expect(send(f, freshClaim())).rejects.toMatchObject({ name: 'ConditionalCheckFailedException' });
     expect(f.store.get(`RFQ#${RFQ_ID}|OUTBOX#org-upsert`)!.version).toBe(1); // not double-bumped
   });
 
   it('completion cancels all-or-nothing if a successor already exists (no partial backfill)', async () => {
     const f = new FakeDdb();
     await submit(f, directParams());
-    await f.send(buildEffectClaimItems({
+    await send(f, buildEffectClaimItems({
       tableName: 'T', rfqId: RFQ_ID, effect: 'org-upsert', owner: 'W', leaseMs: 30000,
       now: '2026-07-18T09:30:10.000Z', from: 'pending', expectedVersion: 0,
     }));
     // Anomalous pre-existing successor → the attribute_not_exists Put conflicts.
     f.seed([{ PK: `RFQ#${RFQ_ID}`, SK: 'OUTBOX#visitor-bridge', status: 'pending' } as never]);
-    await expect(f.send(new TransactWriteCommand({
+    await expect(send(f, new TransactWriteCommand({
       TransactItems: buildEffectCompletionItems({
         tableName: 'T', rfqId: RFQ_ID, owner: 'W', claimedVersion: 1, now: '2026-07-18T09:30:11.000Z',
         effect: 'org-upsert', result: { matchedOrgId: 'org-123' },
@@ -211,11 +214,11 @@ describe('effect lifecycle — attachment branch', () => {
     await submit(f, directParams({ tempKeys: ['temp/rfq/aaaaaaaaaaaaaaaa/a.pdf', 'temp/rfq/bbbbbbbbbbbbbbbb/b.pdf'] }));
     expect(f.store.get(`RFQ#${RFQ_ID}|OUTBOX#attachment-move`)!.input)
       .toEqual({ tempKeys: ['temp/rfq/aaaaaaaaaaaaaaaa/a.pdf', 'temp/rfq/bbbbbbbbbbbbbbbb/b.pdf'] });
-    await f.send(buildEffectClaimItems({
+    await send(f, buildEffectClaimItems({
       tableName: 'T', rfqId: RFQ_ID, effect: 'attachment-move', owner: 'W', leaseMs: 30000,
       now: '2026-07-18T09:30:10.000Z', from: 'pending', expectedVersion: 0,
     }));
-    await f.send(new TransactWriteCommand({
+    await send(f, new TransactWriteCommand({
       TransactItems: buildEffectCompletionItems({
         tableName: 'T', rfqId: RFQ_ID, owner: 'W', claimedVersion: 1, now: '2026-07-18T09:30:12.000Z',
         effect: 'attachment-move',
@@ -236,11 +239,11 @@ describe('email latch', () => {
     const claim = () => buildEmailClaimItems({
       tableName: 'T', rfqId: RFQ_ID, effect: 'confirmation-email', owner: 'W', now: '2026-07-18T09:30:10.000Z',
     });
-    await f.send(claim());
+    await send(f, claim());
     expect(f.store.get(`RFQ#${RFQ_ID}|OUTBOX#confirmation-email`)!.status).toBe('send-claimed');
     // A second claim (e.g. after a crash) must fail — the email is never re-attempted.
-    await expect(f.send(claim())).rejects.toMatchObject({ name: 'ConditionalCheckFailedException' });
-    await f.send(buildEmailFinalizeItems({
+    await expect(send(f, claim())).rejects.toMatchObject({ name: 'ConditionalCheckFailedException' });
+    await send(f, buildEmailFinalizeItems({
       tableName: 'T', rfqId: RFQ_ID, effect: 'confirmation-email', owner: 'W',
       now: '2026-07-18T09:30:11.000Z', attemptedAt: '2026-07-18T09:30:11.000Z', outcome: 'accepted',
     }));

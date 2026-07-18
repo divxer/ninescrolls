@@ -97,7 +97,7 @@ describe('buildReceiptItem', () => {
     const item = buildReceiptItem('SUBMIT_RECEIPT#abc', {
       opKind: 'draft-upgrade', binding: '0'.repeat(64),
       result: { rfqId: 'rfq-x', referenceNumber: 'RFQ-x', status: 200 }, now: '2026-07-18T00:00:00.000Z',
-    }) as Record<string, unknown>;
+    }) as unknown as Record<string, unknown>;
     for (const k of ['name', 'email', 'institution', 'applicationDescription']) expect(k in item).toBe(false);
   });
 });
