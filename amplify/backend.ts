@@ -193,9 +193,9 @@ const restApi = new RestApi(apiStack, 'RestApi', {
     },
 });
 
-// Edge enforcement for the anonymous draft API. The Lambda also uses an atomic
-// DynamoDB counter, so this remains enforced if WAF propagation is delayed and WAF
-// sheds abusive traffic before it incurs Lambda/DynamoDB work.
+// Edge telemetry for the anonymous draft API. Count-only avoids WAF's fixed 403 and
+// header-less response violating the API contract; the Lambda's atomic DynamoDB
+// counter is authoritative and returns the required safe 429 response.
 const draftWafVisibility = (name: string) => ({
     cloudWatchMetricsEnabled: true, metricName: name, sampledRequestsEnabled: true,
 });
@@ -211,7 +211,7 @@ const draftWebAcl = new CfnWebACL(apiStack, 'RfqDraftWebAcl', {
     visibilityConfig: draftWafVisibility('rfq-draft-web-acl'),
     rules: [
         {
-            name: 'RfqDraftCreatePerIp', priority: 0, action: { block: {} },
+            name: 'RfqDraftCreatePerIp', priority: 0, action: { count: {} },
             statement: { rateBasedStatement: {
                 aggregateKeyType: 'IP', limit: 10, evaluationWindowSec: 300,
                 scopeDownStatement: { andStatement: { statements: [
@@ -221,7 +221,7 @@ const draftWebAcl = new CfnWebACL(apiStack, 'RfqDraftWebAcl', {
             visibilityConfig: draftWafVisibility('rfq-draft-create-per-ip'),
         },
         {
-            name: 'RfqDraftAccessPerIp', priority: 1, action: { block: {} },
+            name: 'RfqDraftAccessPerIp', priority: 1, action: { count: {} },
             statement: { rateBasedStatement: {
                 aggregateKeyType: 'IP', limit: 120, evaluationWindowSec: 300,
                 scopeDownStatement: { andStatement: { statements: [

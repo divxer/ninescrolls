@@ -4,6 +4,7 @@ import { createDraft, getDraft, updateDraft, type DraftStoreDeps } from '../../l
 import { draftCreateSchema, draftPatchRequestSchema, normalizeDraftPatch } from '../../lib/rfq/draftContract';
 import { parsePepperSecret } from './pepperProvider';
 import { createRateLimiter } from './rateLimiter';
+import { decodeCredential } from '../../lib/rfq/draftCredentials';
 
 const ALLOWED_ORIGINS = [
   'https://ninescrolls.com',
@@ -61,7 +62,15 @@ const parseBody = (event: DraftEvent): { ok: true; value: unknown } | { ok: fals
   const contentType = header(event.headers, 'content-type');
   if (!contentType || !/^application\/json(?:\s*;\s*charset=utf-8)?$/i.test(contentType)) return { ok: false };
   let raw = event.body ?? '';
-  try { if (event.isBase64Encoded) raw = Buffer.from(raw, 'base64').toString('utf8'); } catch { return { ok: false }; }
+  if (event.isBase64Encoded) {
+    const encoded = raw;
+    if (!/^[A-Za-z0-9+/]*={0,2}$/.test(encoded) || encoded.length % 4 === 1) return { ok: false };
+    try {
+      const bytes = Buffer.from(encoded, 'base64');
+      if (bytes.toString('base64').replace(/=+$/, '') !== encoded.replace(/=+$/, '')) return { ok: false };
+      raw = bytes.toString('utf8');
+    } catch { return { ok: false }; }
+  }
   if (Buffer.byteLength(raw, 'utf8') > MAX_BODY_BYTES) return { ok: false };
   try { return { ok: true, value: raw ? JSON.parse(raw) : {} }; } catch { return { ok: false }; }
 };
@@ -87,9 +96,11 @@ export function makeHandler(deps: HandlerDeps) {
       try { if (!await checkRate(sourceIp, 'create')) return jsonResponse(429, { error: 'Too many requests' }, origin); }
       catch { return retryResponse(origin); }
       const nonce = header(event.headers, 'x-rfq-draft-create-nonce');
+      try { if (!nonce) throw new Error(); else decodeCredential(nonce); }
+      catch { return DRAFT_UNAVAILABLE_RESPONSE(origin); }
       const body = parseBody(event);
       const parsed = body.ok ? draftCreateSchema.safeParse(body.value) : undefined;
-      if (!nonce || !parsed?.success) return jsonResponse(400, { error: 'Invalid request' }, origin);
+      if (!parsed?.success) return jsonResponse(400, { error: 'Invalid request' }, origin);
       try {
         const r = await createDraft(deps, nonce, parsed.data);
         return jsonResponse(201, r, origin);
@@ -101,16 +112,18 @@ export function makeHandler(deps: HandlerDeps) {
 
     const token = header(event.headers, 'x-rfq-draft-token');
     if (!rfqId || !token) return DRAFT_UNAVAILABLE_RESPONSE(origin);
+    if (method !== 'GET' && method !== 'PATCH') return jsonResponse(405, { error: 'Method not allowed' }, origin);
+
+    let authenticated;
+    try { authenticated = await getDraft(deps, rfqId, token); } catch { return retryResponse(origin); }
+    if (!authenticated.ok) return DRAFT_UNAVAILABLE_RESPONSE(origin);
     try { if (!await checkRate(sourceIp, 'access')) return jsonResponse(429, { error: 'Too many requests' }, origin); }
     catch { return retryResponse(origin); }
 
     // GET /api/rfq/draft/{rfqId}
     if (method === 'GET') {
-      let r;
-      try { r = await getDraft(deps, rfqId, token); } catch { return retryResponse(origin); }
-      if (!r.ok) return DRAFT_UNAVAILABLE_RESPONSE(origin);
       return jsonResponse(200, {
-        fields: r.fields, draftVersion: r.draftVersion, expiresAt: r.expiresAt,
+        fields: authenticated.fields, draftVersion: authenticated.draftVersion, expiresAt: authenticated.expiresAt,
       }, origin);
     }
 
@@ -118,9 +131,6 @@ export function makeHandler(deps: HandlerDeps) {
     if (method === 'PATCH') {
       // Authenticate before parsing transport or fields so bad tokens always get the
       // same non-disclosing response (and exercise the store's dummy verifier).
-      let authenticated;
-      try { authenticated = await getDraft(deps, rfqId, token); } catch { return retryResponse(origin); }
-      if (!authenticated.ok) return DRAFT_UNAVAILABLE_RESPONSE(origin);
       const decoded = parseBody(event);
       if (!decoded.ok || !decoded.value || typeof decoded.value !== 'object') return jsonResponse(400, { error: 'Invalid request' }, origin);
       const body = decoded.value as { draftVersion?: unknown; patch?: unknown };

@@ -105,7 +105,22 @@ describe('rfq-draft-api routing', () => {
   it('POST create missing its nonce → 404 (no disclosure of the reason)', async () => {
     const { handler } = ctx();
     const r = await handler(evt('POST', '/api/rfq/draft', {}, CREATE));
-    expect(r.statusCode).toBe(400);
+    expect(r.statusCode).toBe(404);
+  });
+
+  it('does not charge unauthenticated access to the authenticated rate bucket', async () => {
+    let calls = 0;
+    const ddb = new FakeDdb();
+    const handler = makeHandler({
+      send: (c: unknown) => ddb.send(c as never), tableName: 't', pepper, keyVersion: 1,
+      resolvePepper: () => pepper, now: () => '2026-07-15T00:00:00.000Z',
+      rateLimit: async () => { calls++; return false; },
+    });
+    const response = await handler(evt('GET', '/api/rfq/draft/AAAAAAAAAAAAAAAAAAAA', {
+      'x-rfq-draft-token': encodeCredential(crypto.randomBytes(32)),
+    }));
+    expect(response.statusCode).toBe(404);
+    expect(calls).toBe(0);
   });
 
   it('authenticates PATCH before reporting malformed JSON or fields', async () => {
@@ -126,6 +141,8 @@ describe('rfq-draft-api routing', () => {
     encoded.body = Buffer.from(encoded.body!).toString('base64');
     (encoded as typeof encoded & { isBase64Encoded: boolean }).isBase64Encoded = true;
     expect((await handler(encoded)).statusCode).toBe(201);
+    encoded.body = `${encoded.body}!`;
+    expect((await handler(encoded)).statusCode).toBe(400);
     const huge = evt('POST', '/api/rfq/draft', { 'x-rfq-draft-create-nonce': nonce }, CREATE);
     huge.body = JSON.stringify({ ...CREATE, applicationDescription: 'x'.repeat(17 * 1024) });
     expect((await handler(huge)).statusCode).toBe(400);
