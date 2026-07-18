@@ -4,7 +4,12 @@
 
 **Goal:** Build the pure, unit-testable foundation for RFQ secure drafts — the credential library (base64url codec, HKDF token derivation, non-enumerable ID, versioned peppered HMAC hash + constant-time verify) and the draft field whitelist schema — with no AWS or HTTP dependencies.
 
-**Architecture:** Two new modules under `amplify/lib/rfq/` (peer to the existing `contract.ts` and `limits.ts`). `draftCredentials.ts` owns all cryptography — deterministic derivation from a client nonce and non-reversible storage/verification of the peppered token hash. `draftContract.ts` owns the draft field whitelist as a strict Zod schema that derives enums from `contract.ts` and lengths from `limits.ts`, so drafts cannot drift from the formal RFQ schema. Everything here is a pure function of its inputs; DynamoDB, HTTP, and secret retrieval live in later plans (P2/P3).
+**Architecture:** Extend the import-free `contract.ts` with every enum shared by the frontend,
+formal submission, and drafts; migrate the formal handler to consume those exports. Add two
+modules under `amplify/lib/rfq/`: `draftCredentials.ts` owns all cryptography, while
+`draftContract.ts` owns the strict draft whitelist and normalized set/remove update model.
+Everything here is a pure function of its inputs; DynamoDB, HTTP, and secret retrieval live
+in later plans (P2/P3).
 
 **Tech Stack:** TypeScript, Node.js `crypto` (`hkdfSync`, `createHash`, `createHmac`, `timingSafeEqual`), Zod, Vitest.
 
@@ -14,12 +19,15 @@
 
 - Create `amplify/lib/rfq/draftCredentials.ts` — credential codec, derivation, hashing, verification. No imports outside `node:crypto`.
 - Create `amplify/lib/rfq/draftCredentials.test.ts` — unit tests for the above.
-- Create `amplify/lib/rfq/draftContract.ts` — draft field whitelist Zod schema (create + patch variants), deriving from `contract.ts` and `limits.ts`.
+- Modify `amplify/lib/rfq/contract.ts` and `amplify/functions/submit-rfq/handler.ts` — make shared enums canonical and migrate the formal schema to them.
+- Create `amplify/lib/rfq/draftContract.ts` — draft field whitelist Zod schema plus normalized set/remove patch operations, deriving from `contract.ts` and `limits.ts`.
 - Create `amplify/lib/rfq/draftContract.test.ts` — schema tests.
 
-These are leaf modules: nothing else imports them yet, so P1 ships with zero behavior change to the running app. P2 (storage) and P3 (API) import them.
+The two new draft modules are leaves, so P1 changes no draft runtime behavior. The formal
+handler's local enums are replaced with identical canonical exports; parity tests prove the
+migration is behavior-preserving. P2 (storage) and P3 (API) import the draft modules.
 
-**Test command for the whole plan:** `npx vitest run amplify/lib/rfq/ --exclude '**/.claude/**'`
+**Test command for the whole plan:** `npx vitest run amplify/lib/rfq/ amplify/functions/submit-rfq/handler.test.ts --exclude '**/.claude/**'`
 
 ---
 
@@ -58,6 +66,11 @@ describe('credential codec', () => {
     expect(() => decodeCredential(short)).toThrow(InvalidCredentialError);
   });
 
+  it('rejects raw values that are not exactly 32 bytes before encoding', () => {
+    expect(() => encodeCredential(crypto.randomBytes(16))).toThrow(InvalidCredentialError);
+    expect(() => encodeCredential(crypto.randomBytes(33))).toThrow(InvalidCredentialError);
+  });
+
   it('rejects a credential with non-base64url characters', () => {
     expect(() => decodeCredential('not*valid*base64url')).toThrow(InvalidCredentialError);
   });
@@ -89,6 +102,9 @@ const BASE64URL_RE = /^[A-Za-z0-9_-]+$/;
 
 /** Encode raw bytes as base64url without padding. */
 export function encodeCredential(bytes: Buffer): string {
+  if (bytes.length !== CREDENTIAL_BYTES) {
+    throw new InvalidCredentialError();
+  }
   return bytes.toString('base64url');
 }
 
@@ -108,7 +124,7 @@ export function decodeCredential(value: string): Buffer {
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `npx vitest run amplify/lib/rfq/draftCredentials.test.ts`
-Expected: PASS (3 tests).
+Expected: PASS (4 tests).
 
 - [ ] **Step 5: Commit**
 
@@ -321,14 +337,23 @@ git commit -m "feat(rfq-draft): versioned peppered hash + non-disclosing constan
 
 ---
 
-### Task 4: Draft field whitelist schema (create + partial patch)
+### Task 4: Canonical RFQ contract + normalized draft updates
 
-A strict Zod schema for exactly the fields the spec allows a draft to persist (spec lines
-37–52), deriving enums from `contract.ts` and lengths from `limits.ts`. Unknown keys are
-rejected; email is NFC-normalized and lowercased; `quantity` is 1–100. The patch variant is
-the same shape made partial for optimistic-concurrency updates.
+First extend the canonical contract so the formal submission and draft schemas consume the
+same role, budget, timeline, funding, equipment, and normalization definitions. Then add a
+strict schema for exactly the fields the spec allows a draft to persist (spec lines 37–52).
+Unknown keys are rejected; email is NFC-normalized and lowercased; `quantity` is 1–100.
+
+Updates have an explicit normalized representation: `{ set, remove }`. An absent key means
+"unchanged"; a normalized empty optional string means REMOVE; an empty required value is
+invalid. P1 also provides a pure apply-and-revalidate helper: it evaluates every full-draft
+and cross-field rule against the current draft plus the normalized operation before P2 attempts
+a conditional write. P2 can therefore detect a no-op without extending activity/expiry.
 
 **Files:**
+- Modify: `amplify/lib/rfq/contract.ts`
+- Modify: `amplify/functions/submit-rfq/handler.ts`
+- Test: `amplify/functions/submit-rfq/handler.test.ts`
 - Create: `amplify/lib/rfq/draftContract.ts`
 - Test: `amplify/lib/rfq/draftContract.test.ts`
 
@@ -337,7 +362,13 @@ the same shape made partial for optimistic-concurrency updates.
 ```ts
 // amplify/lib/rfq/draftContract.test.ts
 import { describe, it, expect } from 'vitest';
-import { draftCreateSchema, draftPatchSchema, DRAFT_FIELD_KEYS } from './draftContract';
+import {
+  draftCreateSchema,
+  draftPatchRequestSchema,
+  normalizeDraftPatch,
+  applyNormalizedDraftPatch,
+  DRAFT_FIELD_KEYS,
+} from './draftContract';
 
 const VALID = {
   name: 'Jane Researcher',
@@ -376,13 +407,40 @@ describe('draftCreateSchema', () => {
   });
 });
 
-describe('draftPatchSchema', () => {
+describe('normalized draft patch', () => {
   it('accepts a single changed whitelisted field', () => {
-    expect(draftPatchSchema.safeParse({ quantity: 5 }).success).toBe(true);
+    const parsed = draftPatchRequestSchema.parse({ quantity: 5 });
+    expect(normalizeDraftPatch(parsed)).toEqual({ set: { quantity: 5 }, remove: [] });
   });
 
   it('still rejects unknown keys in a patch', () => {
-    expect(draftPatchSchema.safeParse({ turnstileToken: 'x' }).success).toBe(false);
+    expect(draftPatchRequestSchema.safeParse({ turnstileToken: 'x' }).success).toBe(false);
+  });
+
+  it('normalizes an empty optional string to an explicit removal', () => {
+    const parsed = draftPatchRequestSchema.parse({ department: '  ' });
+    expect(normalizeDraftPatch(parsed)).toEqual({ set: {}, remove: ['department'] });
+  });
+
+  it('normalizes whitespace-only phone and enum values to removals', () => {
+    const parsed = draftPatchRequestSchema.parse({ phone: '  ', role: '  ' });
+    expect(normalizeDraftPatch(parsed)).toEqual({ set: {}, remove: ['phone', 'role'] });
+  });
+
+  it('rejects removal of a required string', () => {
+    expect(draftPatchRequestSchema.safeParse({ institution: '  ' }).success).toBe(false);
+  });
+
+  it('preserves an empty patch as a detectable no-op', () => {
+    expect(normalizeDraftPatch(draftPatchRequestSchema.parse({})))
+      .toEqual({ set: {}, remove: [] });
+  });
+
+  it('applies an operation and revalidates the complete resulting draft', () => {
+    const operation = normalizeDraftPatch(draftPatchRequestSchema.parse({ department: '' }));
+    const current = draftCreateSchema.parse({ ...VALID, department: 'Physics' });
+    expect(applyNormalizedDraftPatch(current, operation))
+      .not.toHaveProperty('department');
   });
 });
 ```
@@ -395,46 +453,80 @@ Expected: FAIL — `Failed to resolve import "./draftContract"`.
 - [ ] **Step 3: Write minimal implementation**
 
 ```ts
-// amplify/lib/rfq/draftContract.ts
-import { z } from 'zod';
-import { RFQ_EQUIPMENT_CATEGORY_VALUES } from './contract';
-import { RFQ_FIELD_LIMITS as L } from './limits';
-
-// Enums that also constrain the formal RFQ (kept in one place — see contract.ts).
-const ROLES = [
+// append to amplify/lib/rfq/contract.ts — import-free canonical values
+export const RFQ_ROLE_VALUES = [
   'PI', 'Research Scientist', 'Postdoc', 'Researcher', 'Graduate Student', 'Engineer',
   'Procurement', 'Lab Manager', 'Business Development', 'Other',
 ] as const;
-const BUDGET_RANGES = [
+export const RFQ_BUDGET_RANGE_VALUES = [
   'Under $10k', '$10k - $30k', '$30k - $80k', '$80k - $150k', 'Over $150k', 'Not yet defined',
 ] as const;
-const TIMELINES = [
+export const RFQ_TIMELINE_VALUES = [
   'immediate', 'within-3-months', 'within-6-months', '6-plus-months', 'budgetary-planning',
 ] as const;
-const FUNDING_STATUSES = [
+export const RFQ_FUNDING_STATUS_VALUES = [
   'funded', 'budget-under-review', 'grant-pending', 'exploring', 'prefer-not-to-say',
 ] as const;
 
-const email = z.string().trim().max(L.email.max).email()
-  .transform((v) => v.normalize('NFC').toLowerCase());
+/** Canonical Unicode/whitespace normalization shared by formal and draft input. */
+export function normalizeRfqText(value: string): string {
+  return value.trim().normalize('NFC');
+}
+
+export function normalizeRfqEmail(value: string): string {
+  return normalizeRfqText(value).toLowerCase();
+}
+```
+
+Replace the four local arrays in `submit-rfq/handler.ts` with imports of these values and
+use them in the existing `rfqSchema`. Apply `normalizeRfqEmail` to `email`; apply
+`normalizeRfqText` only to these human-entered prose/address fields before their existing
+length validation: `name`, `phone`, `institution`, `department`, `specificModel`,
+`applicationDescription`, `keySpecifications`, `existingEquipment`, `additionalComments`,
+`shippingAddress`, `shippingCity`, `shippingState`, `shippingZipCode`, and `shippingCountry`.
+Do **not** normalize opaque/security-sensitive values (`turnstileToken`, `attachmentKeys`,
+`visitorId`, or any future credential/identifier) and do not replace a field-specific
+canonicalizer such as the existing `referralSource` transform. Add handler tests that assert:
+(1) each canonical enum parses through the corresponding formal field, (2) formal name/email
+normalization matches the draft schema, and (3) representative opaque values pass through
+unchanged. This makes canonicalization part of P1, not a promise deferred to later work.
+
+```ts
+// amplify/lib/rfq/draftContract.ts
+import { z } from 'zod';
+import {
+  RFQ_BUDGET_RANGE_VALUES,
+  RFQ_EQUIPMENT_CATEGORY_VALUES,
+  RFQ_FUNDING_STATUS_VALUES,
+  RFQ_ROLE_VALUES,
+  RFQ_TIMELINE_VALUES,
+  normalizeRfqEmail,
+  normalizeRfqText,
+} from './contract';
+import { RFQ_FIELD_LIMITS as L } from './limits';
+
+const normalizedText = (schema: z.ZodString) =>
+  z.string().transform(normalizeRfqText).pipe(schema);
+const email = z.string().transform(normalizeRfqEmail)
+  .pipe(z.string().max(L.email.max).email());
 
 // Exactly the spec's draft whitelist (design lines 37–52). `.strict()` rejects
 // any key not listed here — the guarantee that shipping/attachments/comments and
 // credential material can never be persisted in a draft.
 const draftFields = {
-  name: z.string().trim().min(L.name.min).max(L.name.max),
+  name: normalizedText(z.string().min(L.name.min).max(L.name.max)),
   email,
-  phone: z.string().trim().min(7).max(L.phone.max).optional(),
-  institution: z.string().trim().min(L.institution.min).max(L.institution.max),
-  department: z.string().trim().max(L.department.max).optional(),
-  role: z.enum(ROLES).optional(),
+  phone: normalizedText(z.string().min(7).max(L.phone.max)).optional(),
+  institution: normalizedText(z.string().min(L.institution.min).max(L.institution.max)),
+  department: normalizedText(z.string().max(L.department.max)).optional(),
+  role: z.enum(RFQ_ROLE_VALUES).optional(),
   equipmentCategory: z.enum(RFQ_EQUIPMENT_CATEGORY_VALUES),
-  specificModel: z.string().trim().max(L.specificModel.max).optional(),
-  applicationDescription: z.string().trim().min(L.applicationDescription.min).max(L.applicationDescription.max),
+  specificModel: normalizedText(z.string().max(L.specificModel.max)).optional(),
+  applicationDescription: normalizedText(z.string().min(L.applicationDescription.min).max(L.applicationDescription.max)),
   quantity: z.number().int().min(1).max(100),
-  budgetRange: z.enum(BUDGET_RANGES).optional(),
-  timeline: z.enum(TIMELINES).optional(),
-  fundingStatus: z.enum(FUNDING_STATUSES).optional(),
+  budgetRange: z.enum(RFQ_BUDGET_RANGE_VALUES).optional(),
+  timeline: z.enum(RFQ_TIMELINE_VALUES).optional(),
+  fundingStatus: z.enum(RFQ_FUNDING_STATUS_VALUES).optional(),
   needsBudgetaryQuote: z.boolean().optional(),
 };
 
@@ -443,11 +535,66 @@ export const DRAFT_FIELD_KEYS = Object.keys(draftFields);
 /** Full draft (create): required fields present, unknown keys rejected. */
 export const draftCreateSchema = z.object(draftFields).strict();
 
-/** Partial draft (patch): any subset of whitelisted fields, unknown keys rejected. */
-export const draftPatchSchema = z.object(draftFields).strict().partial();
+const removableStringFields = [
+  'phone', 'department', 'specificModel',
+] as const;
+const removableEnumFields = [
+  'role', 'budgetRange', 'timeline', 'fundingStatus',
+] as const;
+const removableFields = [...removableStringFields, ...removableEnumFields] as const;
+
+/** Raw PATCH body: absent means unchanged; blank is allowed only for removable fields. */
+const removable = (schema: z.ZodTypeAny) => z.preprocess(
+  (value) => typeof value === 'string' ? normalizeRfqText(value) : value,
+  schema.or(z.literal('')),
+);
+
+export const draftPatchRequestSchema = z.object({
+  ...draftFields,
+  phone: removable(draftFields.phone.unwrap()),
+  department: removable(draftFields.department.unwrap()),
+  role: removable(draftFields.role.unwrap()),
+  specificModel: removable(draftFields.specificModel.unwrap()),
+  budgetRange: removable(draftFields.budgetRange.unwrap()),
+  timeline: removable(draftFields.timeline.unwrap()),
+  fundingStatus: removable(draftFields.fundingStatus.unwrap()),
+}).strict().partial();
+
+export type DraftRemoveField = (typeof removableFields)[number];
+export type NormalizedDraftPatch = {
+  set: Record<string, unknown>;
+  remove: DraftRemoveField[];
+};
+
+export function normalizeDraftPatch(
+  input: z.infer<typeof draftPatchRequestSchema>,
+): NormalizedDraftPatch {
+  const set: Record<string, unknown> = {};
+  const remove: DraftRemoveField[] = [];
+  for (const [key, value] of Object.entries(input)) {
+    if (typeof value === 'string' && value.trim() === '' &&
+        (removableFields as readonly string[]).includes(key)) {
+      remove.push(key as DraftRemoveField);
+    } else {
+      set[key] = value;
+    }
+  }
+  return { set, remove };
+}
+
+/** Apply removals/sets and rerun all full-draft and cross-field validation. */
+export function applyNormalizedDraftPatch(
+  current: DraftCreateInput,
+  operation: NormalizedDraftPatch,
+): DraftCreateInput {
+  const candidate: Record<string, unknown> = { ...current };
+  for (const key of operation.remove) delete candidate[key];
+  Object.assign(candidate, operation.set);
+  return draftCreateSchema.parse(candidate);
+}
 
 export type DraftCreateInput = z.infer<typeof draftCreateSchema>;
-export type DraftPatchInput = z.infer<typeof draftPatchSchema>;
+export type DraftPatchRequest = z.infer<typeof draftPatchRequestSchema>;
 ```
 
 - [ ] **Step 4: Run test to verify it passes**
@@ -458,8 +605,10 @@ Expected: PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add amplify/lib/rfq/draftContract.ts amplify/lib/rfq/draftContract.test.ts
-git commit -m "feat(rfq-draft): strict draft field whitelist schema (create + patch)"
+git add amplify/lib/rfq/contract.ts amplify/functions/submit-rfq/handler.ts \
+  amplify/functions/submit-rfq/handler.test.ts amplify/lib/rfq/draftContract.ts \
+  amplify/lib/rfq/draftContract.test.ts
+git commit -m "feat(rfq-draft): canonical contract and normalized draft updates"
 ```
 
 ---
@@ -468,18 +617,19 @@ git commit -m "feat(rfq-draft): strict draft field whitelist schema (create + pa
 
 - [ ] **Step 1: Run the full P1 suite**
 
-Run: `npx vitest run amplify/lib/rfq/ --exclude '**/.claude/**'`
-Expected: PASS — draftCredentials + draftContract + existing contract/limits tests.
+Run: `npx vitest run amplify/lib/rfq/ amplify/functions/submit-rfq/handler.test.ts --exclude '**/.claude/**'`
+Expected: PASS — draftCredentials + draftContract + existing contract/limits tests + formal-handler canonical enum/normalization parity tests.
 
 - [ ] **Step 2: Typecheck and lint the new modules**
 
-Run: `npx tsc --noEmit && npx eslint amplify/lib/rfq/draftCredentials.ts amplify/lib/rfq/draftContract.ts`
+Run: `npx tsc --noEmit && npm run typecheck:amplify && npx eslint amplify/lib/rfq/draftCredentials.ts amplify/lib/rfq/draftContract.ts amplify/lib/rfq/contract.ts amplify/functions/submit-rfq/handler.ts`
 Expected: no errors.
 
 - [ ] **Step 3: Confirm zero runtime coupling**
 
-Run: `grep -rn "draftCredentials\|draftContract" src/ amplify/functions/ || echo "not yet imported — P1 ships dark"`
-Expected: no matches — P1 is a leaf; P2/P3 wire it in.
+Run: `grep -rn "draftCredentials\|draftContract" src/ amplify/functions/ || echo "draft modules not yet imported — P1 ships dark"`
+Expected: no runtime imports of `draftCredentials` or `draftContract`. The formal handler does
+import the newly canonical enum values from `contract.ts`; P1 otherwise ships dark.
 
 ---
 
@@ -489,12 +639,13 @@ Expected: no matches — P1 is a leaf; P2/P3 wire it in.
 - 32-byte base64url credentials — Task 1.
 - HKDF token + SHA-256 non-enumerable ID, deterministic, pepper-independent — Task 2.
 - Versioned peppered hash, constant-time compare, non-disclosing dummy path — Task 3.
-- Strict draft whitelist deriving from the shared contract; unknown-key rejection; NFC email; quantity 1–100 — Task 4.
+- Canonical enums consumed by formal + draft schemas; strict draft whitelist; normalized
+  set/remove/no-op update semantics; unknown-key rejection; NFC email; quantity 1–100 — Task 4.
 
 **Deferred to later plans (out of P1 scope):** pepper retrieval/rotation from Secrets Manager (P2/A), `draftCreateNonce`/`submitIdempotencyKey` header handling (P3), submit-receipt binding + canonicalization (P4), DynamoDB storage & optimistic concurrency (P2).
 
 **Placeholder scan:** none — every code step contains complete implementation.
 
-**Type consistency:** `deriveDraftToken`/`deriveDraftId`/`hashDraftToken`/`verifyDraftToken` signatures are used identically across Tasks 2–3; `draftCreateSchema`/`draftPatchSchema`/`DRAFT_FIELD_KEYS` names match between `draftContract.ts` and its test.
+**Type consistency:** `deriveDraftToken`/`deriveDraftId`/`hashDraftToken`/`verifyDraftToken` signatures are used identically across Tasks 2–3; `draftCreateSchema`/`draftPatchRequestSchema`/`normalizeDraftPatch`/`applyNormalizedDraftPatch`/`DRAFT_FIELD_KEYS` names match between `draftContract.ts` and its test.
 
 **Note for the implementer:** `crypto.hkdfSync` returns an `ArrayBuffer`; it is wrapped in `Buffer.from(...)` in Task 2. `crypto.timingSafeEqual` requires equal-length buffers — Task 3 guarantees this by always comparing two 32-byte (64 hex) values.
