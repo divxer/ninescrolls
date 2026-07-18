@@ -6,6 +6,12 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { z } from 'zod';
 import crypto from 'node:crypto';
 import { RFQ_FIELD_LIMITS as L } from '../../lib/rfq/limits';
+import {
+    RFQ_EQUIPMENT_CATEGORY_VALUES,
+    RFQ_ATTACHMENT_MIME_TYPES,
+    MAX_RFQ_ATTACHMENTS,
+    MAX_RFQ_ATTACHMENT_SIZE,
+} from '../../lib/rfq/contract';
 import { invokeOrganizationApi } from '../../lib/organization/invoke-org-api';
 import { computeRfqScore } from '../../lib/organization/lead-score';
 import { emitTimelineEventToCrm, invokeCrmAction } from '../../lib/crm/invoke-crm-api';
@@ -36,12 +42,10 @@ const ALLOWED_ORIGINS = [
     'http://localhost:5173',
 ];
 
-// Must stay in sync with EQUIPMENT_CATEGORIES in src/pages/RFQPage.tsx — a value
-// the form can send but this list omits is rejected as a generic 400.
-const EQUIPMENT_CATEGORIES = [
-    'ICP', 'PECVD', 'Sputter', 'E-Beam', 'ALD', 'RIE', 'IBE', 'HDP-CVD',
-    'Plasma-Cleaner', 'Stripper', 'Coater-Developer', 'Probe-Station', 'Other',
-] as const;
+// Equipment categories + attachment constraints come from the shared RFQ
+// contract (amplify/lib/rfq/contract.ts); the form derives the same values, so
+// a category or file type one side accepts and the other rejects can't ship.
+// Guarded by the parity tests in handler.test.ts + rfqEquipmentOptions.test.ts.
 
 const ROLES = [
     'PI', 'Research Scientist', 'Postdoc', 'Researcher', 'Graduate Student', 'Engineer',
@@ -85,21 +89,8 @@ const REFERRAL_SOURCES = [
     'other',
 ] as const;
 
-// ---------------------------------------------------------------------------
-// Attachment upload constraints
-// Kept in lockstep with RFQPage.tsx (ALLOWED_FILE_TYPES / MAX_FILES / MAX_FILE_SIZE).
-// Divergence here silently rejects files the form accepted, so change both together.
-// ---------------------------------------------------------------------------
-const ALLOWED_ATTACHMENT_MIME_TYPES = [
-    'application/pdf',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    'image/jpeg',
-    'image/png',
-] as const;
-
-const MAX_ATTACHMENTS = 3;
-const MAX_ATTACHMENT_SIZE = 10 * 1024 * 1024; // 10MB
+// Attachment upload constraints come from the shared RFQ contract so the form's
+// ALLOWED_FILE_TYPES / MAX_FILES / MAX_FILE_SIZE and this Lambda cannot diverge.
 const PRESIGNED_URL_EXPIRY = 15 * 60; // 15 minutes
 
 /**
@@ -127,7 +118,7 @@ export const rfqSchema = z.object({
     institution: z.string().min(L.institution.min).max(L.institution.max),
     department: z.string().max(L.department.max).optional(),
     role: z.enum(ROLES).optional(),
-    equipmentCategory: z.enum(EQUIPMENT_CATEGORIES),
+    equipmentCategory: z.enum(RFQ_EQUIPMENT_CATEGORY_VALUES),
     specificModel: z.string().max(L.specificModel.max).optional(),
     applicationDescription: z.string().min(L.applicationDescription.min).max(L.applicationDescription.max),
     keySpecifications: z.string().max(L.keySpecifications.max).optional(),
@@ -146,7 +137,7 @@ export const rfqSchema = z.object({
         .array(z.string().max(500).refine(isValidTempAttachmentKey, {
             message: 'attachmentKeys must reference a temp/rfq/ upload',
         }))
-        .max(MAX_ATTACHMENTS)
+        .max(MAX_RFQ_ATTACHMENTS)
         .optional(),
     // Budgetary quote with shipping address for tax calculation
     needsBudgetaryQuote: z.boolean().optional(),
@@ -256,8 +247,8 @@ async function verifyTurnstile(token: string): Promise<boolean> {
 export const uploadUrlSchema = z.object({
     action: z.literal('getUploadUrl'),
     fileName: z.string().min(1).max(255),
-    mimeType: z.enum(ALLOWED_ATTACHMENT_MIME_TYPES),
-    fileSize: z.number().int().positive().max(MAX_ATTACHMENT_SIZE),
+    mimeType: z.enum(RFQ_ATTACHMENT_MIME_TYPES),
+    fileSize: z.number().int().positive().max(MAX_RFQ_ATTACHMENT_SIZE),
 });
 
 async function handleGetUploadUrl(
@@ -291,7 +282,7 @@ async function handleGetUploadUrl(
         Key: s3Key,
         ContentType: mimeType,
         // Signed, so S3 rejects a PUT whose body length differs — this is what
-        // enforces MAX_ATTACHMENT_SIZE for an unauthenticated caller.
+        // enforces MAX_RFQ_ATTACHMENT_SIZE for an unauthenticated caller.
         ContentLength: fileSize,
     });
 

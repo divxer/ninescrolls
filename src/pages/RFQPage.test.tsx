@@ -6,6 +6,7 @@ import { RFQPage } from './RFQPage';
 import { describeSubmitError } from './rfqSubmitError';
 import { parseRfqUrlParams } from './rfqUrlParams';
 import { RFQ_FIELD_LIMITS } from '../../amplify/lib/rfq/limits';
+import { RFQ_EQUIPMENT_CATEGORY_VALUES } from '../../amplify/lib/rfq/contract';
 
 const { trackCustomEvent, trackRFQSubmission, trackRFQSubmissionWithAnalysis } = vi.hoisted(() => ({
   trackCustomEvent: vi.fn(),
@@ -131,6 +132,21 @@ describe('parseRfqUrlParams', () => {
 });
 
 describe('RFQPage URL attribution contract', () => {
+  it('renders equipment-category options exactly matching the shared RFQ contract', () => {
+    // Guards the ACTUAL rendered <select>, not just the rfqEquipmentOptions module:
+    // catches a future regression that re-inlines a category list in the form and
+    // stops importing the shared contract (the 2026-07-15 enum-drift shape).
+    renderRfq('/request-quote');
+    const select = screen.getByLabelText(/Equipment Category/i) as HTMLSelectElement;
+    // Drop the leading empty-value placeholder option.
+    const rendered = Array.from(select.options)
+      .map((o) => o.value)
+      .filter(Boolean)
+      .sort();
+    const canonical = [...RFQ_EQUIPMENT_CATEGORY_VALUES].sort();
+    expect(rendered).toEqual(canonical);
+  });
+
   it('pre-selects the Wafer Probe Station category from probe-station page links', () => {
     renderRfq('/request-quote?products=semishare-probe-station');
     const select = screen.getByLabelText(/Equipment Category/i) as HTMLSelectElement;

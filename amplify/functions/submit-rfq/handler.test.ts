@@ -1,7 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { APIGatewayProxyEventV2 } from 'aws-lambda';
-import { rfqSchema, isValidTempAttachmentKey } from './handler';
+import { rfqSchema, uploadUrlSchema, isValidTempAttachmentKey } from './handler';
 import { RFQ_FIELD_LIMITS } from '../../lib/rfq/limits';
+import {
+    RFQ_EQUIPMENT_CATEGORY_VALUES,
+    RFQ_ATTACHMENT_MIME_TYPES,
+    MAX_RFQ_ATTACHMENTS,
+    MAX_RFQ_ATTACHMENT_SIZE,
+} from '../../lib/rfq/contract';
 import { PutCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 
 // Attachment keys in the exact shape getUploadUrl issues: temp/rfq/<16 hex>/<name>
@@ -156,6 +162,41 @@ const VALID_RFQ = {
 // Tests
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Attachment contract parity — the server half of the form ⇄ Lambda guard for
+// file uploads. The form's ALLOWED_FILE_TYPES / MAX_FILES / MAX_FILE_SIZE and
+// these presign-schema constraints both derive from amplify/lib/rfq/contract.ts;
+// the client half is asserted in src/pages/rfqEquipmentOptions.test.ts.
+// ---------------------------------------------------------------------------
+describe('attachment contract parity (server side)', () => {
+    const validUpload = (over: Record<string, unknown> = {}) => ({
+        action: 'getUploadUrl',
+        fileName: 'spec.pdf',
+        mimeType: 'application/pdf',
+        fileSize: 1024,
+        ...over,
+    });
+
+    it.each(RFQ_ATTACHMENT_MIME_TYPES)('presign accepts every shared MIME type: %s', (mimeType) => {
+        expect(uploadUrlSchema.safeParse(validUpload({ mimeType })).success, mimeType).toBe(true);
+    });
+
+    it('presign rejects a MIME type not in the shared contract', () => {
+        expect(uploadUrlSchema.safeParse(validUpload({ mimeType: 'application/x-msdownload' })).success).toBe(false);
+    });
+
+    it('presign accepts a file at the shared size limit and rejects one byte over', () => {
+        expect(uploadUrlSchema.safeParse(validUpload({ fileSize: MAX_RFQ_ATTACHMENT_SIZE })).success).toBe(true);
+        expect(uploadUrlSchema.safeParse(validUpload({ fileSize: MAX_RFQ_ATTACHMENT_SIZE + 1 })).success).toBe(false);
+    });
+
+    it('rfqSchema accepts attachmentKeys up to the shared limit and rejects one more', () => {
+        const keys = (n: number) => Array.from({ length: n }, (_, i) => `temp/rfq/${'a'.repeat(16)}/file-${i}.pdf`);
+        expect(rfqSchema.safeParse({ ...VALID_RFQ, attachmentKeys: keys(MAX_RFQ_ATTACHMENTS) }).success).toBe(true);
+        expect(rfqSchema.safeParse({ ...VALID_RFQ, attachmentKeys: keys(MAX_RFQ_ATTACHMENTS + 1) }).success).toBe(false);
+    });
+});
+
 describe('rfqSchema (Zod validation)', () => {
     it('accepts valid RFQ data', () => {
         const result = rfqSchema.safeParse(VALID_RFQ);
@@ -182,15 +223,16 @@ describe('rfqSchema (Zod validation)', () => {
     // Contract guard: the RFQ page's equipmentCategory <select> is the only
     // source of this field, so every value it can emit must parse here. Drift
     // returns a 400 the form renders as a generic retry message, which silently
-    // kills every RFQ for the drifted product line. See RFQPage.tsx
-    // EQUIPMENT_CATEGORIES / PRODUCT_CATEGORY_MAP.
-    it.each([
-        'ICP', 'PECVD', 'Sputter', 'E-Beam', 'ALD', 'RIE', 'IBE', 'HDP-CVD',
-        'Plasma-Cleaner', 'Stripper', 'Coater-Developer', 'Probe-Station', 'Other',
-    ])('accepts equipmentCategory offered by the RFQ form: %s', (category) => {
-        const result = rfqSchema.safeParse({ ...VALID_RFQ, equipmentCategory: category });
-        expect(result.success).toBe(true);
-    });
+    // kills every RFQ for the drifted product line (the 2026-07-15 outage).
+    // Iterating the shared contract (not a hand-copied list) means adding a
+    // category there without wiring it through the schema fails this test.
+    it.each(RFQ_EQUIPMENT_CATEGORY_VALUES)(
+        'accepts equipmentCategory from the shared RFQ contract: %s',
+        (category) => {
+            const result = rfqSchema.safeParse({ ...VALID_RFQ, equipmentCategory: category });
+            expect(result.success).toBe(true);
+        },
+    );
 
     it('rejects missing name', () => {
         const { name: _, ...noName } = VALID_RFQ;
