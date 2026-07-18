@@ -121,6 +121,9 @@ describe('rfq-draft-api routing', () => {
     }));
     expect(response.statusCode).toBe(404);
     expect(calls).toBe(0);
+    const missingNonce = await handler(evt('POST', '/api/rfq/draft', {}, CREATE));
+    expect(missingNonce.statusCode).toBe(404);
+    expect(calls).toBe(0);
   });
 
   it('authenticates PATCH before reporting malformed JSON or fields', async () => {
@@ -142,6 +145,8 @@ describe('rfq-draft-api routing', () => {
     (encoded as typeof encoded & { isBase64Encoded: boolean }).isBase64Encoded = true;
     expect((await handler(encoded)).statusCode).toBe(201);
     encoded.body = `${encoded.body}!`;
+    expect((await handler(encoded)).statusCode).toBe(400);
+    encoded.body = 'YQ=';
     expect((await handler(encoded)).statusCode).toBe(400);
     const huge = evt('POST', '/api/rfq/draft', { 'x-rfq-draft-create-nonce': nonce }, CREATE);
     huge.body = JSON.stringify({ ...CREATE, applicationDescription: 'x'.repeat(17 * 1024) });

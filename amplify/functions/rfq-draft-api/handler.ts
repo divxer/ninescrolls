@@ -67,7 +67,7 @@ const parseBody = (event: DraftEvent): { ok: true; value: unknown } | { ok: fals
     if (!/^[A-Za-z0-9+/]*={0,2}$/.test(encoded) || encoded.length % 4 === 1) return { ok: false };
     try {
       const bytes = Buffer.from(encoded, 'base64');
-      if (bytes.toString('base64').replace(/=+$/, '') !== encoded.replace(/=+$/, '')) return { ok: false };
+      if (bytes.toString('base64') !== encoded) return { ok: false };
       raw = bytes.toString('utf8');
     } catch { return { ok: false }; }
   }
@@ -93,11 +93,11 @@ export function makeHandler(deps: HandlerDeps) {
 
     // POST /api/rfq/draft — create
     if (method === 'POST') {
-      try { if (!await checkRate(sourceIp, 'create')) return jsonResponse(429, { error: 'Too many requests' }, origin); }
-      catch { return retryResponse(origin); }
       const nonce = header(event.headers, 'x-rfq-draft-create-nonce');
       try { if (!nonce) throw new Error(); else decodeCredential(nonce); }
       catch { return DRAFT_UNAVAILABLE_RESPONSE(origin); }
+      try { if (!await checkRate(sourceIp, 'create')) return jsonResponse(429, { error: 'Too many requests' }, origin); }
+      catch { return retryResponse(origin); }
       const body = parseBody(event);
       const parsed = body.ok ? draftCreateSchema.safeParse(body.value) : undefined;
       if (!parsed?.success) return jsonResponse(400, { error: 'Invalid request' }, origin);
