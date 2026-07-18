@@ -3,6 +3,7 @@ import { HelmetProvider } from 'react-helmet-async';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { RFQPage } from './RFQPage';
+import { describeSubmitError } from './rfqSubmitError';
 import { parseRfqUrlParams } from './rfqUrlParams';
 import { RFQ_FIELD_LIMITS } from '../../amplify/lib/rfq/limits';
 
@@ -344,5 +345,48 @@ describe('RFQPage URL attribution contract', () => {
       productCount: 2,
       viaAskCheckbox: true,
     });
+  });
+});
+
+// The RFQ API rejects with { success:false, error, details? } and never sends a
+// `message` key. Reading the wrong key collapsed every 400/403/500 into one
+// generic retry string, which hid a live enum-drift outage on Probe-Station RFQs.
+describe('describeSubmitError', () => {
+  it('names the offending field for a validation failure', () => {
+    expect(
+      describeSubmitError({
+        success: false,
+        error: 'Validation failed',
+        details: [{ field: 'equipmentCategory', message: 'Invalid enum value.' }],
+      }),
+    ).toContain('equipmentCategory');
+  });
+
+  it('lists every offending field', () => {
+    const msg = describeSubmitError({
+      success: false,
+      error: 'Validation failed',
+      details: [
+        { field: 'email', message: 'Invalid email' },
+        { field: 'quantity', message: 'Expected number' },
+      ],
+    });
+    expect(msg).toContain('email');
+    expect(msg).toContain('quantity');
+  });
+
+  it('surfaces a detail-less API error such as the CAPTCHA gate', () => {
+    expect(
+      describeSubmitError({ success: false, error: 'CAPTCHA verification required' }),
+    ).toContain('CAPTCHA verification required');
+  });
+
+  it('falls back to a generic message when the body is unreadable', () => {
+    expect(describeSubmitError(null)).toBe('Failed to submit request. Please try again.');
+  });
+
+  it('ignores an empty details array rather than reporting an empty field list', () => {
+    expect(describeSubmitError({ success: false, error: 'Validation failed', details: [] }))
+      .toContain('Validation failed');
   });
 });

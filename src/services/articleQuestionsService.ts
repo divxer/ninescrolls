@@ -65,6 +65,21 @@ export async function fetchApprovedQuestions(articleSlug: string): Promise<Artic
     .sort((a, b) => new Date(a.submittedAt).getTime() - new Date(b.submittedAt).getTime());
 }
 
+/**
+ * Response from POST /api/questions.
+ *
+ * A union, not a flat object: the Lambda returns `message` only on success and
+ * `error`/`details` only on failure (see amplify/functions/submit-question/handler.ts).
+ * Modelling that split makes reading `.message` off a failure a compile error —
+ * a flat `{ success: boolean; message: string }` would claim `message` always
+ * exists and let the compiler wave through a read that is always undefined.
+ * The failure branch is structurally a `SubmitErrorBody`, so it feeds straight
+ * into `describeSubmitError`.
+ */
+export type SubmitQuestionResponse =
+  | { success: true; message: string }
+  | { success: false; error?: string; details?: { field?: string; message?: string }[] };
+
 /** Submit a new question via REST Lambda (with Turnstile) */
 export async function submitQuestion(payload: {
   articleSlug: string;
@@ -73,7 +88,7 @@ export async function submitQuestion(payload: {
   question: string;
   turnstileToken: string;
   purchaseIntent?: boolean;
-}): Promise<{ success: boolean; message: string }> {
+}): Promise<SubmitQuestionResponse> {
   const res = await fetch(`${getApiUrl()}/api/questions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
