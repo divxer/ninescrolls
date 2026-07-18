@@ -107,4 +107,11 @@ describe('buildReceiptItem', () => {
     expect(() => buildReceiptItem('SUBMIT_RECEIPT#x', { ...good, binding: 'f'.repeat(64), result: { rfqId: '', referenceNumber: 'R', status: 200 } })).toThrow(/rfqId/);
     expect(() => buildReceiptItem('SUBMIT_RECEIPT#x', { ...good, binding: 'f'.repeat(64), now: 'not-a-date' })).toThrow(/now/);
   });
+
+  it('rejects an unknown opKind, out-of-range status, and date-only now', () => {
+    const good = { binding: 'f'.repeat(64), result: { rfqId: 'r', referenceNumber: 'R', status: 200 }, now: '2026-07-18T00:00:00.000Z' };
+    expect(() => buildReceiptItem('SUBMIT_RECEIPT#x', { ...good, opKind: 'other' as never })).toThrow(/opKind/);
+    expect(() => buildReceiptItem('SUBMIT_RECEIPT#x', { ...good, opKind: 'direct', result: { rfqId: 'r', referenceNumber: 'R', status: 999 } })).toThrow(/status/);
+    expect(() => buildReceiptItem('SUBMIT_RECEIPT#x', { ...good, opKind: 'direct', now: '2026-07-18' })).toThrow(/ISO/);
+  });
 });

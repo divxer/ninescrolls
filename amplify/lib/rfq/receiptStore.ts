@@ -27,11 +27,16 @@ export function buildReceiptItem(
   // Enforce on write the same invariants validStoredReceipt() enforces on read, so a
   // malformed receipt can never be persisted (fail closed at the write boundary).
   if (typeof receiptId !== 'string' || receiptId.length === 0) throw new TypeError('receiptId must be a non-empty string');
+  if (args.opKind !== 'direct' && args.opKind !== 'draft-upgrade') throw new TypeError('opKind must be direct|draft-upgrade');
   if (!/^[0-9a-f]{64}$/.test(args.binding)) throw new TypeError('binding must be 64 hex chars');
-  if (!Number.isFinite(Date.parse(args.now))) throw new TypeError('now must be an ISO timestamp');
+  if (typeof args.now !== 'string' || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/.test(args.now) || !Number.isFinite(Date.parse(args.now))) {
+    throw new TypeError('now must be a strict ISO-8601 UTC timestamp');
+  }
   if (typeof args.result.rfqId !== 'string' || args.result.rfqId.length === 0) throw new TypeError('result.rfqId must be non-empty');
   if (typeof args.result.referenceNumber !== 'string' || args.result.referenceNumber.length === 0) throw new TypeError('result.referenceNumber must be non-empty');
-  if (!Number.isSafeInteger(args.result.status)) throw new TypeError('result.status must be a safe integer');
+  if (!Number.isSafeInteger(args.result.status) || args.result.status < 100 || args.result.status > 599) {
+    throw new TypeError('result.status must be a valid HTTP status (100-599)');
+  }
   const replayExpiresAt = new Date(Date.parse(args.now) + REPLAY_DAYS * DAY_MS).toISOString();
   const ttlExpiresAt = new Date(Date.parse(args.now) + TTL_DAYS * DAY_MS).toISOString();
   return {

@@ -3,7 +3,7 @@ import { UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import type { TransactWriteCommandInput } from '@aws-sdk/lib-dynamodb';
 import { outboxEffectKey, type OutboxEffectName } from './outboxEffects';
 import {
-  EFFECT_SUCCESSORS, buildOutboxEffectItem, isEmailEffect,
+  EFFECT_SUCCESSORS, buildOutboxEffectItem, isEmailEffect, isValidTempAttachmentKey,
   type AttachmentMoveResult, type CrmEmitResult,
   type OrgUpsertResult, type VisitorBridgeResult,
 } from './outboxEffects';
@@ -12,61 +12,101 @@ import { MAX_RFQ_ATTACHMENTS } from './contract';
 type TransactItem = NonNullable<TransactWriteCommandInput['TransactItems']>[number];
 
 const MAX_ORG_ID_LEN = 256;
-const MAX_MOVED_KEY_LEN = 256;
+const MAX_LEASE_MS = 60 * 60 * 1000; // 1h — a lease should never legitimately exceed this
+// Destination filename charset mirrors the handler's TEMP_ATTACHMENT_KEY_RE basename: a
+// single path segment (no '/'), no control chars, 1..200 chars. This rejects empty
+// suffixes, nested paths, and control characters in one shot.
+const MOVED_FILENAME_RE = /^[a-zA-Z0-9._-]{1,200}$/;
+// Strict ISO-8601 UTC (exactly what Date.prototype.toISOString produces), so a loose
+// `Date.parse`-acceptable value like '2026-07-18' or 'Jan 1 2026' is rejected.
+const ISO_UTC_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/;
 
 // These builders are the trust boundary between the P4b-2 worker (which passes results
 // derived from helpers / DynamoDB streams as effectively `unknown`) and what gets durably
-// persisted + backfilled onto the RFQ. TypeScript types alone don't survive a cast, so we
-// validate at runtime and fail closed rather than persist a malformed/oversized result.
+// persisted + backfilled onto the RFQ. TypeScript types don't survive a cast, so we parse
+// at runtime, fail closed, and persist ONLY a freshly-normalized copy — never the caller's
+// object — so a post-build mutation cannot reach the transaction.
 function assertNonEmptyString(v: unknown, label: string): void {
   if (typeof v !== 'string' || v.length === 0) throw new Error(`${label} must be a non-empty string`);
 }
 function assertIsoTime(v: unknown, label: string): void {
-  if (typeof v !== 'string' || !Number.isFinite(Date.parse(v))) throw new Error(`${label} must be an ISO timestamp`);
+  if (typeof v !== 'string' || !ISO_UTC_RE.test(v) || !Number.isFinite(Date.parse(v))) {
+    throw new Error(`${label} must be a strict ISO-8601 UTC timestamp`);
+  }
 }
-function assertNonNegSafeInt(v: unknown, label: string): void {
-  if (!Number.isSafeInteger(v) || (v as number) < 0) throw new Error(`${label} must be a non-negative safe integer`);
+/** Non-negative safe integer whose successor is still safe (version fencing does `+1`). */
+function assertVersion(v: unknown, label: string): void {
+  if (!Number.isSafeInteger(v) || (v as number) < 0 || (v as number) >= Number.MAX_SAFE_INTEGER) {
+    throw new Error(`${label} must be a non-negative safe integer below MAX_SAFE_INTEGER`);
+  }
+}
+function isPlainObject(v: unknown): v is Record<string, unknown> {
+  return typeof v === 'object' && v !== null && !Array.isArray(v) && Object.getPrototypeOf(v) === Object.prototype;
+}
+function assertExactKeys(rec: Record<string, unknown>, allowed: readonly string[], label: string): void {
+  for (const k of Object.keys(rec)) {
+    if (!allowed.includes(k)) throw new Error(`${label} has unexpected property '${k}'`);
+  }
 }
 
-/** Fail closed if a completion result is malformed, mismatched to its effect, or oversized. */
-function assertValidCompletionResult(p: CompletionParams): void {
-  const r = p.result as unknown;
-  if (r === null || typeof r !== 'object') throw new Error(`${p.effect} result must be an object`);
-  const rec = r as Record<string, unknown>;
-  switch (p.effect) {
-    case 'org-upsert':
-      if (!(rec.matchedOrgId === null
-        || (typeof rec.matchedOrgId === 'string' && rec.matchedOrgId.length > 0 && rec.matchedOrgId.length <= MAX_ORG_ID_LEN))) {
+type NormalizedResult = OrgUpsertResult | VisitorBridgeResult | CrmEmitResult | AttachmentMoveResult;
+
+/**
+ * Strict fail-closed parser: requires a plain own-property object with the EXACT field set
+ * for the effect, strict value/key formats, and unique+disjoint attachment arrays. Returns
+ * a brand-new normalized object (fresh nested arrays) so the caller can never mutate what
+ * gets persisted. Anything unexpected throws — nothing is coerced or silently dropped.
+ */
+function parseCompletionResult(effect: CompletionParams['effect'], rfqId: string, result: unknown): NormalizedResult {
+  if (!isPlainObject(result)) throw new Error(`${effect} result must be a plain object`);
+  switch (effect) {
+    case 'org-upsert': {
+      assertExactKeys(result, ['matchedOrgId'], 'org-upsert result');
+      const id = result.matchedOrgId;
+      if (!(id === null || (typeof id === 'string' && id.length > 0 && id.length <= MAX_ORG_ID_LEN))) {
         throw new Error('org-upsert result.matchedOrgId must be null or a bounded non-empty string');
       }
-      break;
-    case 'visitor-bridge':
-      if (typeof rec.created !== 'boolean' || typeof rec.orgUpgraded !== 'boolean') {
+      return { matchedOrgId: id };
+    }
+    case 'visitor-bridge': {
+      assertExactKeys(result, ['created', 'orgUpgraded'], 'visitor-bridge result');
+      if (typeof result.created !== 'boolean' || typeof result.orgUpgraded !== 'boolean') {
         throw new Error('visitor-bridge result requires boolean created/orgUpgraded');
       }
-      break;
-    case 'crm-emit':
-      if (rec.accepted !== true) throw new Error('crm-emit result.accepted must be true');
-      break;
+      return { created: result.created, orgUpgraded: result.orgUpgraded };
+    }
+    case 'crm-emit': {
+      assertExactKeys(result, ['accepted'], 'crm-emit result');
+      if (result.accepted !== true) throw new Error('crm-emit result.accepted must be true');
+      return { accepted: true };
+    }
     case 'attachment-move': {
-      const moved = rec.movedKeys, failed = rec.failedKeys;
+      assertExactKeys(result, ['movedKeys', 'failedKeys'], 'attachment-move result');
+      const moved = result.movedKeys, failed = result.failedKeys;
       if (!Array.isArray(moved) || !Array.isArray(failed)) {
         throw new Error('attachment-move result requires movedKeys/failedKeys arrays');
       }
-      // moved+failed partition the ≤MAX validated temp keys, so total is bounded.
       if (moved.length + failed.length > MAX_RFQ_ATTACHMENTS) {
-        throw new Error(`attachment-move movedKeys+failedKeys exceeds MAX_RFQ_ATTACHMENTS (${MAX_RFQ_ATTACHMENTS})`);
+        throw new Error(`attachment-move keys exceed MAX_RFQ_ATTACHMENTS (${MAX_RFQ_ATTACHMENTS})`);
       }
-      const destPrefix = `rfqs/${p.rfqId}/`;
+      const destPrefix = `rfqs/${rfqId}/`;
+      const seen = new Set<string>();
+      const movedKeys: string[] = [];
       for (const k of moved) {
-        if (typeof k !== 'string' || !k.startsWith(destPrefix) || k.length > MAX_MOVED_KEY_LEN || k.includes('..')) {
-          throw new Error(`attachment-move movedKeys must be bounded rfqs/${p.rfqId}/ keys`);
+        if (typeof k !== 'string' || !k.startsWith(destPrefix) || k.includes('..')
+          || !MOVED_FILENAME_RE.test(k.slice(destPrefix.length))) {
+          throw new Error(`attachment-move movedKeys must be strict rfqs/${rfqId}/<filename> keys`);
         }
+        if (seen.has(k)) throw new Error('attachment-move keys must be unique and disjoint');
+        seen.add(k); movedKeys.push(k);
       }
-      for (const k of failed) if (typeof k !== 'string' || k.length > MAX_MOVED_KEY_LEN) {
-        throw new Error('attachment-move failedKeys must be bounded strings');
+      const failedKeys: string[] = [];
+      for (const k of failed) {
+        if (!isValidTempAttachmentKey(k)) throw new Error('attachment-move failedKeys must be valid temp/rfq/ keys');
+        if (seen.has(k)) throw new Error('attachment-move keys must be unique and disjoint');
+        seen.add(k); failedKeys.push(k);
       }
-      break;
+      return { movedKeys, failedKeys };
     }
   }
 }
@@ -85,8 +125,10 @@ export interface ClaimParams {
 export function buildEffectClaimItems(p: ClaimParams): UpdateCommand {
   assertNonEmptyString(p.owner, 'owner');
   assertIsoTime(p.now, 'now');
-  assertNonNegSafeInt(p.expectedVersion, 'expectedVersion');
-  if (!Number.isFinite(p.leaseMs) || p.leaseMs <= 0) throw new Error('leaseMs must be a positive number');
+  assertVersion(p.expectedVersion, 'expectedVersion');
+  if (!Number.isSafeInteger(p.leaseMs) || p.leaseMs <= 0 || p.leaseMs > MAX_LEASE_MS) {
+    throw new Error(`leaseMs must be a positive safe integer <= ${MAX_LEASE_MS}`);
+  }
   const nowMs = Date.parse(p.now);
   const values: Record<string, unknown> = {
     ':processing': 'processing', ':owner': p.owner, ':exp': nowMs + p.leaseMs,
@@ -123,16 +165,22 @@ export type CompletionParams = {
   tableName: string; rfqId: string; owner: string; claimedVersion: number; now: string;
 } & CompletionResult;
 
-/** Optional RFQ#/META backfill patch for the effects that project a result onto the RFQ. */
-function rfqBackfill(p: CompletionParams): { UpdateExpression: string; values: Record<string, unknown> } | null {
-  if (p.effect === 'org-upsert' && p.result.matchedOrgId !== null) {
+/**
+ * Optional RFQ#/META backfill patch, built from the NORMALIZED parsed result (never the
+ * caller's object), so the backfill can't carry post-build-mutated data.
+ */
+function rfqBackfill(
+  effect: CompletionParams['effect'], parsed: NormalizedResult,
+): { UpdateExpression: string; values: Record<string, unknown> } | null {
+  if (effect === 'org-upsert' && (parsed as OrgUpsertResult).matchedOrgId !== null) {
+    const id = (parsed as OrgUpsertResult).matchedOrgId;
     return {
       UpdateExpression: 'SET matchedOrgId = :id, GSI2PK = :gsi2',
-      values: { ':id': p.result.matchedOrgId, ':gsi2': `ORG#${p.result.matchedOrgId}` },
+      values: { ':id': id, ':gsi2': `ORG#${id}` },
     };
   }
-  if (p.effect === 'attachment-move') {
-    return { UpdateExpression: 'SET attachmentKeys = :keys', values: { ':keys': p.result.movedKeys } };
+  if (effect === 'attachment-move') {
+    return { UpdateExpression: 'SET attachmentKeys = :keys', values: { ':keys': (parsed as AttachmentMoveResult).movedKeys } };
   }
   return null;
 }
@@ -151,8 +199,9 @@ export function buildEffectCompletionItems(p: CompletionParams): TransactItem[] 
   }
   assertNonEmptyString(p.owner, 'owner');
   assertIsoTime(p.now, 'now');
-  assertNonNegSafeInt(p.claimedVersion, 'claimedVersion');
-  assertValidCompletionResult(p);
+  assertVersion(p.claimedVersion, 'claimedVersion');
+  // Parse into a fresh normalized object; everything below persists ONLY `parsed`.
+  const parsed = parseCompletionResult(p.effect, p.rfqId, p.result);
   const items: TransactItem[] = [
     {
       Update: {
@@ -164,13 +213,13 @@ export function buildEffectCompletionItems(p: CompletionParams): TransactItem[] 
         ExpressionAttributeNames: { '#status': 'status', '#version': 'version', '#result': 'result' },
         ExpressionAttributeValues: {
           ':done': 'done', ':processing': 'processing', ':owner': p.owner,
-          ':cv': p.claimedVersion, ':nv': p.claimedVersion + 1, ':result': p.result, ':now': p.now,
+          ':cv': p.claimedVersion, ':nv': p.claimedVersion + 1, ':result': parsed, ':now': p.now,
         },
       },
     },
   ];
 
-  const backfill = rfqBackfill(p);
+  const backfill = rfqBackfill(p.effect, parsed);
   if (backfill) {
     items.push({
       Update: {
