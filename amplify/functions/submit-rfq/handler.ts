@@ -4,6 +4,7 @@ import { DynamoDBDocumentClient, PutCommand, UpdateCommand } from '@aws-sdk/lib-
 import { S3Client, CopyObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { z } from 'zod';
 import crypto from 'node:crypto';
+import { RFQ_FIELD_LIMITS as L } from '../../lib/rfq/limits';
 import { invokeOrganizationApi } from '../../lib/organization/invoke-org-api';
 import { computeRfqScore } from '../../lib/organization/lead-score';
 import { emitTimelineEventToCrm, invokeCrmAction } from '../../lib/crm/invoke-crm-api';
@@ -86,43 +87,45 @@ const REFERRAL_SOURCES = [
 // ---------------------------------------------------------------------------
 // Zod Schema — matches §12.10.3 API format
 // ---------------------------------------------------------------------------
+// Length caps derive from the shared source of truth (amplify/lib/rfq/limits)
+// so client (maxLength + validateField) and server can never drift.
 export const rfqSchema = z.object({
-    name: z.string().min(2).max(100),
-    email: z.string().email().max(254),
-    phone: z.string().max(30).optional(),
-    institution: z.string().min(2).max(200),
-    department: z.string().max(200).optional(),
+    name: z.string().min(L.name.min).max(L.name.max),
+    email: z.string().email().max(L.email.max),
+    phone: z.string().max(L.phone.max).optional(),
+    institution: z.string().min(L.institution.min).max(L.institution.max),
+    department: z.string().max(L.department.max).optional(),
     role: z.enum(ROLES).optional(),
     equipmentCategory: z.enum(EQUIPMENT_CATEGORIES),
-    specificModel: z.string().max(100).optional(),
-    applicationDescription: z.string().min(10).max(3000),
-    keySpecifications: z.string().max(3000).optional(),
+    specificModel: z.string().max(L.specificModel.max).optional(),
+    applicationDescription: z.string().min(L.applicationDescription.min).max(L.applicationDescription.max),
+    keySpecifications: z.string().max(L.keySpecifications.max).optional(),
     quantity: z.number().int().positive().default(1),
     budgetRange: z.enum(BUDGET_RANGES).optional(),
     timeline: z.enum(TIMELINES).optional(),
     fundingStatus: z.enum(FUNDING_STATUSES).optional(),
     referralSource: z.enum(REFERRAL_SOURCES).optional(),
-    existingEquipment: z.string().max(2000).optional(),
-    additionalComments: z.string().max(3000).optional(),
+    existingEquipment: z.string().max(L.existingEquipment.max).optional(),
+    additionalComments: z.string().max(L.additionalComments.max).optional(),
     turnstileToken: z.string().min(1),
     // Browser visitor identity for the VISITOR# bridge (2C-analytics)
-    visitorId: z.string().max(100).optional(),
+    visitorId: z.string().max(L.visitorId.max).optional(),
     // S3 keys from presigned URL uploads (temp/ prefix)
     attachmentKeys: z.array(z.string().max(500)).max(3).optional(),
     // Budgetary quote with shipping address for tax calculation
     needsBudgetaryQuote: z.boolean().optional(),
-    shippingAddress: z.string().max(300).optional(),
-    shippingCity: z.string().max(100).optional(),
-    shippingState: z.string().max(100).optional(),
-    shippingZipCode: z.string().max(20).optional(),
-    shippingCountry: z.string().max(100).optional(),
+    shippingAddress: z.string().max(L.shippingAddress.max).optional(),
+    shippingCity: z.string().max(L.shippingCity.max).optional(),
+    shippingState: z.string().max(L.shippingState.max).optional(),
+    shippingZipCode: z.string().max(L.shippingZipCode.max).optional(),
+    shippingCountry: z.string().max(L.shippingCountry.max).optional(),
     // Article attribution — silently dropped if invalid (never blocks submission)
     referrerSource: z
         .string()
         .optional()
         .transform((v) => {
             if (!v) return undefined;
-            if (v.length > 200 || !/^(insights|news|products)\/[a-z0-9-]+$/.test(v)) {
+            if (v.length > L.referrerSource.max || !/^(insights|news|products)\/[a-z0-9-]+$/.test(v)) {
                 console.warn(`Invalid referrerSource ignored: ${v.slice(0, 50)}`);
                 return undefined;
             }

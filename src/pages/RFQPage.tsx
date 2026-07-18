@@ -7,6 +7,9 @@ import { getVisitorId } from '../services/analyticsStorageService';
 import { describeSubmitError, type SubmitErrorBody } from './rfqSubmitError';
 import { parseRfqUrlParams } from './rfqUrlParams';
 import { ConversionCard, ConversionHero, TrustSignalList } from '../components/conversion';
+// Shared source of truth for field length caps — the server's rfqSchema
+// derives its .max() from this same object, so client and server cannot drift.
+import { RFQ_FIELD_LIMITS } from '../../amplify/lib/rfq/limits';
 
 // ---------------------------------------------------------------------------
 // Turnstile
@@ -386,8 +389,8 @@ export function RFQPage() {
   const validateField = useCallback((name: string, value: string | number | boolean): string => {
     switch (name) {
       case 'name':
-        if (!value || (typeof value === 'string' && value.trim().length < 2)) return 'Name must be at least 2 characters';
-        if (typeof value === 'string' && value.trim().length > 100) return 'Name must be under 100 characters';
+        if (!value || (typeof value === 'string' && value.trim().length < RFQ_FIELD_LIMITS.name.min)) return `Name must be at least ${RFQ_FIELD_LIMITS.name.min} characters`;
+        if (typeof value === 'string' && value.length > RFQ_FIELD_LIMITS.name.max) return `Name must be under ${RFQ_FIELD_LIMITS.name.max} characters`;
         return '';
       case 'email':
         if (!value) return 'Email is required';
@@ -397,19 +400,39 @@ export function RFQPage() {
         if (value && typeof value === 'string' && value.trim() && !/^[+\d\s\-().]{7,20}$/.test(value.trim())) return 'Please enter a valid phone number';
         return '';
       case 'institution':
-        if (!value || (typeof value === 'string' && value.trim().length < 2)) return 'Institution is required (at least 2 characters)';
-        if (typeof value === 'string' && value.trim().length > 200) return 'Institution must be under 200 characters';
+        if (!value || (typeof value === 'string' && value.trim().length < RFQ_FIELD_LIMITS.institution.min)) return `Institution is required (at least ${RFQ_FIELD_LIMITS.institution.min} characters)`;
+        if (typeof value === 'string' && value.length > RFQ_FIELD_LIMITS.institution.max) return `Institution must be under ${RFQ_FIELD_LIMITS.institution.max} characters`;
         return '';
       case 'equipmentCategory':
         if (!value) return 'Please select an equipment category';
         return '';
       case 'applicationDescription':
-        if (!value || (typeof value === 'string' && value.trim().length < 10)) return 'Please describe your application (at least 10 characters)';
-        if (typeof value === 'string' && value.trim().length > 3000) return 'Description must be under 3000 characters';
+        if (!value || (typeof value === 'string' && value.trim().length < RFQ_FIELD_LIMITS.applicationDescription.min)) return `Please describe your application (at least ${RFQ_FIELD_LIMITS.applicationDescription.min} characters)`;
+        if (typeof value === 'string' && value.length > RFQ_FIELD_LIMITS.applicationDescription.max) return `Description must be under ${RFQ_FIELD_LIMITS.applicationDescription.max} characters`;
         return '';
-      case 'quantity':
-        if (typeof value === 'number' && (value < 1 || !Number.isInteger(value))) return 'Quantity must be a positive integer';
+      // Optional free-text fields the server length-caps. Only enforce the cap
+      // here (empty is valid); maxLength attributes stop typed/pasted overflow,
+      // these cases catch prefilled/programmatic overflow before submit.
+      case 'department':
+        if (typeof value === 'string' && value.length > RFQ_FIELD_LIMITS.department.max) return `Department must be under ${RFQ_FIELD_LIMITS.department.max} characters`;
         return '';
+      case 'specificModel':
+        if (typeof value === 'string' && value.length > RFQ_FIELD_LIMITS.specificModel.max) return `Preferred model must be under ${RFQ_FIELD_LIMITS.specificModel.max} characters`;
+        return '';
+      case 'keySpecifications':
+        if (typeof value === 'string' && value.length > RFQ_FIELD_LIMITS.keySpecifications.max) return `Technical requirements must be under ${RFQ_FIELD_LIMITS.keySpecifications.max} characters`;
+        return '';
+      case 'existingEquipment':
+        if (typeof value === 'string' && value.length > RFQ_FIELD_LIMITS.existingEquipment.max) return `Existing equipment must be under ${RFQ_FIELD_LIMITS.existingEquipment.max} characters`;
+        return '';
+      case 'additionalComments':
+        if (typeof value === 'string' && value.length > RFQ_FIELD_LIMITS.additionalComments.max) return `Additional notes must be under ${RFQ_FIELD_LIMITS.additionalComments.max} characters`;
+        return '';
+      case 'quantity': {
+        const n = typeof value === 'number' ? value : parseInt(String(value), 10);
+        if (!Number.isInteger(n) || n < 1) return 'Quantity must be a positive integer';
+        return '';
+      }
       case 'shippingAddress':
         if (formData.needsBudgetaryQuote && (!value || (typeof value === 'string' && !value.trim()))) return 'Street address is required for budgetary quote';
         return '';
@@ -470,6 +493,10 @@ export function RFQPage() {
       const phoneError = validateField('phone', formData.phone);
       if (phoneError) errors.phone = phoneError;
     }
+    if (formData.department) {
+      const departmentError = validateField('department', formData.department);
+      if (departmentError) errors.department = departmentError;
+    }
     setFieldErrors(errors);
     if (Object.keys(errors).length === 0) {
       setCurrentStep(2);
@@ -502,6 +529,15 @@ export function RFQPage() {
     if (formData.phone) {
       const phoneError = validateField('phone', formData.phone);
       if (phoneError) errors.phone = phoneError;
+    }
+    // Optional free-text fields the server length-caps — validate so overflow
+    // (typically from cart/URL prefill) is caught before the request fires.
+    const cappedOptionalFields: (keyof RFQFormData)[] = [
+      'department', 'specificModel', 'keySpecifications', 'existingEquipment', 'additionalComments',
+    ];
+    for (const field of cappedOptionalFields) {
+      const error = validateField(field, formData[field]);
+      if (error) errors[field] = error;
     }
     if (formData.needsBudgetaryQuote) {
       const addressFields: (keyof RFQFormData)[] = ['shippingAddress', 'shippingCity', 'shippingState', 'shippingZipCode'];
@@ -762,19 +798,19 @@ export function RFQPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label htmlFor="rfq-name" className={labelClasses}>Full Name <span className="text-red-500">*</span></label>
-                        <input type="text" id="rfq-name" name="name" value={formData.name} onChange={handleChange} onBlur={handleBlur} placeholder="Full name" required className={inputClasses} {...fieldErrorAria('name')} />
+                        <input type="text" id="rfq-name" name="name" value={formData.name} onChange={handleChange} onBlur={handleBlur} placeholder="Full name" required maxLength={RFQ_FIELD_LIMITS.name.max} className={inputClasses} {...fieldErrorAria('name')} />
                         {fieldErrors.name && <span id="rfq-error-name" data-field-error className="text-red-500 text-xs mt-1 block">{fieldErrors.name}</span>}
                       </div>
                       <div>
                         <label htmlFor="rfq-email" className={labelClasses}>Email <span className="text-red-500">*</span></label>
-                        <input type="email" id="rfq-email" name="email" value={formData.email} onChange={handleChange} onBlur={handleBlur} placeholder="you@university.edu" required className={inputClasses} {...fieldErrorAria('email')} />
+                        <input type="email" id="rfq-email" name="email" value={formData.email} onChange={handleChange} onBlur={handleBlur} placeholder="you@university.edu" required maxLength={RFQ_FIELD_LIMITS.email.max} className={inputClasses} {...fieldErrorAria('email')} />
                         {fieldErrors.email && <span id="rfq-error-email" data-field-error className="text-red-500 text-xs mt-1 block">{fieldErrors.email}</span>}
                       </div>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label htmlFor="rfq-phone" className={labelClasses}>Phone <span className="text-on-surface-variant/50 text-[10px]">(optional)</span></label>
-                        <input type="tel" id="rfq-phone" name="phone" value={formData.phone} onChange={handleChange} onBlur={handleBlur} placeholder="+1 (650) xxx-xxxx" className={inputClasses} {...fieldErrorAria('phone')} />
+                        <input type="tel" id="rfq-phone" name="phone" value={formData.phone} onChange={handleChange} onBlur={handleBlur} placeholder="+1 (650) xxx-xxxx" maxLength={RFQ_FIELD_LIMITS.phone.max} className={inputClasses} {...fieldErrorAria('phone')} />
                         {fieldErrors.phone && <span id="rfq-error-phone" data-field-error className="text-red-500 text-xs mt-1 block">{fieldErrors.phone}</span>}
                       </div>
                       <div>
@@ -788,12 +824,13 @@ export function RFQPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label htmlFor="rfq-institution" className={labelClasses}>Institution / Organization <span className="text-red-500">*</span></label>
-                        <input type="text" id="rfq-institution" name="institution" value={formData.institution} onChange={handleChange} onBlur={handleBlur} placeholder="University or company name" required className={inputClasses} {...fieldErrorAria('institution')} />
+                        <input type="text" id="rfq-institution" name="institution" value={formData.institution} onChange={handleChange} onBlur={handleBlur} placeholder="University or company name" required maxLength={RFQ_FIELD_LIMITS.institution.max} className={inputClasses} {...fieldErrorAria('institution')} />
                         {fieldErrors.institution && <span id="rfq-error-institution" data-field-error className="text-red-500 text-xs mt-1 block">{fieldErrors.institution}</span>}
                       </div>
                       <div>
                         <label htmlFor="rfq-department" className={labelClasses}>Department <span className="text-on-surface-variant/50 text-[10px]">(optional)</span></label>
-                        <input type="text" id="rfq-department" name="department" value={formData.department} onChange={handleChange} placeholder="e.g. Materials Science & Engineering" className={inputClasses} />
+                        <input type="text" id="rfq-department" name="department" value={formData.department} onChange={handleChange} onBlur={handleBlur} placeholder="e.g. Materials Science & Engineering" maxLength={RFQ_FIELD_LIMITS.department.max} className={inputClasses} {...fieldErrorAria('department')} />
+                        {fieldErrors.department && <span id="rfq-error-department" data-field-error className="text-red-500 text-xs mt-1 block">{fieldErrors.department}</span>}
                       </div>
                     </div>
                   </div>
@@ -824,6 +861,7 @@ export function RFQPage() {
                         placeholder="Describe your intended process, target materials, substrate size, temperature limits, gases, throughput expectations, and any existing process challenges."
                         rows={5}
                         required
+                        maxLength={RFQ_FIELD_LIMITS.applicationDescription.max}
                         className={textareaClasses}
                         {...fieldErrorAria('applicationDescription')}
                       />
@@ -866,15 +904,20 @@ export function RFQPage() {
                         name="keySpecifications"
                         value={formData.keySpecifications}
                         onChange={handleChange}
+                        onBlur={handleBlur}
                         placeholder="Chamber size, wafer/substrate dimensions, gas lines needed, temperature range, RF power, vacuum level, throughput, automation requirements, etc."
                         rows={4}
+                        maxLength={RFQ_FIELD_LIMITS.keySpecifications.max}
                         className={textareaClasses}
+                        {...fieldErrorAria('keySpecifications')}
                       />
+                      {fieldErrors.keySpecifications && <span id="rfq-error-keySpecifications" data-field-error className="text-red-500 text-xs mt-1 block">{fieldErrors.keySpecifications}</span>}
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label htmlFor="rfq-specificModel" className={labelClasses}>Preferred Model <span className="text-on-surface-variant/50 text-[10px]">(optional)</span></label>
-                        <input type="text" id="rfq-specificModel" name="specificModel" value={formData.specificModel} onChange={handleChange} placeholder='e.g. "ICP-100A" or "Need recommendation"' className={inputClasses} />
+                        <input type="text" id="rfq-specificModel" name="specificModel" value={formData.specificModel} onChange={handleChange} onBlur={handleBlur} placeholder='e.g. "ICP-100A" or "Need recommendation"' maxLength={RFQ_FIELD_LIMITS.specificModel.max} className={inputClasses} {...fieldErrorAria('specificModel')} />
+                        {fieldErrors.specificModel && <span id="rfq-error-specificModel" data-field-error className="text-red-500 text-xs mt-1 block">{fieldErrors.specificModel}</span>}
                       </div>
                       <div>
                         <label htmlFor="rfq-quantity" className={labelClasses}>Quantity</label>
@@ -936,25 +979,25 @@ export function RFQPage() {
                       <p className="text-xs text-on-surface-variant">Shipping address is required to calculate applicable taxes for your budgetary quote.</p>
                       <div>
                         <label htmlFor="rfq-shippingAddress" className={labelClasses}>Street Address <span className="text-red-500">*</span></label>
-                        <input type="text" id="rfq-shippingAddress" name="shippingAddress" value={formData.shippingAddress} onChange={handleChange} onBlur={handleBlur} placeholder="Street address" autoComplete="street-address" required className={inputClasses} {...fieldErrorAria('shippingAddress')} />
+                        <input type="text" id="rfq-shippingAddress" name="shippingAddress" value={formData.shippingAddress} onChange={handleChange} onBlur={handleBlur} placeholder="Street address" autoComplete="street-address" required maxLength={RFQ_FIELD_LIMITS.shippingAddress.max} className={inputClasses} {...fieldErrorAria('shippingAddress')} />
                         {fieldErrors.shippingAddress && <span id="rfq-error-shippingAddress" data-field-error className="text-red-500 text-xs mt-1 block">{fieldErrors.shippingAddress}</span>}
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                           <label htmlFor="rfq-shippingCity" className={labelClasses}>City <span className="text-red-500">*</span></label>
-                          <input type="text" id="rfq-shippingCity" name="shippingCity" value={formData.shippingCity} onChange={handleChange} onBlur={handleBlur} placeholder="City" autoComplete="address-level2" required className={inputClasses} {...fieldErrorAria('shippingCity')} />
+                          <input type="text" id="rfq-shippingCity" name="shippingCity" value={formData.shippingCity} onChange={handleChange} onBlur={handleBlur} placeholder="City" autoComplete="address-level2" required maxLength={RFQ_FIELD_LIMITS.shippingCity.max} className={inputClasses} {...fieldErrorAria('shippingCity')} />
                           {fieldErrors.shippingCity && <span id="rfq-error-shippingCity" data-field-error className="text-red-500 text-xs mt-1 block">{fieldErrors.shippingCity}</span>}
                         </div>
                         <div>
                           <label htmlFor="rfq-shippingState" className={labelClasses}>State / Province <span className="text-red-500">*</span></label>
-                          <input type="text" id="rfq-shippingState" name="shippingState" value={formData.shippingState} onChange={handleChange} onBlur={handleBlur} placeholder="State or province" autoComplete="address-level1" required className={inputClasses} {...fieldErrorAria('shippingState')} />
+                          <input type="text" id="rfq-shippingState" name="shippingState" value={formData.shippingState} onChange={handleChange} onBlur={handleBlur} placeholder="State or province" autoComplete="address-level1" required maxLength={RFQ_FIELD_LIMITS.shippingState.max} className={inputClasses} {...fieldErrorAria('shippingState')} />
                           {fieldErrors.shippingState && <span id="rfq-error-shippingState" data-field-error className="text-red-500 text-xs mt-1 block">{fieldErrors.shippingState}</span>}
                         </div>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                           <label htmlFor="rfq-shippingZipCode" className={labelClasses}>ZIP / Postal Code <span className="text-red-500">*</span></label>
-                          <input type="text" id="rfq-shippingZipCode" name="shippingZipCode" value={formData.shippingZipCode} onChange={handleChange} onBlur={handleBlur} placeholder="ZIP or postal code" autoComplete="postal-code" required className={inputClasses} {...fieldErrorAria('shippingZipCode')} />
+                          <input type="text" id="rfq-shippingZipCode" name="shippingZipCode" value={formData.shippingZipCode} onChange={handleChange} onBlur={handleBlur} placeholder="ZIP or postal code" autoComplete="postal-code" required maxLength={RFQ_FIELD_LIMITS.shippingZipCode.max} className={inputClasses} {...fieldErrorAria('shippingZipCode')} />
                           {fieldErrors.shippingZipCode && <span id="rfq-error-shippingZipCode" data-field-error className="text-red-500 text-xs mt-1 block">{fieldErrors.shippingZipCode}</span>}
                         </div>
                         <div>
@@ -981,10 +1024,14 @@ export function RFQPage() {
                         name="existingEquipment"
                         value={formData.existingEquipment}
                         onChange={handleChange}
+                        onBlur={handleBlur}
                         placeholder="List any existing tools relevant to this project (e.g., plasma cleaner, RIE, PECVD, spin coater, vacuum pumps, gas cabinets, substrate sizes supported, or legacy systems)."
                         rows={3}
+                        maxLength={RFQ_FIELD_LIMITS.existingEquipment.max}
                         className={textareaClasses}
+                        {...fieldErrorAria('existingEquipment')}
                       />
+                      {fieldErrors.existingEquipment && <span id="rfq-error-existingEquipment" data-field-error className="text-red-500 text-xs mt-1 block">{fieldErrors.existingEquipment}</span>}
                     </div>
 
                     {/* File Upload */}
@@ -1031,10 +1078,14 @@ export function RFQPage() {
                         name="additionalComments"
                         value={formData.additionalComments}
                         onChange={handleChange}
+                        onBlur={handleBlur}
                         placeholder="Any additional details, constraints, timeline considerations, or questions for our engineering team."
                         rows={3}
+                        maxLength={RFQ_FIELD_LIMITS.additionalComments.max}
                         className={textareaClasses}
+                        {...fieldErrorAria('additionalComments')}
                       />
+                      {fieldErrors.additionalComments && <span id="rfq-error-additionalComments" data-field-error className="text-red-500 text-xs mt-1 block">{fieldErrors.additionalComments}</span>}
                     </div>
                   </div>
                 </div>
