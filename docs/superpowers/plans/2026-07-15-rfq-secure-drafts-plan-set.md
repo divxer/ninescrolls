@@ -38,6 +38,11 @@ Sequencing follows the spec's rollout: **P1 → P2 → P4 (submission idempotenc
 
 ## Detailed plans
 
-- **P1** — [`2026-07-15-rfq-secure-drafts-p1-contract-and-crypto.md`](2026-07-15-rfq-secure-drafts-p1-contract-and-crypto.md) *(merged, #306)*
-- **P2** — [`2026-07-15-rfq-secure-drafts-p2-storage.md`](2026-07-15-rfq-secure-drafts-p2-storage.md) *(written)*
-- P3–P6 — to be written per-phase.
+- **P1** — [`…p1-contract-and-crypto.md`](2026-07-15-rfq-secure-drafts-p1-contract-and-crypto.md) *(merged, #306)*
+- **P2** — [`…p2-storage.md`](2026-07-15-rfq-secure-drafts-p2-storage.md) *(merged, #307)*
+- **P3** — [`…p3-public-api.md`](2026-07-15-rfq-secure-drafts-p3-public-api.md) *(merged, #308)*
+- **P4a** — [`…p4a-receipt-idempotency.md`](2026-07-15-rfq-secure-drafts-p4a-receipt-idempotency.md) *(merged, #309)* — receipt + idempotency store, dark
+- **P4b** — [`…p4b-submit-refactor.md`](2026-07-15-rfq-secure-drafts-p4b-submit-refactor.md) *(written — the live submit-rfq refactor; flag-gated)*
+- P5 (admin/cleanup) · P6 (frontend autosave) — to be written per-phase.
+
+**Note:** P4 split into **P4a** (pure receipt/idempotency core, shipped dark) and **P4b** (the live `submit-rfq` cutover behind `RFQ_IDEMPOTENT_SUBMIT`) so the production-path change lands small and reviewed.
