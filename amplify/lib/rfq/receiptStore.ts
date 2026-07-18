@@ -14,6 +14,25 @@ export interface ReceiptDeps {
 
 export interface StoredResult { rfqId: string; referenceNumber: string; status: number }
 
+export interface ReceiptItem {
+  PK: string; SK: 'META'; opKind: SubmitOperationKind; binding: string; rfqId: string;
+  referenceNumber: string; status: number; createdAt: string; replayExpiresAt: string; TTL: number;
+}
+
+/** Shared receipt-item builder — the single source for recordReceipt AND the submit transaction. */
+export function buildReceiptItem(
+  receiptId: string,
+  args: { opKind: SubmitOperationKind; binding: string; result: StoredResult; now: string },
+): ReceiptItem {
+  const replayExpiresAt = new Date(Date.parse(args.now) + REPLAY_DAYS * DAY_MS).toISOString();
+  const ttlExpiresAt = new Date(Date.parse(args.now) + TTL_DAYS * DAY_MS).toISOString();
+  return {
+    PK: receiptId, SK: 'META', opKind: args.opKind, binding: args.binding,
+    rfqId: args.result.rfqId, referenceNumber: args.result.referenceNumber, status: args.result.status,
+    createdAt: args.now, replayExpiresAt, TTL: Math.floor(Date.parse(ttlExpiresAt) / 1000),
+  };
+}
+
 export type CheckReceiptResult =
   | { outcome: 'first-use' }
   | { outcome: 'replay'; result: StoredResult }
@@ -67,17 +86,9 @@ export async function recordReceipt(
   deps: ReceiptDeps, receiptId: string,
   args: { opKind: SubmitOperationKind; binding: string; result: StoredResult },
 ): Promise<void> {
-  const now = deps.now();
-  const replayExpiresAt = new Date(Date.parse(now) + REPLAY_DAYS * DAY_MS).toISOString();
-  const ttlExpiresAt = new Date(Date.parse(now) + TTL_DAYS * DAY_MS).toISOString();
   await deps.send(new PutCommand({
     TableName: deps.tableName,
-    Item: {
-      PK: receiptId, SK: 'META',
-      opKind: args.opKind, binding: args.binding,
-      rfqId: args.result.rfqId, referenceNumber: args.result.referenceNumber, status: args.result.status,
-      createdAt: now, replayExpiresAt, TTL: Math.floor(Date.parse(ttlExpiresAt) / 1000),
-    },
+    Item: buildReceiptItem(receiptId, { ...args, now: deps.now() }),
     ConditionExpression: 'attribute_not_exists(PK)',
   }));
 }

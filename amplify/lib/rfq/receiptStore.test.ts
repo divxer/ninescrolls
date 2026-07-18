@@ -4,6 +4,7 @@ import { recordReceipt, checkReceipt } from './receiptStore';
 import { deriveSubmitReceiptId, computeRequestBinding } from './submitReceipt';
 import { encodeCredential } from './draftCredentials';
 import { FakeDdb } from '../../functions/price-api/lib/testing/fakeDdb';
+import { buildReceiptItem } from './receiptStore';
 
 const NOW = '2026-07-15T00:00:00.000Z';
 const deps = (ddb: FakeDdb, now = NOW) => ({
@@ -75,5 +76,28 @@ describe('receipt store', () => {
     expect(item).not.toHaveProperty('email');
     expect(item).not.toHaveProperty('name');
     expect(item.binding).toBe(binding);
+  });
+});
+
+describe('buildReceiptItem', () => {
+  it('builds the receipt with 7-day replay + 90-day TTL and terminal fields only', () => {
+    const now = '2026-07-18T00:00:00.000Z';
+    expect(buildReceiptItem('SUBMIT_RECEIPT#abc', {
+      opKind: 'direct', binding: 'f'.repeat(64),
+      result: { rfqId: 'rfq-20260718-abc123', referenceNumber: 'RFQ-20260718-ABC1', status: 200 }, now,
+    })).toEqual({
+      PK: 'SUBMIT_RECEIPT#abc', SK: 'META', opKind: 'direct', binding: 'f'.repeat(64),
+      rfqId: 'rfq-20260718-abc123', referenceNumber: 'RFQ-20260718-ABC1', status: 200,
+      createdAt: now, replayExpiresAt: '2026-07-25T00:00:00.000Z',
+      TTL: Math.floor(Date.parse('2026-10-16T00:00:00.000Z') / 1000),
+    });
+  });
+
+  it('stores no form PII', () => {
+    const item = buildReceiptItem('SUBMIT_RECEIPT#abc', {
+      opKind: 'draft-upgrade', binding: '0'.repeat(64),
+      result: { rfqId: 'rfq-x', referenceNumber: 'RFQ-x', status: 200 }, now: '2026-07-18T00:00:00.000Z',
+    }) as Record<string, unknown>;
+    for (const k of ['name', 'email', 'institution', 'applicationDescription']) expect(k in item).toBe(false);
   });
 });
