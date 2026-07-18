@@ -2,6 +2,11 @@ import { QueryCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient, TABLE_NAME } from '../lib/dynamodb.js';
 import type { AppSyncEvent } from '../lib/types.js';
 
+// The unfiltered "All" view intentionally lists only real RFQs (pending/declined/
+// converted). Abandoned Step-1 captures (RFQ_STATUS#partial, written by submit-rfq's
+// capturePartial action) are high-volume and carry submittedAt=now, so mixing them
+// into "All" would bury genuine leads past the merge cap — they're surfaced only via
+// the explicit `status='partial'` filter (the query branch below is status-generic).
 const RFQ_STATUSES = ['pending', 'declined', 'converted'] as const;
 
 export async function listRfqs(event: AppSyncEvent) {
