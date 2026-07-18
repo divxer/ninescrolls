@@ -15,7 +15,7 @@ describe('header', () => {
 
 describe('responses', () => {
   it('credential-bearing responses set no-store + no-referrer', () => {
-    const r = jsonResponse(201, { rfqId: 'x' }, 'https://ninescrolls.com', { credential: true });
+    const r = jsonResponse(201, { rfqId: 'x' }, 'https://ninescrolls.com');
     expect(r.statusCode).toBe(201);
     expect(r.headers['Cache-Control']).toBe('no-store');
     expect(r.headers['Referrer-Policy']).toBe('no-referrer');
@@ -50,7 +50,7 @@ const evt = (method: string, path: string, headers: Record<string, string>, body
     requestContext: { http: { method, path, sourceIp: '1.2.3.4' } },
     rawPath: path,
     pathParameters: last && /^[A-Za-z0-9_-]{20,}$/.test(last) ? { rfqId: last } : undefined,
-    headers: { origin: 'https://ninescrolls.com', ...headers },
+    headers: { origin: 'https://ninescrolls.com', 'content-type': 'application/json', ...headers },
     body: body === undefined ? undefined : JSON.stringify(body),
   };
 };
@@ -78,6 +78,15 @@ describe('rfq-draft-api routing', () => {
     expect(JSON.parse(got.body)).toEqual({ error: 'Draft unavailable' });
   });
 
+  it('maps malformed credentials to the same unavailable response', async () => {
+    const { handler } = ctx();
+    const response = await handler(evt('GET', '/api/rfq/draft/AAAAAAAAAAAAAAAAAAAA', {
+      'x-rfq-draft-token': 'not+base64url',
+    }));
+    expect(response.statusCode).toBe(404);
+    expect(JSON.parse(response.body)).toEqual({ error: 'Draft unavailable' });
+  });
+
   it('PATCH bumps version; a stale draftVersion → 409 with the current draft', async () => {
     const { handler } = ctx();
     const nonce = encodeCredential(crypto.randomBytes(32));
@@ -90,12 +99,78 @@ describe('rfq-draft-api routing', () => {
     const stale = await handler(evt('PATCH', `/api/rfq/draft/${rfqId}`, h, { draftVersion: 1, patch: { quantity: 8 } }));
     expect(stale.statusCode).toBe(409);
     expect(JSON.parse(stale.body).draftVersion).toBe(2);
-    expect(JSON.parse(stale.body).fields.quantity).toBe(7);
+    expect(JSON.parse(stale.body).draft.quantity).toBe(7);
   });
 
   it('POST create missing its nonce → 404 (no disclosure of the reason)', async () => {
     const { handler } = ctx();
     const r = await handler(evt('POST', '/api/rfq/draft', {}, CREATE));
-    expect(r.statusCode).toBe(404);
+    expect(r.statusCode).toBe(400);
+  });
+
+  it('authenticates PATCH before reporting malformed JSON or fields', async () => {
+    const { handler } = ctx();
+    const bad = evt('PATCH', '/api/rfq/draft/AAAAAAAAAAAAAAAAAAAA', {
+      'x-rfq-draft-token': encodeCredential(crypto.randomBytes(32)),
+    }, { draftVersion: 1, patch: { unknown: true } });
+    expect((await handler(bad)).statusCode).toBe(404);
+  });
+
+  it('requires JSON, enforces decoded byte limits, and handles API Gateway base64 bodies', async () => {
+    const { handler } = ctx();
+    const nonce = encodeCredential(crypto.randomBytes(32));
+    expect((await handler(evt('POST', '/api/rfq/draft', {
+      'x-rfq-draft-create-nonce': nonce, 'content-type': 'text/plain',
+    }, CREATE))).statusCode).toBe(400);
+    const encoded = evt('POST', '/api/rfq/draft', { 'x-rfq-draft-create-nonce': nonce }, CREATE);
+    encoded.body = Buffer.from(encoded.body!).toString('base64');
+    (encoded as typeof encoded & { isBase64Encoded: boolean }).isBase64Encoded = true;
+    expect((await handler(encoded)).statusCode).toBe(201);
+    const huge = evt('POST', '/api/rfq/draft', { 'x-rfq-draft-create-nonce': nonce }, CREATE);
+    huge.body = JSON.stringify({ ...CREATE, applicationDescription: 'x'.repeat(17 * 1024) });
+    expect((await handler(huge)).statusCode).toBe(400);
+  });
+
+  it('supports REST API v1 source IP and returns safe 429 responses', async () => {
+    const { handler: ignored } = ctx();
+    let seen = '';
+    const ddb = new FakeDdb();
+    const handler = makeHandler({
+      send: (c: unknown) => ddb.send(c as never), tableName: 't', pepper, keyVersion: 1,
+      resolvePepper: () => pepper, now: () => '2026-07-15T00:00:00.000Z',
+      rateLimit: async (ip) => { seen = ip; return false; },
+    });
+    const event = evt('POST', '/api/rfq/draft', { 'x-rfq-draft-create-nonce': encodeCredential(crypto.randomBytes(32)) }, CREATE);
+    delete (event.requestContext as { http?: unknown }).http;
+    Object.assign(event, { httpMethod: 'POST', path: '/api/rfq/draft' });
+    (event.requestContext as { identity?: { sourceIp: string } }).identity = { sourceIp: '192.0.2.5' };
+    const response = await handler(event);
+    expect(seen).toBe('192.0.2.5');
+    expect(response.statusCode).toBe(429);
+    expect(response.headers['Cache-Control']).toBe('no-store');
+    void ignored;
+  });
+
+  it('rejects untrusted origins without reflecting or defaulting CORS', async () => {
+    const { handler } = ctx();
+    const event = evt('OPTIONS', '/api/rfq/draft', {});
+    event.headers.origin = 'https://evil.example';
+    const response = await handler(event);
+    expect(response.statusCode).toBe(403);
+    expect(response.headers['Access-Control-Allow-Origin']).toBeUndefined();
+  });
+
+  it('sanitizes storage failures as retryable 503 responses with safe headers', async () => {
+    const handler = makeHandler({
+      send: async () => { throw new Error('secret internal detail'); }, tableName: 't',
+      pepper, keyVersion: 1, resolvePepper: () => pepper, now: () => '2026-07-15T00:00:00.000Z',
+    });
+    const response = await handler(evt('GET', '/api/rfq/draft/AAAAAAAAAAAAAAAAAAAA', {
+      'x-rfq-draft-token': encodeCredential(crypto.randomBytes(32)),
+    }));
+    expect(response.statusCode).toBe(503);
+    expect(response.body).not.toContain('internal');
+    expect(response.headers['Cache-Control']).toBe('no-store');
+    expect(response.headers['Referrer-Policy']).toBe('no-referrer');
   });
 });

@@ -48,6 +48,7 @@ import { MetricFilter, FilterPattern } from 'aws-cdk-lib/aws-logs';
 import { Topic } from 'aws-cdk-lib/aws-sns';
 import { LambdaIntegration } from 'aws-cdk-lib/aws-apigateway';
 import { Stack } from 'aws-cdk-lib';
+import { CfnWebACL, CfnWebACLAssociation } from 'aws-cdk-lib/aws-wafv2';
 import { Table, AttributeType, BillingMode, ProjectionType } from 'aws-cdk-lib/aws-dynamodb';
 import { Bucket, BlockPublicAccess, BucketEncryption, HttpMethods } from 'aws-cdk-lib/aws-s3';
 import { Duration } from 'aws-cdk-lib';
@@ -190,6 +191,51 @@ const restApi = new RestApi(apiStack, 'RestApi', {
             },
         },
     },
+});
+
+// Edge enforcement for the anonymous draft API. The Lambda also uses an atomic
+// DynamoDB counter, so this remains enforced if WAF propagation is delayed and WAF
+// sheds abusive traffic before it incurs Lambda/DynamoDB work.
+const draftWafVisibility = (name: string) => ({
+    cloudWatchMetricsEnabled: true, metricName: name, sampledRequestsEnabled: true,
+});
+const byteMatch = (fieldToMatch: Record<string, unknown>, value: string, positionalConstraint = 'EXACTLY') => ({
+    byteMatchStatement: {
+        fieldToMatch, positionalConstraint, searchString: value,
+        textTransformations: [{ priority: 0, type: 'NONE' }],
+    },
+});
+const draftWebAcl = new CfnWebACL(apiStack, 'RfqDraftWebAcl', {
+    scope: 'REGIONAL',
+    defaultAction: { allow: {} },
+    visibilityConfig: draftWafVisibility('rfq-draft-web-acl'),
+    rules: [
+        {
+            name: 'RfqDraftCreatePerIp', priority: 0, action: { block: {} },
+            statement: { rateBasedStatement: {
+                aggregateKeyType: 'IP', limit: 10, evaluationWindowSec: 300,
+                scopeDownStatement: { andStatement: { statements: [
+                    byteMatch({ uriPath: {} }, '/api/rfq/draft'), byteMatch({ method: {} }, 'POST'),
+                ] } },
+            } },
+            visibilityConfig: draftWafVisibility('rfq-draft-create-per-ip'),
+        },
+        {
+            name: 'RfqDraftAccessPerIp', priority: 1, action: { block: {} },
+            statement: { rateBasedStatement: {
+                aggregateKeyType: 'IP', limit: 120, evaluationWindowSec: 300,
+                scopeDownStatement: { andStatement: { statements: [
+                    byteMatch({ uriPath: {} }, '/api/rfq/draft/', 'STARTS_WITH'),
+                    { orStatement: { statements: [byteMatch({ method: {} }, 'GET'), byteMatch({ method: {} }, 'PATCH')] } },
+                ] } },
+            } },
+            visibilityConfig: draftWafVisibility('rfq-draft-access-per-ip'),
+        },
+    ],
+});
+new CfnWebACLAssociation(apiStack, 'RfqDraftWebAclAssociation', {
+    resourceArn: `arn:${Stack.of(restApi).partition}:apigateway:${Stack.of(restApi).region}::/restapis/${restApi.restApiId}/stages/${restApi.deploymentStage.stageName}`,
+    webAclArn: draftWebAcl.attrArn,
 });
 
 // Create /checkout/session resource for Stripe Checkout

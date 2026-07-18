@@ -559,9 +559,9 @@ Amplify secret mechanism. Record this in the PR so the deployer sets it.
 - Versioned peppered verification with rotation-overlap resolver — Task 1.
 - Non-disclosing `404 {"error":"Draft unavailable"}` for missing/malformed/wrong/expired; `409 {"error":"Version conflict", ...current}` only for an authenticated live draft — Tasks 2–3.
 - `Cache-Control: no-store`, `Referrer-Policy: no-referrer`, CORS allow-list limited to the two credential headers — Task 2.
-- Per-route throttling — Task 5.
+- Layered per-IP throttling (WAFv2 plus atomic DynamoDB counters) — Task 5 plus review hardening.
 
-**Deferred (out of P3):** `X-RFQ-Submit-Key` + draft→pending upgrade + receipt/outbox (P4); per-IP WAF rate rule and application-level conditional counters (P3 ships the API-Gateway aggregate ceiling; the WAF rule is the same follow-on the existing routes note); frontend autosave (P6); admin/cleanup (P5). The spec's log/tracing redaction is honored by never placing credentials in responses/log lines here; a project-wide access-log template audit is tracked with the WAF follow-on.
+**Deferred (out of P3):** `X-RFQ-Submit-Key` + draft→pending upgrade + receipt/outbox (P4); frontend autosave (P6); admin/cleanup (P5). P3 now includes both a WAFv2 per-IP rate rule and an application-level conditional DynamoDB counter. The spec's log/tracing redaction is honored by never placing credentials in responses/log lines here; a project-wide access-log template audit remains follow-on work.
 
 **Placeholder scan:** none — every code step is complete. Task 5/6 "deploy-verified" notes are explicit verification instructions for infra that unit tests cannot exercise, not deferred code.
 

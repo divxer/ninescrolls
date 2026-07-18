@@ -22,4 +22,11 @@ describe('parsePepperSecret', () => {
     expect(() => parsePepperSecret(JSON.stringify({ current: 1, keys: { 1: 'abcd' } }))).toThrow();
     expect(() => parsePepperSecret('not json')).toThrow();
   });
+
+  it('rejects non-canonical and unsafe key versions', () => {
+    for (const key of ['01', '-1', '1.5', '9007199254740992']) {
+      expect(() => parsePepperSecret(JSON.stringify({ current: Number(key), keys: { [key]: k1 } }))).toThrow();
+    }
+    expect(() => parsePepperSecret(JSON.stringify({ current: -1, keys: { 1: k1 } }))).toThrow();
+  });
 });
