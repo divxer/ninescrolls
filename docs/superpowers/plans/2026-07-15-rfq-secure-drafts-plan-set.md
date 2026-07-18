@@ -48,7 +48,7 @@ The original spec sequenced P4/P5 before P3; that no longer holds — P3 and P4a
 - **P3** — [`…p3-public-api.md`](2026-07-15-rfq-secure-drafts-p3-public-api.md) *(merged, #308)*
 - **P4a** — [`…p4a-receipt-idempotency.md`](2026-07-15-rfq-secure-drafts-p4a-receipt-idempotency.md) *(merged, #309)* — receipt + idempotency store, dark
 - **P4b** — the live `submit-rfq` refactor. [`…p4b-submit-refactor.md`](2026-07-15-rfq-secure-drafts-p4b-submit-refactor.md) is a **⛔ BLOCKED historical/restructure record only** — its original draft was found not implementable in review and has been neutered. The actual work is four phases that are **not yet written and not yet reviewed**:
-  - **P4b-1** — receipt-as-transaction-item + atomic submit transaction + dependency-ordered outbox model (pure, dark)
+  - **P4b-1** — receipt-as-transaction-item + atomic submit transaction + dependency-ordered outbox model (pure, dark) — [`…p4b1-transaction-outbox-model.md`](2026-07-15-rfq-secure-drafts-p4b1-transaction-outbox-model.md) *(written — in review)*
   - **P4b-2** — outbox worker (DynamoDB Streams + Lambda), DLQ/alarms, at-most-once email (dark)
   - **P4b-3** — frontend sends `X-RFQ-Submit-Key` (compat) + handler opt-in
   - **P4b-4** — mandatory header, soak, remove legacy + flag
