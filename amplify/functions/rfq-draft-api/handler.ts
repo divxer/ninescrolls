@@ -1,5 +1,8 @@
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
 import { createDraft, getDraft, updateDraft, type DraftStoreDeps } from '../../lib/rfq/draftStore';
 import { draftCreateSchema, draftPatchRequestSchema, normalizeDraftPatch } from '../../lib/rfq/draftContract';
+import { parsePepperSecret } from './pepperProvider';
 
 const ALLOWED_ORIGINS = [
   'https://ninescrolls.com',
@@ -109,3 +112,22 @@ export function makeHandler(deps: DraftStoreDeps) {
     return jsonResponse(405, { error: 'Method not allowed' }, origin);
   };
 }
+
+// --------------------------------------------------------------------------
+// Deployed entry — resolves the pepper once per cold start, then delegates.
+// --------------------------------------------------------------------------
+let cached: ReturnType<typeof makeHandler> | undefined;
+function deployed() {
+  if (cached) return cached;
+  const doc = DynamoDBDocumentClient.from(new DynamoDBClient({}));
+  const { pepper, keyVersion, resolvePepper } = parsePepperSecret(process.env.RFQ_DRAFT_PEPPER!);
+  cached = makeHandler({
+    send: (c) => doc.send(c as never) as Promise<{ Item?: Record<string, unknown> }>,
+    tableName: process.env.INTELLIGENCE_TABLE!,
+    pepper, keyVersion, resolvePepper,
+    now: () => new Date().toISOString(),
+  });
+  return cached;
+}
+
+export const handler = (event: unknown) => deployed()(event as never);
