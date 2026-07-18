@@ -244,7 +244,7 @@ export function RFQListPage() {
                   <td className="px-6 py-5"><StatusBadge status={rfq.status} /></td>
                   <td className="px-6 py-5 text-right">
                     <Link
-                      to={`/admin/rfqs/${rfq.rfqId}`}
+                      to={`/admin/rfqs/${encodeURIComponent(rfq.rfqId)}`}
                       className="text-on-surface-variant hover:text-primary transition-all p-1"
                       onClick={(e) => e.stopPropagation()}
                     >
@@ -454,7 +454,7 @@ export function RFQListPage() {
 
               {/* Full Detail Link */}
               <Link
-                to={`/admin/rfqs/${selectedRfq.rfqId}`}
+                to={`/admin/rfqs/${encodeURIComponent(selectedRfq.rfqId)}`}
                 className="flex items-center gap-2 text-sm font-semibold text-secondary hover:text-primary transition-colors no-underline"
               >
                 <span className="material-symbols-outlined text-base">open_in_new</span>

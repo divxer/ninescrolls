@@ -340,6 +340,10 @@ async function handleCapturePartial(rawBody: unknown, corsHeaders: Record<string
         submittedAt: now, // capture time — drives the admin list ordering + display
         updatedAt: now,
         visitorId,
+        // Bound growth: abandoned partials that never convert are cleaned up by the
+        // table's TTL (attribute name 'TTL', epoch seconds). Converted ones are deleted
+        // sooner by the submit path. 90 days = generous follow-up window for sales.
+        TTL: Math.floor(Date.parse(now) / 1000) + 90 * 24 * 60 * 60,
     };
     if (name) item.name = name;
     if (email) item.email = email;

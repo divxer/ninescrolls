@@ -7,6 +7,7 @@ import { describeSubmitError } from './rfqSubmitError';
 import { parseRfqUrlParams } from './rfqUrlParams';
 import { RFQ_FIELD_LIMITS } from '../../amplify/lib/rfq/limits';
 import { RFQ_EQUIPMENT_CATEGORY_VALUES } from '../../amplify/lib/rfq/contract';
+import { capturePartialRfq } from '../services/rfqPartialCapture';
 
 const { trackCustomEvent, trackRFQSubmission, trackRFQSubmissionWithAnalysis } = vi.hoisted(() => ({
   trackCustomEvent: vi.fn(),
@@ -220,6 +221,28 @@ describe('RFQPage URL attribution contract', () => {
 
     await waitFor(() => {
       expect(screen.getByLabelText(/Preferred Model/i)).toHaveValue('icp-etcher');
+    });
+  });
+
+  it('captures the Step-1 fields when advancing to Step 2', async () => {
+    renderRfq('/request-quote?category=ICP');
+
+    fireEvent.change(screen.getByLabelText(/Full Name/i), { target: { value: 'Ada Lovelace' } });
+    fireEvent.change(screen.getByLabelText(/^Email/i), { target: { value: 'ada@example.edu' } });
+    fireEvent.change(screen.getByLabelText(/Institution/i), { target: { value: 'Example Lab' } });
+    fireEvent.change(screen.getByLabelText(/Application \/ Research Goal/i), {
+      target: { value: 'Deep silicon etching process development for MEMS sensors.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Continue to Project Details/i }));
+
+    await waitFor(() => {
+      expect(vi.mocked(capturePartialRfq)).toHaveBeenCalledWith({
+        name: 'Ada Lovelace',
+        email: 'ada@example.edu',
+        institution: 'Example Lab',
+        equipmentCategory: 'ICP',
+        applicationDescription: 'Deep silicon etching process development for MEMS sensors.',
+      });
     });
   });
 
