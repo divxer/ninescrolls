@@ -2,7 +2,9 @@ import { QueryCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient, TABLE_NAME } from '../lib/dynamodb.js';
 import type { AppSyncEvent } from '../lib/types.js';
 
-const RFQ_STATUSES = ['pending', 'declined', 'converted'] as const;
+// 'partial' surfaces abandoned Step-1 captures (rows the submit-rfq capturePartial
+// action writes to RFQ_STATUS#partial). They're superseded/deleted on full submit.
+const RFQ_STATUSES = ['pending', 'declined', 'converted', 'partial'] as const;
 
 export async function listRfqs(event: AppSyncEvent) {
     const { status, limit = 20, nextToken } = event.arguments as {

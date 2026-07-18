@@ -9,7 +9,7 @@ import type { RfqSubmission } from '../../types/admin';
 import * as svc from '../../services/orderAdminService';
 import { parseRfqSource } from '../../utils/rfqAttribution';
 
-const STATUS_OPTIONS = ['All', 'pending', 'converted', 'declined'];
+const STATUS_OPTIONS = ['All', 'partial', 'pending', 'converted', 'declined'];
 const ALL_RFQ_LIMIT = 100;
 const STATUS_RFQ_LIMIT = 50;
 

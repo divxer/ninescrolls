@@ -18,6 +18,7 @@ const ORDER_STATUS_STYLES: Record<string, { badge: string; dot: string }> = {
 };
 
 const RFQ_STATUS_STYLES: Record<string, { badge: string; dot: string }> = {
+  partial: { badge: 'bg-amber-100 text-amber-800', dot: 'bg-amber-500' },
   pending: { badge: 'bg-secondary/10 text-secondary', dot: 'bg-secondary' },
   converted: { badge: 'bg-green-100 text-green-800', dot: 'bg-green-600' },
   declined: { badge: 'bg-surface-container-high text-on-surface-variant', dot: 'bg-on-surface-variant' },

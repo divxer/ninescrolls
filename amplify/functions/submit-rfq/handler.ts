@@ -1,6 +1,6 @@
 import type { APIGatewayProxyHandlerV2 } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, PutCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, PutCommand, UpdateCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
 import { S3Client, CopyObjectCommand, DeleteObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { z } from 'zod';
@@ -289,6 +289,70 @@ async function handleGetUploadUrl(
             expiresAt: new Date(Date.now() + PRESIGNED_URL_EXPIRY * 1000).toISOString(),
         }),
     };
+}
+
+// ---------------------------------------------------------------------------
+// capturePartial — persist Step-1 fields for an abandoned RFQ
+//
+// Fired when the customer advances from Step 1 to Step 2. Keyed by visitorId so
+// repeated captures overwrite one row and a later full submission can supersede
+// it (see the delete in the submit path). Fields are lenient (Step-1 validation
+// already passed client-side; this is best-effort visibility, not the RFQ of
+// record) — capped + normalized, no min-length, no CAPTCHA, no side effects.
+// ---------------------------------------------------------------------------
+const VISITOR_ID_RE = /^[A-Za-z0-9_-]{1,100}$/;
+
+/** Deterministic key for a visitor's partial row, so re-capture overwrites + submit can delete it. */
+export function partialRfqId(visitorId: string): string {
+    return `PARTIAL#${visitorId}`;
+}
+
+export const capturePartialSchema = z.object({
+    action: z.literal('capturePartial'),
+    visitorId: z.string().regex(VISITOR_ID_RE),
+    name: nText(z.string().max(L.name.max)).optional(),
+    email: z.string().transform(normalizeRfqEmail).pipe(z.string().max(L.email.max)).optional(),
+    institution: nText(z.string().max(L.institution.max)).optional(),
+    equipmentCategory: z.enum(RFQ_EQUIPMENT_CATEGORY_VALUES).optional(),
+    applicationDescription: nText(z.string().max(L.applicationDescription.max)).optional(),
+});
+
+async function handleCapturePartial(rawBody: unknown, corsHeaders: Record<string, string>) {
+    const parsed = capturePartialSchema.safeParse(rawBody);
+    if (!parsed.success) {
+        return {
+            statusCode: 400,
+            headers: corsHeaders,
+            body: JSON.stringify({ success: false, error: 'Invalid partial capture' }),
+        };
+    }
+    const { visitorId, name, email, institution, equipmentCategory, applicationDescription } = parsed.data;
+    const now = new Date().toISOString();
+    const rfqId = partialRfqId(visitorId);
+    const item: Record<string, unknown> = {
+        PK: `RFQ#${rfqId}`,
+        SK: 'META',
+        // Same GSI1 status-partition convention the admin listRfqs resolver queries.
+        GSI1PK: 'RFQ_STATUS#partial',
+        GSI1SK: `${now}#${rfqId}`,
+        rfqId,
+        status: 'partial',
+        submittedAt: now, // capture time — drives the admin list ordering + display
+        updatedAt: now,
+        visitorId,
+    };
+    if (name) item.name = name;
+    if (email) item.email = email;
+    if (institution) item.institution = institution;
+    if (equipmentCategory) item.equipmentCategory = equipmentCategory;
+    if (applicationDescription) item.applicationDescription = applicationDescription;
+
+    // Unconditional Put = upsert: the same visitor advancing to Step 2 again just
+    // refreshes their single partial row rather than piling up duplicates.
+    await docClient.send(new PutCommand({ TableName: TABLE_NAME(), Item: item }));
+    console.log(`Partial RFQ captured for visitor ${visitorId}`);
+
+    return { statusCode: 200, headers: corsHeaders, body: JSON.stringify({ success: true }) };
 }
 
 // ---------------------------------------------------------------------------
@@ -644,6 +708,13 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
             return await handleGetUploadUrl(rawBody, corsHeaders);
         }
 
+        // Step-1 partial capture shares this Lambda but skips the full RFQ path:
+        // no CAPTCHA (mid-form), no side effects, just one upsert so an abandoned
+        // Step 1 is still visible in the admin RFQ list.
+        if ((rawBody as { action?: unknown } | null)?.action === 'capturePartial') {
+            return await handleCapturePartial(rawBody, corsHeaders);
+        }
+
         // 1. Validate Turnstile CAPTCHA
         const isPrivateIP = (addr: string): boolean => {
             const parts = addr.split('.').map(Number);
@@ -769,6 +840,20 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
             Item: item,
         }));
         console.log(`RFQ_SUBMISSION created: ${rfqId}`);
+
+        // Supersede this visitor's Step-1 partial row, if any — the full RFQ now
+        // exists, so the admin should see one record, not a partial + a submission.
+        // Best-effort: a stray partial (TTL-less but low-value) never blocks the lead.
+        if (data.visitorId) {
+            try {
+                await docClient.send(new DeleteCommand({
+                    TableName: TABLE_NAME(),
+                    Key: { PK: `RFQ#${partialRfqId(data.visitorId)}`, SK: 'META' },
+                }));
+            } catch (err) {
+                console.warn('Failed to delete superseded partial RFQ (non-fatal):', err);
+            }
+        }
 
         // 6. Upsert customer Organization + backfill matchedOrgId/GSI2PK
         let matchedOrgId: string | null = null;

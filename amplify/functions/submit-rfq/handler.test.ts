@@ -34,6 +34,7 @@ const TEMP_KEY_C = `temp/rfq/${'c'.repeat(16)}/notes.docx`;
 const mockPut = vi.fn().mockResolvedValue({});
 const mockQuery = vi.fn().mockResolvedValue({ Items: [] });
 const mockUpdate = vi.fn().mockResolvedValue({});
+const mockDelete = vi.fn().mockResolvedValue({});
 
 vi.mock('@aws-sdk/client-dynamodb', () => ({
     DynamoDBClient: vi.fn().mockImplementation(() => ({})),
@@ -44,9 +45,10 @@ vi.mock('@aws-sdk/lib-dynamodb', () => ({
         from: vi.fn().mockReturnValue({
             send: vi.fn().mockImplementation((cmd: unknown) => {
                 const cmdName = (cmd as { constructor: { name: string } }).constructor.name;
-                if (cmdName === 'PutCommand') return mockPut();
+                if (cmdName === 'PutCommand') return mockPut(cmd);
                 if (cmdName === 'QueryCommand') return mockQuery();
                 if (cmdName === 'UpdateCommand') return mockUpdate();
+                if (cmdName === 'DeleteCommand') return mockDelete(cmd);
                 return Promise.resolve({});
             }),
         }),
@@ -64,6 +66,11 @@ vi.mock('@aws-sdk/lib-dynamodb', () => ({
     UpdateCommand: vi.fn().mockImplementation((params) => {
         const instance = { ...params };
         Object.defineProperty(instance, 'constructor', { value: { name: 'UpdateCommand' } });
+        return instance;
+    }),
+    DeleteCommand: vi.fn().mockImplementation((params) => {
+        const instance = { ...params };
+        Object.defineProperty(instance, 'constructor', { value: { name: 'DeleteCommand' } });
         return instance;
     }),
 }));
@@ -1082,6 +1089,48 @@ describe('submit-rfq handler', () => {
             expect(errSpy).toHaveBeenCalledWith(expect.stringContaining('crm.visitor_bridge.write_failed'));
             expect(mockInvokeCrmAction).not.toHaveBeenCalled();
             errSpy.mockRestore();
+        });
+    });
+
+    describe('capturePartial (Step-1 abandoned lead)', () => {
+        it('captures Step-1 fields as a partial RFQ row (200)', async () => {
+            const event = makeEvent({
+                action: 'capturePartial', visitorId: 'v-abandon-1',
+                name: 'Half Filled', email: 'Half@Lab.EDU', institution: 'Some Lab',
+                equipmentCategory: 'RIE', applicationDescription: 'Just started describing the application.',
+            });
+            const result = await handler(event, {} as never, (() => {}) as never);
+
+            expect((result as { statusCode: number }).statusCode).toBe(200);
+            expect(JSON.parse((result as { body: string }).body).success).toBe(true);
+            const item = mockPut.mock.calls.map((c) => c[0]?.Item).find((i) => i?.status === 'partial');
+            expect(item).toBeTruthy();
+            expect(item.PK).toBe('RFQ#PARTIAL#v-abandon-1');
+            expect(item.SK).toBe('META');
+            expect(item.GSI1PK).toBe('RFQ_STATUS#partial');
+            expect(item.rfqId).toBe('PARTIAL#v-abandon-1');
+            expect(item.name).toBe('Half Filled');
+            expect(item.email).toBe('half@lab.edu'); // normalized
+            expect(item.equipmentCategory).toBe('RIE');
+        });
+
+        it('rejects a malformed visitorId without writing (400)', async () => {
+            const event = makeEvent({ action: 'capturePartial', visitorId: 'bad id!!', name: 'X' });
+            const result = await handler(event, {} as never, (() => {}) as never);
+            expect((result as { statusCode: number }).statusCode).toBe(400);
+            expect(mockPut).not.toHaveBeenCalled();
+        });
+
+        it('supersedes the partial row on full submission (delete keyed by visitorId)', async () => {
+            const result = await handler(makeEvent({ ...VALID_RFQ, visitorId: 'v-converts' }), {} as never, (() => {}) as never);
+            expect((result as { statusCode: number }).statusCode).toBe(200);
+            const key = mockDelete.mock.calls.map((c) => c[0]?.Key).find((k) => k?.PK === 'RFQ#PARTIAL#v-converts');
+            expect(key).toEqual({ PK: 'RFQ#PARTIAL#v-converts', SK: 'META' });
+        });
+
+        it('does not attempt a partial delete when the submission has no visitorId', async () => {
+            await handler(makeEvent(VALID_RFQ), {} as never, (() => {}) as never);
+            expect(mockDelete).not.toHaveBeenCalled();
         });
     });
 });

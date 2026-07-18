@@ -33,6 +33,11 @@ vi.mock('../services/behaviorAnalytics', () => ({
   },
 }));
 
+// Step-1 partial capture fires a fetch on step navigation; mock it out so these
+// tests see only the submit/attachment calls they assert on. Its own behavior is
+// covered by rfqPartialCapture.test.ts.
+vi.mock('../services/rfqPartialCapture', () => ({ capturePartialRfq: vi.fn() }));
+
 vi.mock('../services/analyticsStorageService', () => ({
   getVisitorId: () => 'visitor-test',
 }));
