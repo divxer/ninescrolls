@@ -309,6 +309,19 @@ describe('rfqSchema (Zod validation)', () => {
         });
         expect(result.success).toBe(false);
     });
+
+    // accept-at-max (the reject-over-max tests above share the constant with the
+    // schema, so only the boundary catches a schema cap hardcoded too small)
+    it('accepts department, keySpecifications, existingEquipment, additionalComments exactly at their shared max', () => {
+        const result = rfqSchema.safeParse({
+            ...VALID_RFQ,
+            department: 'd'.repeat(RFQ_FIELD_LIMITS.department.max),
+            keySpecifications: 'k'.repeat(RFQ_FIELD_LIMITS.keySpecifications.max),
+            existingEquipment: 'e'.repeat(RFQ_FIELD_LIMITS.existingEquipment.max),
+            additionalComments: 'c'.repeat(RFQ_FIELD_LIMITS.additionalComments.max),
+        });
+        expect(result.success).toBe(true);
+    });
 });
 
 describe('submit-rfq handler', () => {

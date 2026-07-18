@@ -388,8 +388,8 @@ export function RFQPage() {
   const validateField = useCallback((name: string, value: string | number | boolean): string => {
     switch (name) {
       case 'name':
-        if (!value || (typeof value === 'string' && value.trim().length < 2)) return 'Name must be at least 2 characters';
-        if (typeof value === 'string' && value.trim().length > 100) return 'Name must be under 100 characters';
+        if (!value || (typeof value === 'string' && value.trim().length < RFQ_FIELD_LIMITS.name.min)) return `Name must be at least ${RFQ_FIELD_LIMITS.name.min} characters`;
+        if (typeof value === 'string' && value.length > RFQ_FIELD_LIMITS.name.max) return `Name must be under ${RFQ_FIELD_LIMITS.name.max} characters`;
         return '';
       case 'email':
         if (!value) return 'Email is required';
@@ -399,8 +399,8 @@ export function RFQPage() {
         if (value && typeof value === 'string' && value.trim() && !/^[+\d\s\-().]{7,20}$/.test(value.trim())) return 'Please enter a valid phone number';
         return '';
       case 'institution':
-        if (!value || (typeof value === 'string' && value.trim().length < 2)) return 'Institution is required (at least 2 characters)';
-        if (typeof value === 'string' && value.trim().length > 200) return 'Institution must be under 200 characters';
+        if (!value || (typeof value === 'string' && value.trim().length < RFQ_FIELD_LIMITS.institution.min)) return `Institution is required (at least ${RFQ_FIELD_LIMITS.institution.min} characters)`;
+        if (typeof value === 'string' && value.length > RFQ_FIELD_LIMITS.institution.max) return `Institution must be under ${RFQ_FIELD_LIMITS.institution.max} characters`;
         return '';
       case 'equipmentCategory':
         if (!value) return 'Please select an equipment category';

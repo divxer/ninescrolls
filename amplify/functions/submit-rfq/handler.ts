@@ -253,6 +253,7 @@ const equipmentCategoryLabels: Record<string, string> = {
     'IBE': 'Ion Beam Etching System',
     'HDP-CVD': 'HDP-CVD System',
     'Plasma-Cleaner': 'Plasma Cleaner',
+    'Probe-Station': 'Wafer Probe Station',
     'Other': 'Other / Need Recommendation',
 };
 
@@ -266,6 +267,7 @@ const equipmentGreetingPhrase: Record<string, string> = {
     'IBE': 'ion beam etching',
     'HDP-CVD': 'HDP-CVD',
     'Plasma-Cleaner': 'plasma cleaner',
+    'Probe-Station': 'wafer probe',
 };
 
 /** Send confirmation email to customer via SendGrid — §12.10.9 */
