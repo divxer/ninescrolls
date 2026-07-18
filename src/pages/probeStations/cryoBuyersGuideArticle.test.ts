@@ -47,6 +47,8 @@ describe('cryogenic probe station buyer’s guide standalone article', () => {
   it('embeds the cooling-architectures figure as its own <picture> block with slug-scoped CDN URLs, adjacent caption, and on-disk source assets', async () => {
     const pictureBlocks = content.match(/<picture>[\s\S]*?<\/picture>/g) ?? [];
     const CDN = `https://cdn.ninescrolls.com/insights/${SLUG}`;
+    const FIGURE_ALT = 'Comparison diagram of liquid-nitrogen flow or reservoir, closed-cycle cryocooler, and liquid-helium flow or bath architectures, showing thermal paths, consumables and utilities, mechanical vibration sources, operating patterns, and buyer questions';
+    const figureSizes = { sm: [640, 360], md: [768, 432], lg: [1024, 576], xl: [1280, 720] } as const;
 
     // figure name (as it appears in the CDN path) -> local UPLOAD SOURCE basename.
     const FIGURES: Array<{ name: string; localBase: string }> = [
@@ -56,6 +58,7 @@ describe('cryogenic probe station buyer’s guide standalone article', () => {
     for (const { name, localBase } of FIGURES) {
       const block = pictureBlocks.find((b) => b.includes(`${CDN}/${name}`));
       expect(block, `<picture> block for ${name}`).toBeTruthy();
+      expect(block, `${name} exact approved alt`).toContain(`alt="${FIGURE_ALT}"`);
 
       // Responsive webp srcset (absolute slug-scoped CDN), all inside THIS block.
       for (const size of ['sm', 'md', 'lg', 'xl']) {
@@ -71,6 +74,20 @@ describe('cryogenic probe station buyer’s guide standalone article', () => {
       );
       // The upload SOURCE base png (what upload-insights-image.ts is pointed at).
       expect(existsSync(`public/assets/images/insights/${localBase}.png`), `${localBase}.png on disk`).toBe(true);
+      const sourcePath = `public/assets/images/insights/${localBase}.png`;
+      const sourceMeta = await sharp(sourcePath).metadata();
+      expect(sourceMeta.width).toBe(1600);
+      expect(sourceMeta.height).toBe(900);
+      expect(sourceMeta.space).toBe('srgb');
+      for (const [size, [width, height]] of Object.entries(figureSizes)) {
+        for (const extension of ['png', 'webp']) {
+          const variantPath = `public/assets/images/insights/${localBase}-${size}.${extension}`;
+          const meta = await sharp(variantPath).metadata();
+          expect(meta.width, `${size}.${extension} width`).toBe(width);
+          expect(meta.height, `${size}.${extension} height`).toBe(height);
+          expect(meta.space, `${size}.${extension} colorspace`).toBe('srgb');
+        }
+      }
 
       // The IMMEDIATELY ADJACENT caption element (allowing only closing wrapper
       // tags in between) must be a <figcaption>. This figure is a neutral
