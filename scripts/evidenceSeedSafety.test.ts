@@ -92,6 +92,30 @@ describe('evidence seeder safety contracts', () => {
     expect(client.graphql).toHaveBeenCalledTimes(1);
   });
 
+  it('treats reserved object keys as unknown before any classifier write', async () => {
+    let writes = 0;
+    const client: EvidenceGraphqlClient = {
+      graphql: vi.fn(async (request: any) => {
+        if (request.variables.input) {
+          writes++;
+          return { data: { updateEvidence: { id: request.variables.input.id } } };
+        }
+        return queryResult([
+          { id: 'known', slug: 'known', type: 'publication', status: 'draft', meta: '{}' },
+          { id: 'constructor', slug: 'constructor', type: 'publication', status: 'draft', meta: '{}' },
+          { id: 'to-string', slug: 'toString', type: 'publication', status: 'draft', meta: '{}' },
+        ]);
+      }),
+    };
+
+    await expect(classifyPublications(
+      client,
+      { known: ['A', 'primary'] },
+      new Set(),
+    )).rejects.toThrow(/constructor.*toString.*no records were changed|no records were changed.*constructor.*toString/i);
+    expect(writes).toBe(0);
+  });
+
   it('treats a classifier mutation error as fatal before returning a tally', async () => {
     const client: EvidenceGraphqlClient = {
       graphql: vi.fn()
@@ -227,6 +251,48 @@ describe('evidence seeder safety contracts', () => {
 
     expect(correction).toBeGreaterThan(0);
     expect(classifier).toBeGreaterThan(correction);
+  });
+
+  it('keeps classification and documentation at the reproducible 49-record set', () => {
+    const classifier = readFileSync(
+      resolve(process.cwd(), 'scripts/classify-evidence-publish-priority.ts'),
+      'utf8',
+    );
+    const classTable = classifier.slice(
+      classifier.indexOf('const CLASS'),
+      classifier.indexOf('const WAVE1'),
+    );
+    const readme = readFileSync(
+      resolve(process.cwd(), 'scripts/README-evidence-seeders.md'),
+      'utf8',
+    );
+    const classifiedRows = [...classTable.matchAll(
+      /'[^']+': \['[AB]', '(?:primary|substantial|incidental)'\]/g,
+    )];
+
+    expect(classTable).not.toContain('pub-tailong-rie100-nanoforest-ev-capture-acsnano-2025');
+    expect(classTable).not.toContain('pub-tailong-rie150-wafer-graphene-cvd-acsanm-2023');
+    expect(classTable).not.toContain('pub-tailong-rie100-vdw-photodiode-infomat-2022');
+    expect(classifiedRows).toHaveLength(49);
+    expect(readme).toContain('49 active Evidence records');
+    expect(readme).not.toContain('52 active Evidence records');
+    expect(readme).toContain('wave1 **6** · wave2 **29** ·');
+    expect(readme).toContain('wave3 **14**; tier A **42** / B **7**; launchEligible **35**');
+  });
+
+  it('uses the checked raw-GraphQL path for the first documented seeder', () => {
+    const source = readFileSync(
+      resolve(process.cwd(), 'scripts/seed-evidence.ts'),
+      'utf8',
+    );
+    const readme = readFileSync(
+      resolve(process.cwd(), 'scripts/README-evidence-seeders.md'),
+      'utf8',
+    );
+
+    expect(source).toContain('createEvidenceIfMissing');
+    expect(source).not.toContain('client.models.Evidence');
+    expect(readme).toContain('npx tsx scripts/seed-evidence.ts --apply');
   });
 
   it('requires an explicit, unambiguous apply confirmation', () => {

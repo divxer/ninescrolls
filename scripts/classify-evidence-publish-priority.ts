@@ -36,7 +36,7 @@ const CLASS: Record<string, ['A' | 'B', 'primary' | 'substantial' | 'incidental'
   'pub-tailong-rie150a-colorrouter-lsa-2025': ['A', 'primary'],
   'pub-tailong-icp200-flowviz-lsa-2025': ['A', 'primary'],
   'pub-tailong-pecvd150ll-icp100-ptse2-apsusc-2026': ['A', 'primary'],
-  // --- catalog (26) ---
+  // --- catalog (24 active; 2 legacy false positives corrected to archived) ---
   'pub-tailong-icp100a-compound-eyes-adfm-2019': ['A', 'primary'],
   'pub-tailong-icp100a-sapphire-microlens-lpt-2019': ['A', 'primary'],
   'pub-tailong-icp200-metalens-lpor-2024': ['A', 'primary'],
@@ -85,10 +85,6 @@ const CLASS: Record<string, ['A' | 'B', 'primary' | 'substantial' | 'incidental'
   'pub-tailong-neural-optrode-multi-micromachines-2025': ['A', 'incidental'],
   'pub-tailong-rie100m-polyimide-bonding-materials-2022': ['A', 'incidental'],
   'pub-tailong-rie-graphene-molecule-junction-natprotoc-2023': ['A', 'incidental'],
-  // --- tail (3) ---
-  'pub-tailong-rie100-nanoforest-ev-capture-acsnano-2025': ['A', 'primary'],
-  'pub-tailong-rie150-wafer-graphene-cvd-acsanm-2023': ['A', 'substantial'],
-  'pub-tailong-rie100-vdw-photodiode-infomat-2022': ['A', 'substantial'],
 };
 
 const WAVE1 = new Set([

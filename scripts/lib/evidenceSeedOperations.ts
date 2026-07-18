@@ -195,7 +195,7 @@ export async function classifyPublications(
   const publications = items.filter((item) =>
     item.type === 'publication' && item.status !== 'archived');
   const unmapped = publications
-    .filter((item) => !classifications[item.slug])
+    .filter((item) => !Object.prototype.hasOwnProperty.call(classifications, item.slug))
     .map((item) => item.slug)
     .sort();
   if (unmapped.length) {

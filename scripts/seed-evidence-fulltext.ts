@@ -57,7 +57,7 @@ async function main() {
       manufacturerAsNamed: 'Beijing Zhongke Tailong Electronic Technology', manufacturerLegalName: 'Beijing Zhongke Tailong Electronic Technology Corporation (Nano-Promiso)',
       instrumentAsNamed: instrument, relationshipDisclosure: DISCLOSURE, journal, year, doi, verifiedAt: '2026-07-13',
       sourceCategory: 'Scholar alt-keyword sweep + full-text verification',
-      verification: `Full-text verified (${tier}): "${quote}" DOI: ${doi}.`,
+      verification: `Verification evidence (${tier}): "${quote}" DOI: ${doi}.`,
     };
     const input = { slug, title, type: 'publication', status: 'draft', products, summary: summaryFor(journal, year, instrument, products), sourceUrl: `https://doi.org/${doi}`, meta: JSON.stringify(meta) };
     const outcome = await createEvidenceIfMissing(client, input);

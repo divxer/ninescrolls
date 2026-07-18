@@ -9,10 +9,11 @@ of this platform, so each `meta.relationshipDisclosure` states that honestly.
 
 ## Prerequisites
 
-1. `amplify_outputs.json` in repo root (not tracked). Points at the prod backend
-   (user pool `us-east-2_3AE21gHBg`). NOTE: the local copy's model introspection
-   does **not** include the `Evidence` model, so these scripts use **raw GraphQL**
-   (`client.graphql`) against the deployed schema rather than the typed client.
+1. `amplify_outputs.json` in repo root (not tracked), containing the target
+   GraphQL endpoint and Cognito settings. If it is missing or stale, regenerate it:
+   `npx ampx generate outputs --app-id d244ebmxcttcdz --branch main`. Evidence
+   model introspection is not required because every command below uses checked
+   **raw GraphQL** (`client.graphql`) against the deployed schema.
 2. Admin Cognito creds in `.env`: `ADMIN_EMAIL`, `ADMIN_PASSWORD`.
 
 These scripts write to the backend named by `amplify_outputs.json` (currently
@@ -23,7 +24,7 @@ an explicit `--apply` argument and rejects unknown arguments.
 
 ```bash
 set -a; source .env; set +a
-npx tsx scripts/seed-evidence.ts                  # 2  — first ICP-100A drafts (merged in #284)
+npx tsx scripts/seed-evidence.ts --apply          # 2  — first ICP-100A drafts (merged in #284)
 npx tsx scripts/seed-evidence-spotlights.ts --apply       # 5  — Publication Spotlight articles
 npx tsx scripts/seed-evidence-catalog.ts --apply          # 24 — vetted internal citation catalog
 npx tsx scripts/correct-evidence-false-positives.ts --apply # archive 2 records from older runs
@@ -45,12 +46,13 @@ it encounters a slug not in its explicit classification table.
 | `seed-evidence.ts` | 2 | ICP-100A papers, full-text-verified quotes (PhotoniX 2022, Nanomaterials 2020) |
 | `seed-evidence-spotlights.ts` | 5 | Our own DynamoDB **"Publication Spotlight"** insight articles; instrument quoted verbatim from article bodies (written from full text) |
 | `seed-evidence-catalog.ts` | 24 | Vetted internal catalog `泰龙电子产品Google_Scholar引用文献统计.md`; **DOIs Crossref-verified**; verbatim full-text re-quote recommended before publish |
-| `seed-evidence-scholar-verified.ts` | 12 (+3 refine) | Google Scholar re-verification (keyword "Tailong Electronics"); **verbatim Scholar snippet** stored in `meta.verification`; DOIs Crossref-verified |
-| `seed-evidence-fulltext.ts` | 6 (+1 refine) | Exhaustive full-text pass (open-access PDFs / PMC / Nature Protocols); each has a verbatim quote from full text |
+| `seed-evidence-scholar-verified.ts` | 12 (+3 refine) | Google Scholar re-verification: 11 verbatim visible snippets + 1 catalog/index lead explicitly held at tier B for re-quote; DOIs Crossref-verified |
+| `seed-evidence-fulltext.ts` | 6 (+1 refine) | 5 open-access/author-PDF full-text quotes + 1 search-index snippet explicitly held at tier B for PDF re-quote |
 
 `meta` per record holds: `manufacturerAsNamed`, `instrumentAsNamed`, `journal`,
-`year`, `doi`, `relationshipDisclosure`, `verifiedAt`, `verification` (source +
-quote). **No dynamic "cited-by" counts are stored** (they change over time).
+`year`, `doi`, `relationshipDisclosure`, `verifiedAt`, `verification` (source and,
+when captured, a verbatim quote). Tier B marks records still requiring re-quote.
+**No dynamic "cited-by" counts are stored** (they change over time).
 
 ## Deliberately NOT seeded (documented for future reference)
 
@@ -63,9 +65,11 @@ quote). **No dynamic "cited-by" counts are stored** (they change over time).
   "ICP-300" / "DZS500", **not Tailong**.
 - **Electrocatalysis cluster** — Tailong appears only as an argon **gas** supplier, or
   the papers use no deposition/etch equipment.
-- **~11 paywalled papers** — genuine leads whose Methods sections are behind hard
-  paywalls (ACS / Elsevier / Wiley-Cloudflare / IEEE); not seeded without a
-  full-text read.
+- **Paywalled/source-limited records** — five remaining catalog records, the PET
+  nanotemplate catalog/index record, and the RIE-100 infrared-source search-index
+  snippet are retained explicitly at tier B without a captured full-text quote.
+  None is publish-eligible until its instrument string is re-quoted. Other
+  source-limited leads without enough catalog evidence remain unseeded.
 - **ALD 光子学报 "T-ALD-100A"** paper — Chinese-journal DOI unresolved.
 - **Two catalog records ARCHIVED as false positives** (caught by the full-text
   re-quote pass, 2026-07-13): `sputter-cu-nanotwin-mi-2024` (uses a non-Tailong
@@ -73,12 +77,19 @@ quote). **No dynamic "cited-by" counts are stored** (they change over time).
   **gas supplier**, "Anxing Tailong Gas Chemical", ≠ Beijing Zhongke Tailong).
   `correct-evidence-false-positives.ts` repeatably converges any records from
   older runs to `status: archived` with a checked `meta.removedReason`.
+- **Three legacy tail slugs** appeared only as classifier keys in repository
+  history; no titles, DOIs, or provenance payloads exist in the reproducible
+  seeders. They are excluded rather than reconstructed from invented data. If
+  still active in a target backend, classifier preflight intentionally reports
+  them as unknown and performs no writes pending separate evidence adjudication.
 
-## Result (verified 2026-07-13)
+## Reproducible result
 
-**52 active Evidence records (all `status: draft`) + 2 archived false positives.**
-No-leak boundary holds: the anonymous `listPublishedEvidence` (apiKey) query
-returns 0 records. Publication coverage by product (active): `rie-etcher` 23 ·
+The clean sequence above creates **49 active Evidence records**, all
+`status: draft`. On older backends, the correction step may additionally retain
+2 archived false-positive records. No-leak boundary holds: the anonymous
+`listPublishedEvidence` (apiKey) query returns 0 records. Reproducible publication
+coverage by product (active): `rie-etcher` 20 ·
 `icp-etcher` 22 · `pecvd` 7 · `sputter` 3 · `ibe-ribe` 1 · `striper` 1 (6 product
 lines; `ald` 0). Tailong models observed: ICP-100A/100/200,
 ICP-S-150, ICP-PECVD-150, ICP-I, RIE-100/150/150A/100M, STRIPER-100, PECVD-150LL,
@@ -96,8 +107,8 @@ select what to publish — **being "verified" alone is NOT enough to auto-publis
 | `launchEligible` | boolean | **hard gate** = `tier A` AND `capabilityRole != incidental` |
 | `publishPriority` | `wave1` / `wave2` / `wave3` | `wave1` = 6 hero papers (rie/icp/pecvd/sputter); `wave2` = rest of launch-eligible; `wave3` = held (B-tier re-quote, incidental, snippet-tier) |
 
-Current split (52 active records; 2 archived as false positives — see below):
-wave1 **6** · wave2 **32** · wave3 **14**; tier A **45** / B **7**; launchEligible **38**.
+Current reproducible split (49 active records): wave1 **6** · wave2 **29** ·
+wave3 **14**; tier A **42** / B **7**; launchEligible **35**.
 `ibe-ribe`, `striper`, `ald` have **no** launch-eligible record →
 their product pages show no Evidence module at launch (by design — "no strong evidence,
 don't show" beats forcing coverage with an incidental-use paper). "One record per product
@@ -106,7 +117,7 @@ line" is a **soft** goal; tier-A + non-incidental are the **hard** gates. Re-run
 
 ## Before publishing (Phase 2)
 
-- Do a verbatim full-text instrument-string re-quote pass on the
-  `seed-evidence-catalog.ts` batch (the spotlights + Scholar-verified + full-text
-  batches already carry verbatim quotes).
+- Do a verbatim full-text instrument-string re-quote pass on the tier-B catalog,
+  Scholar/index, and search-index records. Spotlights and tier-A Scholar/full-text
+  records already carry their captured quote provenance.
 - Confirm no product **page** displays a live aggregate citation count.

@@ -1,9 +1,9 @@
 /**
  * (1) Seed the under-seeded Tailong RIE/ICP/Sputter papers surfaced during the
  *     Google Scholar re-verification (keyword "Tailong Electronics", 2026-07-13).
- *     HIGHER verification tier than the catalog batch: the instrument string was
- *     seen VERBATIM in the Scholar snippet (stored in meta.verification). DOIs
- *     Crossref-verified. All status:draft.
+ *     Most have an instrument string seen verbatim in a Scholar snippet; one
+ *     catalog/index lead is explicitly held for a publish-time re-quote. The
+ *     evidence is stored in meta.verification. DOIs Crossref-verified. All draft.
  * (2) Apply 3 model-string refinements to already-seeded records where Scholar
  *     showed a more specific model than the catalog had.
  *
@@ -31,7 +31,7 @@ const toolType = (p: string[]) =>
 const summaryFor = (journal: string, year: number, instrument: string, p: string[]) =>
   `${journal} (${year}) — peer-reviewed research that used the Tailong Electronics ${instrument} (${toolType(p)}). NineScrolls is the authorized distributor of this platform.`;
 
-// [slug, title, products, doi, instrument, journal, year, scholarSnippet]
+// [slug, title, products, doi, instrument, journal, year, scholarEvidence]
 type Row = [string, string, string[], string, string, string, number, string];
 const NEW: Row[] = [
   ['pub-tailong-rie100-hidden-vacancy-2dsemi-adma-2021', 'Hidden vacancy benefit in monolayer 2D semiconductors', ['rie-etcher'], '10.1002/adma.202007051', 'RIE-100', 'Advanced Materials', 2021, 'The plasma etchings were finished in a Tailong Electronics RIE 100.'],
@@ -61,7 +61,7 @@ async function main() {
 
   // (1) seed new
   let created = 0, skipped = 0;
-  for (const [slug, title, products, doi, instrument, journal, year, snippet] of NEW) {
+  for (const [slug, title, products, doi, instrument, journal, year, scholarEvidence] of NEW) {
     const meta = {
       manufacturerAsNamed: 'Tailong Electronics',
       manufacturerLegalName: 'Beijing Zhongke Tailong Electronic Technology Corporation (Nano-Promiso)',
@@ -70,7 +70,7 @@ async function main() {
       journal, year, doi,
       verifiedAt: '2026-07-13',
       sourceCategory: 'Tailong citation catalog + Scholar re-verification',
-      verification: `Google Scholar (keyword "Tailong Electronics", verified 2026-07-13) snippet: "${snippet}" DOI Crossref-verified.`,
+      verification: `Google Scholar/catalog evidence (verified 2026-07-13): "${scholarEvidence}" DOI Crossref-verified.`,
     };
     const input = { slug, title, type: 'publication', status: 'draft', products, summary: summaryFor(journal, year, instrument, products), sourceUrl: `https://doi.org/${doi}`, meta: JSON.stringify(meta) };
     const outcome = await createEvidenceIfMissing(client, input);

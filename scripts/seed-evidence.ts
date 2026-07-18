@@ -3,18 +3,18 @@
  * Far faster / repeatable / reviewable than clicking the admin form.
  *
  * Usage:
- *   npx tsx scripts/seed-evidence.ts
- *   (creds from .env, or: ADMIN_EMAIL=... ADMIN_PASSWORD=... npx tsx scripts/seed-evidence.ts)
+ *   npx tsx scripts/seed-evidence.ts --apply
+ *   (creds from .env, or: ADMIN_EMAIL=... ADMIN_PASSWORD=... npx tsx scripts/seed-evidence.ts --apply)
  *
  * Prerequisites:
- *   1. amplify_outputs.json MUST be CURRENT (include the Evidence model). The
- *      local copy is often stale — regenerate against the deployed backend first:
+ *   1. amplify_outputs.json must contain the target endpoint and auth settings.
+ *      Regenerate it against the deployed backend if missing or stale:
  *        npx ampx generate outputs --app-id d244ebmxcttcdz --branch main
- *      (If Evidence is missing from the introspection, client.models.Evidence is
- *      undefined and this script exits early with a clear message.)
+ *      This script uses checked raw GraphQL and does not require Evidence model
+ *      introspection in the generated file.
  *   2. ADMIN_EMAIL / ADMIN_PASSWORD (Cognito admin) in .env or environment.
  *
- * Idempotent: skips a record whose slug already exists.
+ * Duplicate-safe: skips a record whose slug already exists.
  * Records are created as status:'draft' (NOT public) for review before publish.
  *
  * Provenance note: these are `publication` evidence for the ICP platform
@@ -24,13 +24,13 @@
  */
 import { Amplify } from 'aws-amplify';
 import { generateClient } from 'aws-amplify/data';
-import type { Schema } from '../amplify/data/resource';
 import { authenticate } from './lib/auth';
+import { createEvidenceIfMissing, requireApply } from './lib/evidenceSeedOperations';
 
 import amplifyOutputs from '../amplify_outputs.json';
 Amplify.configure(amplifyOutputs as any);
 
-const client = generateClient<Schema>({ authMode: 'userPool' });
+const client: any = generateClient();
 
 const DISCLOSURE =
   'NineScrolls is the authorized distributor of this platform (Tailong Electronics)';
@@ -92,44 +92,26 @@ const RECORDS: EvidenceSeed[] = [
   },
 ];
 
-async function slugExists(slug: string): Promise<boolean> {
-  const { data } = await client.models.Evidence.listEvidenceBySlug({ slug });
-  return (data ?? []).length > 0;
-}
-
 async function main() {
+  requireApply(process.argv.slice(2), 'seed-evidence');
   await authenticate();
 
-  if (!client.models.Evidence) {
-    console.error(
-      'client.models.Evidence is undefined — amplify_outputs.json is stale (missing the Evidence model).\n' +
-        'Regenerate: npx ampx generate outputs --app-id d244ebmxcttcdz --branch main'
-    );
-    process.exit(1);
-  }
-
   for (const rec of RECORDS) {
-    if (await slugExists(rec.slug)) {
-      console.log(`skip (slug exists): ${rec.slug}`);
-      continue;
-    }
-    const { data, errors } = await client.models.Evidence.create({
+    const outcome = await createEvidenceIfMissing(client, {
       slug: rec.slug,
       title: rec.title,
       type: rec.type,
       products: rec.products,
       sourceUrl: rec.sourceUrl,
       summary: rec.summary,
-      // a.json() / AWSJSON MUST be a JSON string (same convention as InsightsPost
-      // relatedProducts/faqs) — passing a raw object is rejected by AppSync.
       meta: JSON.stringify(rec.meta),
       status: rec.status,
     });
-    if (errors) {
-      console.error(`FAILED ${rec.slug}:`, errors);
-      process.exit(1);
+    if (outcome === 'skipped') {
+      console.log(`skip (slug exists): ${rec.slug}`);
+      continue;
     }
-    console.log(`created draft: id=${data?.id}  ${rec.slug}`);
+    console.log(`created draft: ${rec.slug}`);
   }
 
   console.log(
