@@ -9,8 +9,14 @@ import { RFQ_FIELD_LIMITS as L } from '../../lib/rfq/limits';
 import {
     RFQ_EQUIPMENT_CATEGORY_VALUES,
     RFQ_ATTACHMENT_MIME_TYPES,
+    RFQ_ROLE_VALUES,
+    RFQ_BUDGET_RANGE_VALUES,
+    RFQ_TIMELINE_VALUES,
+    RFQ_FUNDING_STATUS_VALUES,
     MAX_RFQ_ATTACHMENTS,
     MAX_RFQ_ATTACHMENT_SIZE,
+    normalizeRfqText,
+    normalizeRfqEmail,
     type RfqEquipmentCategory,
 } from '../../lib/rfq/contract';
 import { invokeOrganizationApi } from '../../lib/organization/invoke-org-api';
@@ -48,36 +54,9 @@ const ALLOWED_ORIGINS = [
 // a category or file type one side accepts and the other rejects can't ship.
 // Guarded by the parity tests in handler.test.ts + rfqEquipmentOptions.test.ts.
 
-const ROLES = [
-    'PI', 'Research Scientist', 'Postdoc', 'Researcher', 'Graduate Student', 'Engineer',
-    'Procurement', 'Lab Manager', 'Business Development', 'Other',
-] as const;
-
-const BUDGET_RANGES = [
-    'Under $10k',
-    '$10k - $30k',
-    '$30k - $80k',
-    '$80k - $150k',
-    'Over $150k',
-    'Not yet defined',
-] as const;
-
-const TIMELINES = [
-    'immediate',
-    'within-3-months',
-    'within-6-months',
-    '6-plus-months',
-    'budgetary-planning',
-] as const;
-
-const FUNDING_STATUSES = [
-    'funded',
-    'budget-under-review',
-    'grant-pending',
-    'exploring',
-    'prefer-not-to-say',
-] as const;
-
+// role / budget / timeline / funding enums now come from the shared contract
+// (RFQ_ROLE_VALUES etc.) so the formal schema and the draft schema cannot drift.
+// referralSource stays local — it is not a draft field.
 const REFERRAL_SOURCES = [
     'web-search',
     'google-ads',
@@ -112,24 +91,30 @@ export function isValidTempAttachmentKey(key: string): boolean {
 // ---------------------------------------------------------------------------
 // Length caps derive from the shared source of truth (amplify/lib/rfq/limits)
 // so client (maxLength + validateField) and server can never drift.
+// Normalize (trim + NFC) human-entered prose/address text before length
+// validation, using the same canonical helper the draft schema uses. Applied
+// ONLY to human text — never to opaque/security values (turnstileToken,
+// attachmentKeys, visitorId) or field-specific canonicalizers (referralSource).
+const nText = (schema: z.ZodString) => z.string().transform(normalizeRfqText).pipe(schema);
+
 export const rfqSchema = z.object({
-    name: z.string().min(L.name.min).max(L.name.max),
-    email: z.string().email().max(L.email.max),
-    phone: z.string().max(L.phone.max).optional(),
-    institution: z.string().min(L.institution.min).max(L.institution.max),
-    department: z.string().max(L.department.max).optional(),
-    role: z.enum(ROLES).optional(),
+    name: nText(z.string().min(L.name.min).max(L.name.max)),
+    email: z.string().transform(normalizeRfqEmail).pipe(z.string().max(L.email.max).email()),
+    phone: nText(z.string().max(L.phone.max)).optional(),
+    institution: nText(z.string().min(L.institution.min).max(L.institution.max)),
+    department: nText(z.string().max(L.department.max)).optional(),
+    role: z.enum(RFQ_ROLE_VALUES).optional(),
     equipmentCategory: z.enum(RFQ_EQUIPMENT_CATEGORY_VALUES),
-    specificModel: z.string().max(L.specificModel.max).optional(),
-    applicationDescription: z.string().min(L.applicationDescription.min).max(L.applicationDescription.max),
-    keySpecifications: z.string().max(L.keySpecifications.max).optional(),
+    specificModel: nText(z.string().max(L.specificModel.max)).optional(),
+    applicationDescription: nText(z.string().min(L.applicationDescription.min).max(L.applicationDescription.max)),
+    keySpecifications: nText(z.string().max(L.keySpecifications.max)).optional(),
     quantity: z.number().int().positive().default(1),
-    budgetRange: z.enum(BUDGET_RANGES).optional(),
-    timeline: z.enum(TIMELINES).optional(),
-    fundingStatus: z.enum(FUNDING_STATUSES).optional(),
+    budgetRange: z.enum(RFQ_BUDGET_RANGE_VALUES).optional(),
+    timeline: z.enum(RFQ_TIMELINE_VALUES).optional(),
+    fundingStatus: z.enum(RFQ_FUNDING_STATUS_VALUES).optional(),
     referralSource: z.enum(REFERRAL_SOURCES).optional(),
-    existingEquipment: z.string().max(L.existingEquipment.max).optional(),
-    additionalComments: z.string().max(L.additionalComments.max).optional(),
+    existingEquipment: nText(z.string().max(L.existingEquipment.max)).optional(),
+    additionalComments: nText(z.string().max(L.additionalComments.max)).optional(),
     turnstileToken: z.string().min(1),
     // Browser visitor identity for the VISITOR# bridge (2C-analytics)
     visitorId: z.string().max(L.visitorId.max).optional(),
@@ -142,11 +127,11 @@ export const rfqSchema = z.object({
         .optional(),
     // Budgetary quote with shipping address for tax calculation
     needsBudgetaryQuote: z.boolean().optional(),
-    shippingAddress: z.string().max(L.shippingAddress.max).optional(),
-    shippingCity: z.string().max(L.shippingCity.max).optional(),
-    shippingState: z.string().max(L.shippingState.max).optional(),
-    shippingZipCode: z.string().max(L.shippingZipCode.max).optional(),
-    shippingCountry: z.string().max(L.shippingCountry.max).optional(),
+    shippingAddress: nText(z.string().max(L.shippingAddress.max)).optional(),
+    shippingCity: nText(z.string().max(L.shippingCity.max)).optional(),
+    shippingState: nText(z.string().max(L.shippingState.max)).optional(),
+    shippingZipCode: nText(z.string().max(L.shippingZipCode.max)).optional(),
+    shippingCountry: nText(z.string().max(L.shippingCountry.max)).optional(),
     // Article attribution — silently dropped if invalid (never blocks submission)
     referrerSource: z
         .string()

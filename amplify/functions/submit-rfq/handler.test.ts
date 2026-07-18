@@ -11,9 +11,14 @@ import { RFQ_FIELD_LIMITS } from '../../lib/rfq/limits';
 import {
     RFQ_EQUIPMENT_CATEGORY_VALUES,
     RFQ_ATTACHMENT_MIME_TYPES,
+    RFQ_ROLE_VALUES,
+    RFQ_BUDGET_RANGE_VALUES,
+    RFQ_TIMELINE_VALUES,
+    RFQ_FUNDING_STATUS_VALUES,
     MAX_RFQ_ATTACHMENTS,
     MAX_RFQ_ATTACHMENT_SIZE,
 } from '../../lib/rfq/contract';
+import { draftCreateSchema } from '../../lib/rfq/draftContract';
 import { PutCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 
 // Attachment keys in the exact shape getUploadUrl issues: temp/rfq/<16 hex>/<name>
@@ -1207,5 +1212,66 @@ describe('submit-rfq getUploadUrl action', () => {
             );
             expect((result as { statusCode: number }).statusCode).toBe(200);
         }
+    });
+});
+
+// Parity guard for the P1 canonical-contract migration: the formal handler and
+// the draft schema now derive role/budget/timeline/funding enums and text
+// normalization from amplify/lib/rfq/contract. These prove the migration is
+// behavior-preserving and that the two schemas agree on normalization.
+describe('canonical contract parity (formal ⇄ shared)', () => {
+    const base = {
+        name: 'Dr. Jane Smith',
+        email: 'jane@stanford.edu',
+        institution: 'Stanford University',
+        equipmentCategory: 'ICP',
+        applicationDescription: 'We need an ICP etching system for silicon etching research.',
+        turnstileToken: 'token',
+    };
+
+    it('accepts every canonical role/budget/timeline/funding value', () => {
+        for (const role of RFQ_ROLE_VALUES) {
+            expect(rfqSchema.safeParse({ ...base, role }).success, role).toBe(true);
+        }
+        for (const budgetRange of RFQ_BUDGET_RANGE_VALUES) {
+            expect(rfqSchema.safeParse({ ...base, budgetRange }).success, budgetRange).toBe(true);
+        }
+        for (const timeline of RFQ_TIMELINE_VALUES) {
+            expect(rfqSchema.safeParse({ ...base, timeline }).success, timeline).toBe(true);
+        }
+        for (const fundingStatus of RFQ_FUNDING_STATUS_VALUES) {
+            expect(rfqSchema.safeParse({ ...base, fundingStatus }).success, fundingStatus).toBe(true);
+        }
+    });
+
+    it('normalizes name and email identically to the draft schema', () => {
+        const messy = {
+            ...base,
+            name: '  Jane   Smith  ',
+            email: '  JANE@Stanford.EDU ',
+        };
+        const formal = rfqSchema.parse(messy);
+        const draft = draftCreateSchema.parse({
+            name: messy.name,
+            email: messy.email,
+            institution: base.institution,
+            equipmentCategory: base.equipmentCategory,
+            applicationDescription: base.applicationDescription,
+            quantity: 1,
+        });
+        expect(formal.email).toBe('jane@stanford.edu');
+        expect(formal.name).toBe('Jane   Smith'); // trimmed edges, inner spacing preserved
+        expect(formal.email).toBe(draft.email);
+        expect(formal.name).toBe(draft.name);
+    });
+
+    it('leaves opaque/security values untouched (no trim/case change)', () => {
+        const parsed = rfqSchema.parse({
+            ...base,
+            turnstileToken: '  Tok-EN_with.Spaces  ',
+            visitorId: '  Visitor-ID-123  ',
+        });
+        expect(parsed.turnstileToken).toBe('  Tok-EN_with.Spaces  ');
+        expect(parsed.visitorId).toBe('  Visitor-ID-123  ');
     });
 });

@@ -57,3 +57,40 @@ export const MAX_RFQ_ATTACHMENTS = 3;
 
 /** Maximum size (bytes) of a single RFQ attachment. */
 export const MAX_RFQ_ATTACHMENT_SIZE = 10 * 1024 * 1024; // 10MB
+
+// ---------------------------------------------------------------------------
+// Shared enums — consumed by the formal submit-rfq Zod schema AND the draft
+// schema, so the two cannot drift (the Probe-Station lesson, applied to every
+// enum). Values MUST match the submit-rfq handler's historical arrays exactly.
+// ---------------------------------------------------------------------------
+
+export const RFQ_ROLE_VALUES = [
+  'PI', 'Research Scientist', 'Postdoc', 'Researcher', 'Graduate Student', 'Engineer',
+  'Procurement', 'Lab Manager', 'Business Development', 'Other',
+] as const;
+
+export const RFQ_BUDGET_RANGE_VALUES = [
+  'Under $10k', '$10k - $30k', '$30k - $80k', '$80k - $150k', 'Over $150k', 'Not yet defined',
+] as const;
+
+export const RFQ_TIMELINE_VALUES = [
+  'immediate', 'within-3-months', 'within-6-months', '6-plus-months', 'budgetary-planning',
+] as const;
+
+export const RFQ_FUNDING_STATUS_VALUES = [
+  'funded', 'budget-under-review', 'grant-pending', 'exploring', 'prefer-not-to-say',
+] as const;
+
+/**
+ * Canonical Unicode/whitespace normalization shared by formal and draft input.
+ * Apply ONLY to human-entered prose/address fields — never to opaque or
+ * security-sensitive values (tokens, attachment keys, visitor/identifier ids).
+ */
+export function normalizeRfqText(value: string): string {
+  return value.trim().normalize('NFC');
+}
+
+/** Email normalization: canonical text plus lowercasing for consistent indexing. */
+export function normalizeRfqEmail(value: string): string {
+  return normalizeRfqText(value).toLowerCase();
+}
