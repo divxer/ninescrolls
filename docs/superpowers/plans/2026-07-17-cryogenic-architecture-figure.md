@@ -118,6 +118,8 @@ W, H = 1600, 900
 NAVY, ACCENT, INK = '#1e3a5f', '#3b82f6', '#17324d'
 MUTED, FIELD, WHITE, RULE = '#5c7085', '#f6f9fc', '#ffffff', '#d6e2ec'
 HEADER_BOTTOM, THERMAL_BOTTOM, MATRIX_BOTTOM = 162, 472, 844
+TITLE = 'Three Cryogenic Cooling Architectures'
+SUBTITLE = 'Thermal paths and operating trade-offs for probe-station evaluation'
 ROWS = ['CONSUMABLES / UTILITIES', 'MECHANICAL VIBRATION SOURCE',
         'OPERATING PATTERN', 'BUYER’S KEY QUESTION']
 ARCHITECTURES = [
@@ -154,9 +156,9 @@ thermal_link: two parallel curves joining terminal bars
 stage: thin platform over circular wafer outline
 ```
 
-Header title `(72,38)`, size 46 Space Grotesk; subtitle `(74,105)`, size 22 Inter. Architecture columns are `(250,690)`, `(700,1140)`, `(1150,1590)`; left 230 pixels are matrix row labels. Center headings at y=196, path nodes at y=246-374, references at y=421. Connect nodes with 2-pixel accent arrows.
+Header title `(72,38)`, size 46 Space Grotesk at weight 600; after loading the variable font, call `title_font.set_variation_by_axes([600])` (its sole `wght` axis spans 300-700). Draw the subtitle at `(74,105)`, size 22 Inter. Architecture columns are `(250,690)`, `(700,1140)`, `(1150,1590)`; left 230 pixels are matrix row labels. Center headings at y=196, path nodes at y=246-374, references at y=421. Connect nodes with 2-pixel accent arrows.
 
-Matrix rows run y=490-816 with heights `[78,78,88,82]`; alternate `#ffffff` / `#eef4f9`, with horizontal `RULE` separators only. Wrap cells at 18 pixels minimum and 1.25 line spacing. Footer starts `(72,862)`, size 15 Inter. `fit_text(...)` must reduce font size until text fits its explicit box and raise `ValueError` instead of clipping.
+Matrix rows run y=490-816 with heights `[78,78,88,82]`; alternate `#ffffff` / `#eef4f9`, with horizontal `RULE` separators only. Pass 18 as `fit_text`'s minimum permitted cell-font size and use 1.25 line spacing. Footer starts `(72,862)`, size 15 Inter. `fit_text(...)` must reduce font size only down to that explicit lower bound, then raise `ValueError` instead of clipping.
 
 Save an RGB PNG with:
 
@@ -165,6 +167,7 @@ image.save(OUT, format='PNG', optimize=True, icc_profile=None)
 with Image.open(OUT) as check:
     assert check.size == (1600, 900)
     assert check.mode == 'RGB'
+print(OUT)
 ```
 
 - [ ] **Step 3: Generate the candidate**
@@ -177,7 +180,7 @@ Expected: exits 0, prints the candidate path, and leaves no TTF in the repositor
 
 - [ ] **Step 4: Inspect native and 640 × 360 renders**
 
-Verify: three paths read left-to-right; all 12 cells are present/aligned; no clipping; `LN₂` and `Buyer’s` are real glyphs; only two approved numbers occur; no brand/product/certification/guarantee/`10 K-class`; footer is legible at 640 × 360; layout does not read as three product cards. If any check fails, edit only the renderer and repeat Steps 3-4.
+Verify: `Three Cryogenic Cooling Architectures` and `Thermal paths and operating trade-offs for probe-station evaluation` match exactly; three paths read left-to-right; all 12 cells are present/aligned; no clipping; `LN₂` and `Buyer’s` are real glyphs; only two approved numbers occur; no brand/product/certification/guarantee/`10 K-class`; footer is legible at 640 × 360; layout does not read as three product cards. If any check fails, edit only the renderer and repeat Steps 3-4.
 
 ### Task 3: Promote, Integrate, and Regenerate
 
@@ -214,6 +217,8 @@ npm run optimize-images -- public/assets/images/insights/cryo-cooling-architectu
 ```
 
 Expected: eight generated paths and `Single image optimization complete!`.
+
+The optimizer logs caught errors without forcing a nonzero exit, so this message and exit status are informational only; Step 4's checksum comparison and Step 5's Sharp metadata assertions are the success gates.
 
 - [ ] **Step 4: Prove every responsive checksum changed**
 
@@ -261,7 +266,7 @@ Expected: no candidate or temporary TTF staged.
 
 ```bash
 npx vitest run src/pages/probeStations/cryoBuyersGuideArticle.test.ts
-npx vitest run --testNamePattern="cryogenic probing"
+npx vitest run src/pages/probeStations/CryogenicProbingPage.test.tsx
 ```
 
 Expected: both exit 0.
@@ -294,9 +299,11 @@ git push origin feature/cryo-buyers-guide-article
 
 Expected: PR #291 updates. Do not run `upload-insights-image.ts`, `create-insight`, or a cover-update command.
 
-- [ ] **Step 5: Preserve the publication-only handoff command without executing it**
+## Publication-Time Handoff Note — Do Not Execute During This Plan
 
-```bash
+The following command is documentation for the later publication workflow, not an executable plan step:
+
+```text
 npx tsx scripts/upload-insights-image.ts \
   cryogenic-probe-station-buyers-guide \
   public/assets/images/insights/cryo-cooling-architectures.png \
