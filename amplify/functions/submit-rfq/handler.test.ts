@@ -475,6 +475,11 @@ describe('submit-rfq handler', () => {
     beforeEach(async () => {
         vi.clearAllMocks();
 
+        // clearAllMocks wipes call history but not implementations; reset the
+        // shared S3 send so a per-test failure override never leaks forward.
+        mockS3Send.mockReset();
+        mockS3Send.mockResolvedValue({});
+
         // Set environment variables
         process.env.INTELLIGENCE_TABLE = 'NineScrolls-Intelligence';
         process.env.DOCUMENTS_BUCKET = 'ninescrolls-order-documents';
@@ -776,6 +781,211 @@ describe('submit-rfq handler', () => {
                 return (params.UpdateExpression ?? '').includes('matchedOrgId');
             });
         expect(backfillCall).toBeUndefined();
+    });
+
+    describe('partial attachment failure (silent data-loss guard)', () => {
+        // Find the internal (sales-facing) SendGrid notification and return its HTML body.
+        function findInternalNotificationHtml(): string | undefined {
+            const call = mockFetch.mock.calls.find((c: unknown[]) => {
+                const url = c[0] as string;
+                if (!url.includes('sendgrid')) return false;
+                const opts = c[1] as { body?: string } | undefined;
+                if (!opts?.body) return false;
+                const parsed = JSON.parse(opts.body) as {
+                    personalizations?: { to?: { email?: string }[] }[];
+                };
+                return parsed.personalizations?.[0]?.to?.[0]?.email === 'sales@ninescrolls.com';
+            });
+            if (!call) return undefined;
+            const body = JSON.parse((call[1] as { body: string }).body) as {
+                content: { value: string }[];
+            };
+            return body.content[0].value;
+        }
+
+        it('returns 200 and surfaces the lost file when one CopyObject fails', async () => {
+            // Second CopyObject (TEMP_KEY_B) rejects; the other two move fine.
+            let copyCount = 0;
+            mockS3Send.mockImplementation((cmd: { __type?: string }) => {
+                if (cmd.__type === 'CopyObject') {
+                    copyCount++;
+                    if (copyCount === 2) return Promise.reject(new Error('S3 copy failed'));
+                }
+                return Promise.resolve({});
+            });
+
+            const event = makeEvent({
+                ...VALID_RFQ,
+                attachmentKeys: [TEMP_KEY_A, TEMP_KEY_B, TEMP_KEY_C],
+            });
+            const result = await handler(event, {} as never, (() => {}) as never);
+
+            // The lead is worth more than the file — a partial failure must not fail the RFQ.
+            expect((result as { statusCode: number }).statusCode).toBe(200);
+            expect(JSON.parse((result as { body: string }).body).success).toBe(true);
+
+            // The internal notification must make the loss explicit, not hide it.
+            const html = findInternalNotificationHtml();
+            expect(html).toBeDefined();
+            expect(html).toContain('2 of 3');
+            expect(html).toMatch(/failed to process/i);
+            // The failed source key is named so sales can chase the missing file.
+            expect(html).toContain(TEMP_KEY_B);
+        });
+
+        it('only persists the successfully-moved keys on partial failure', async () => {
+            let copyCount = 0;
+            mockS3Send.mockImplementation((cmd: { __type?: string }) => {
+                if (cmd.__type === 'CopyObject') {
+                    copyCount++;
+                    if (copyCount === 2) return Promise.reject(new Error('S3 copy failed'));
+                }
+                return Promise.resolve({});
+            });
+
+            const event = makeEvent({
+                ...VALID_RFQ,
+                attachmentKeys: [TEMP_KEY_A, TEMP_KEY_B, TEMP_KEY_C],
+            });
+            await handler(event, {} as never, (() => {}) as never);
+
+            const attachmentUpdate = (UpdateCommand as unknown as ReturnType<typeof vi.fn>).mock.calls
+                .find((c: unknown[]) => {
+                    const params = c[0] as { UpdateExpression?: string };
+                    return (params.UpdateExpression ?? '').includes('attachmentKeys');
+                });
+            expect(attachmentUpdate).toBeDefined();
+            const keys = (attachmentUpdate![0] as { ExpressionAttributeValues: Record<string, string[]> })
+                .ExpressionAttributeValues[':keys'];
+            expect(keys).toHaveLength(2);
+            expect(keys.some(k => k.endsWith('spec.pdf'))).toBe(true);      // TEMP_KEY_A
+            expect(keys.some(k => k.endsWith('notes.docx'))).toBe(true);    // TEMP_KEY_C
+            expect(keys.some(k => k.endsWith('drawing.pdf'))).toBe(false);  // TEMP_KEY_B failed
+        });
+
+        // Judgment call: the customer confirmation stays calm but gives a resend
+        // path on partial loss, rather than letting them believe a lost file arrived.
+        function findConfirmationHtml(): string | undefined {
+            const call = mockFetch.mock.calls.find((c: unknown[]) => {
+                const url = c[0] as string;
+                if (!url.includes('sendgrid')) return false;
+                const opts = c[1] as { body?: string } | undefined;
+                if (!opts?.body) return false;
+                const parsed = JSON.parse(opts.body) as {
+                    personalizations?: { to?: { email?: string }[] }[];
+                };
+                return parsed.personalizations?.[0]?.to?.[0]?.email === VALID_RFQ.email;
+            });
+            if (!call) return undefined;
+            const body = JSON.parse((call[1] as { body: string }).body) as {
+                content: { value: string }[];
+            };
+            return body.content[0].value;
+        }
+
+        it('adds a resend note to the customer confirmation on partial failure', async () => {
+            let copyCount = 0;
+            mockS3Send.mockImplementation((cmd: { __type?: string }) => {
+                if (cmd.__type === 'CopyObject') {
+                    copyCount++;
+                    if (copyCount === 2) return Promise.reject(new Error('S3 copy failed'));
+                }
+                return Promise.resolve({});
+            });
+
+            await handler(makeEvent({
+                ...VALID_RFQ,
+                attachmentKeys: [TEMP_KEY_A, TEMP_KEY_B, TEMP_KEY_C],
+            }), {} as never, (() => {}) as never);
+
+            const html = findConfirmationHtml();
+            expect(html).toBeDefined();
+            expect(html).toMatch(/resend/i);
+            // Non-alarming: doesn't dump internal S3 keys on the customer.
+            expect(html).not.toContain(TEMP_KEY_B);
+        });
+
+        it('leaves the customer confirmation untouched when all attachments move', async () => {
+            await handler(makeEvent({
+                ...VALID_RFQ,
+                attachmentKeys: [TEMP_KEY_A, TEMP_KEY_B],
+            }), {} as never, (() => {}) as never);
+
+            const html = findConfirmationHtml();
+            expect(html).toBeDefined();
+            expect(html).not.toMatch(/resend/i);
+            expect(html).not.toMatch(/couldn't process/i);
+        });
+
+        it('does not mention failures when every attachment moves', async () => {
+            const event = makeEvent({
+                ...VALID_RFQ,
+                attachmentKeys: [TEMP_KEY_A, TEMP_KEY_B],
+            });
+            const result = await handler(event, {} as never, (() => {}) as never);
+
+            expect((result as { statusCode: number }).statusCode).toBe(200);
+            const html = findInternalNotificationHtml();
+            expect(html).toBeDefined();
+            expect(html).toContain('Attachments (2)');
+            expect(html).not.toMatch(/failed to process/i);
+        });
+
+        it('reports 0 of N when every attachment fails to copy', async () => {
+            mockS3Send.mockImplementation((cmd: { __type?: string }) => {
+                if (cmd.__type === 'CopyObject') {
+                    return Promise.reject(new Error('S3 copy failed'));
+                }
+                return Promise.resolve({});
+            });
+
+            const event = makeEvent({
+                ...VALID_RFQ,
+                attachmentKeys: [TEMP_KEY_A, TEMP_KEY_B, TEMP_KEY_C],
+            });
+            const result = await handler(event, {} as never, (() => {}) as never);
+
+            // Total loss still keeps the lead.
+            expect((result as { statusCode: number }).statusCode).toBe(200);
+            const html = findInternalNotificationHtml();
+            expect(html).toContain('0 of 3');
+            expect(html).toMatch(/3 attachments failed to process/i);
+
+            // Nothing moved → no attachmentKeys update at all.
+            const attachmentUpdate = (UpdateCommand as unknown as ReturnType<typeof vi.fn>).mock.calls
+                .find((c: unknown[]) => (c[0] as { UpdateExpression?: string }).UpdateExpression?.includes('attachmentKeys'));
+            expect(attachmentUpdate).toBeUndefined();
+        });
+
+        // A file is saved by the copy; a failed temp-source delete must NOT be
+        // reported as a lost file — that would be the inverse of the bug we fixed.
+        it('treats a delete-only failure as moved, not lost', async () => {
+            mockS3Send.mockImplementation((cmd: { __type?: string }) => {
+                if (cmd.__type === 'DeleteObject') {
+                    return Promise.reject(new Error('S3 delete failed'));
+                }
+                return Promise.resolve({});
+            });
+
+            const event = makeEvent({
+                ...VALID_RFQ,
+                attachmentKeys: [TEMP_KEY_A, TEMP_KEY_B],
+            });
+            const result = await handler(event, {} as never, (() => {}) as never);
+
+            expect((result as { statusCode: number }).statusCode).toBe(200);
+            const html = findInternalNotificationHtml();
+            expect(html).toContain('Attachments (2)');
+            expect(html).not.toMatch(/failed to process/i);
+
+            // Both files are recorded as saved despite temp cleanup failing.
+            const attachmentUpdate = (UpdateCommand as unknown as ReturnType<typeof vi.fn>).mock.calls
+                .find((c: unknown[]) => (c[0] as { UpdateExpression?: string }).UpdateExpression?.includes('attachmentKeys'));
+            expect(attachmentUpdate).toBeDefined();
+            const keys = (attachmentUpdate![0] as { ExpressionAttributeValues: Record<string, string[]> })
+                .ExpressionAttributeValues[':keys'];
+            expect(keys).toHaveLength(2);
+        });
     });
 
     describe('visitorId capture (2C-analytics)', () => {

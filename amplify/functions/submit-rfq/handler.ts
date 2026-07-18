@@ -309,9 +309,22 @@ async function handleGetUploadUrl(
 // ---------------------------------------------------------------------------
 // Move attachments from temp/ to rfqs/<rfqId>/
 // ---------------------------------------------------------------------------
-async function moveAttachments(rfqId: string, tempKeys: string[]): Promise<string[]> {
+interface MoveAttachmentsResult {
+    /** Final rfqs/<rfqId>/ keys for the files that relocated successfully. */
+    movedKeys: string[];
+    /** Original temp/ keys of files that failed to copy/delete (never saved). */
+    failedKeys: string[];
+}
+
+/**
+ * Relocates each temp upload to its permanent RFQ prefix. A per-file failure is
+ * isolated (logged, its source key returned) rather than aborting the batch — the
+ * caller must surface the loss instead of silently dropping an intended attachment.
+ */
+async function moveAttachments(rfqId: string, tempKeys: string[]): Promise<MoveAttachmentsResult> {
     const bucket = BUCKET_NAME();
-    const finalKeys: string[] = [];
+    const movedKeys: string[] = [];
+    const failedKeys: string[] = [];
 
     for (const tempKey of tempKeys) {
         // Re-checked here and not only at the schema: this loop deletes whatever
@@ -324,26 +337,38 @@ async function moveAttachments(rfqId: string, tempKeys: string[]): Promise<strin
         const fileName = tempKey.split('/').pop() ?? tempKey;
         const destKey = `rfqs/${rfqId}/${fileName}`;
 
+        // The copy is the operation that saves the file. If it fails, the file is
+        // genuinely lost — record the source key so the caller can surface it.
         try {
             await s3Client.send(new CopyObjectCommand({
                 Bucket: bucket,
                 CopySource: `${bucket}/${tempKey}`,
                 Key: destKey,
             }));
+        } catch (err) {
+            failedKeys.push(tempKey);
+            console.error(`Failed to copy attachment ${tempKey}:`, err);
+            continue;
+        }
 
+        // Copy succeeded: the file is safely at destKey, so it counts as moved
+        // regardless of whether temp cleanup below succeeds.
+        movedKeys.push(destKey);
+        console.log(`Attachment moved: ${tempKey} → ${destKey}`);
+
+        // Deleting the temp source is best-effort cleanup, not data loss — a
+        // failure just leaves an orphaned temp object (lifecycle-expired later).
+        try {
             await s3Client.send(new DeleteObjectCommand({
                 Bucket: bucket,
                 Key: tempKey,
             }));
-
-            finalKeys.push(destKey);
-            console.log(`Attachment moved: ${tempKey} → ${destKey}`);
         } catch (err) {
-            console.error(`Failed to move attachment ${tempKey}:`, err);
+            console.warn(`Copied ${tempKey} → ${destKey} but failed to delete temp source:`, err);
         }
     }
 
-    return finalKeys;
+    return { movedKeys, failedKeys };
 }
 
 // ---------------------------------------------------------------------------
@@ -388,7 +413,7 @@ export const equipmentGreetingPhrase: Partial<Record<RfqEquipmentCategory, strin
 };
 
 /** Send confirmation email to customer via SendGrid — §12.10.9 */
-async function sendConfirmationEmail(data: RfqInput, referenceNumber: string): Promise<void> {
+async function sendConfirmationEmail(data: RfqInput, referenceNumber: string, failedAttachmentCount = 0): Promise<void> {
     const apiKey = SENDGRID_API_KEY();
     if (!apiKey) {
         console.warn('SENDGRID_API_KEY not configured, skipping confirmation email');
@@ -408,6 +433,13 @@ async function sendConfirmationEmail(data: RfqInput, referenceNumber: string): P
         data.keySpecifications ? `<tr><td style="padding:6px 12px 6px 0;font-weight:600;color:#555;white-space:nowrap;vertical-align:top;">Key Specs:</td><td style="padding:6px 0;vertical-align:top;">${sanitize(data.keySpecifications.length > 120 ? data.keySpecifications.slice(0, 120) + '…' : data.keySpecifications)}</td></tr>` : '',
         data.needsBudgetaryQuote && data.shippingCountry ? `<tr><td style="padding:6px 12px 6px 0;font-weight:600;color:#555;white-space:nowrap;vertical-align:top;">Shipping Location:</td><td style="padding:6px 0;vertical-align:top;">${[data.shippingState, data.shippingCountry].filter(Boolean).map(s => sanitize(s!)).join(', ')}</td></tr>` : '',
     ].filter(Boolean).join('\n');
+
+    // Gentle, actionable note when one or more uploads didn't make it through —
+    // better the customer re-sends than believes a lost file arrived. Kept low-key.
+    const attachmentNotice = failedAttachmentCount > 0 ? `
+<p style="background:#fff8e1;border-left:3px solid #f0b400;padding:10px 14px;margin-top:16px;font-size:14px;">
+  Note: we couldn't process ${failedAttachmentCount === 1 ? 'one of your attached files' : `${failedAttachmentCount} of your attached files`}. Please reply to this email to resend ${failedAttachmentCount === 1 ? 'it' : 'them'} so we can include ${failedAttachmentCount === 1 ? 'it' : 'them'} with your request.
+</p>` : '';
 
     const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
         method: 'POST',
@@ -434,7 +466,7 @@ async function sendConfirmationEmail(data: RfqInput, referenceNumber: string): P
 <table style="border-collapse:collapse;font-size:14px;">
 ${summaryRows}
 </table>
-
+${attachmentNotice}
 <p style="margin-top:20px;">If you need to add any specifications or supporting documents, simply reply to this email or contact us at <a href="mailto:sales@ninescrolls.com">sales@ninescrolls.com</a>. Please reference <strong>${referenceNumber}</strong> in any future communications regarding this request.</p>
 
 <p style="color:#888;font-size:13px;margin-top:20px;">This is an automated acknowledgment of your request. A member of our team will follow up shortly.</p>
@@ -465,7 +497,7 @@ ${summaryRows}
 }
 
 /** Send internal notification email to sales team via SendGrid */
-async function sendInternalNotification(data: RfqInput, rfqId: string, referenceNumber: string, attachmentKeys: string[]): Promise<void> {
+async function sendInternalNotification(data: RfqInput, rfqId: string, referenceNumber: string, attachmentKeys: string[], failedAttachmentKeys: string[] = []): Promise<void> {
     const apiKey = SENDGRID_API_KEY();
     if (!apiKey) {
         console.warn('SENDGRID_API_KEY not configured, skipping internal notification');
@@ -494,9 +526,22 @@ async function sendInternalNotification(data: RfqInput, rfqId: string, reference
             .filter(Boolean).map(s => sanitize(s!)).join(', ')}</p>
     ` : '';
 
-    const attachmentSection = attachmentKeys.length > 0 ? `
-        <h3 style="margin-top:20px;">Attachments (${attachmentKeys.length})</h3>
-        <ul>${attachmentKeys.map(k => `<li>${sanitize(k)}</li>`).join('')}</ul>
+    // Surface partial attachment loss explicitly — a file that failed to relocate
+    // is gone, and neither sales nor the customer learns of it otherwise. The lead
+    // still succeeds (handler returns 200); we just refuse to hide the loss.
+    const totalRequested = attachmentKeys.length + failedAttachmentKeys.length;
+    const failedCount = failedAttachmentKeys.length;
+    const attachmentHeading = failedCount > 0
+        ? `Attachments (${attachmentKeys.length} of ${totalRequested} attached; ${failedCount} failed to process)`
+        : `Attachments (${attachmentKeys.length})`;
+    const failedAttachmentBlock = failedCount > 0 ? `
+        <p style="color:#b91c1c;font-weight:700;margin-top:8px;">⚠ ${failedCount} attachment${failedCount === 1 ? '' : 's'} failed to process and ${failedCount === 1 ? 'was' : 'were'} NOT saved — ask the customer to resend:</p>
+        <ul>${failedAttachmentKeys.map(k => `<li style="color:#b91c1c;">${sanitize(k)}</li>`).join('')}</ul>
+    ` : '';
+    const attachmentSection = totalRequested > 0 ? `
+        <h3 style="margin-top:20px;">${attachmentHeading}</h3>
+        ${attachmentKeys.length > 0 ? `<ul>${attachmentKeys.map(k => `<li>${sanitize(k)}</li>`).join('')}</ul>` : ''}
+        ${failedAttachmentBlock}
     ` : '';
 
     const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
@@ -811,9 +856,25 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
         ));
 
         // 7. Move attachments from temp/ → rfqs/<rfqId>/
+        //    A per-file relocation failure is isolated, not fatal: the lead is worth
+        //    more than the file. We keep the 200 but surface the loss in the emails
+        //    below so an intended attachment never goes missing silently.
         let attachmentKeys: string[] = [];
+        let failedAttachmentKeys: string[] = [];
         if (data.attachmentKeys && data.attachmentKeys.length > 0) {
-            attachmentKeys = await moveAttachments(rfqId, data.attachmentKeys);
+            const moveResult = await moveAttachments(rfqId, data.attachmentKeys);
+            attachmentKeys = moveResult.movedKeys;
+            failedAttachmentKeys = moveResult.failedKeys;
+
+            if (failedAttachmentKeys.length > 0) {
+                console.error(JSON.stringify({
+                    event: 'submit-rfq.attachment-move-partial-failure',
+                    rfqId,
+                    requested: data.attachmentKeys.length,
+                    moved: attachmentKeys.length,
+                    failed: failedAttachmentKeys.length,
+                }));
+            }
 
             // Update the record with final attachment keys
             if (attachmentKeys.length > 0) {
@@ -828,8 +889,8 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
 
         // 9. Send emails (best-effort, non-blocking)
         await Promise.allSettled([
-            sendConfirmationEmail(data, referenceNumber),
-            sendInternalNotification(data, rfqId, referenceNumber, attachmentKeys),
+            sendConfirmationEmail(data, referenceNumber, failedAttachmentKeys.length),
+            sendInternalNotification(data, rfqId, referenceNumber, attachmentKeys, failedAttachmentKeys),
         ]).then(results => {
             results.forEach((result, i) => {
                 const label = i === 0 ? 'Confirmation email' : 'Internal notification';
