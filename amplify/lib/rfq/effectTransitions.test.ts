@@ -37,3 +37,59 @@ describe('buildEffectClaimItems — expired-lease re-claim', () => {
     });
   });
 });
+
+import { buildEffectCompletionItems } from './effectTransitions';
+
+const CBASE = {
+  tableName: 'T', rfqId: 'rfq-1', owner: 'worker-A', claimedVersion: 1, now: '2026-07-18T00:01:00.000Z',
+};
+
+describe('buildEffectCompletionItems', () => {
+  it('marks org done, backfills matchedOrgId/GSI2PK, and creates visitor+crm successors', () => {
+    const items = buildEffectCompletionItems({
+      ...CBASE, effect: 'org-upsert', result: { matchedOrgId: 'org-123' },
+    });
+    expect(items[0].Update!.ConditionExpression)
+      .toBe('#status = :processing AND leaseOwner = :owner AND #version = :cv');
+    expect(items[0].Update!.UpdateExpression)
+      .toBe('SET #status = :done, #result = :result, completedAt = :now, #version = :nv');
+    expect(items[0].Update!.ExpressionAttributeNames)
+      .toEqual({ '#status': 'status', '#version': 'version', '#result': 'result' });
+    expect(items[0].Update!.Key).toEqual({ PK: 'RFQ#rfq-1', SK: 'OUTBOX#org-upsert' });
+    expect(items[1].Update!.Key).toEqual({ PK: 'RFQ#rfq-1', SK: 'META' });
+    expect(items[1].Update!.UpdateExpression).toBe('SET matchedOrgId = :id, GSI2PK = :gsi2');
+    expect(items[1].Update!.ExpressionAttributeValues).toMatchObject({ ':id': 'org-123', ':gsi2': 'ORG#org-123' });
+    expect(items.slice(2).map((i) => i.Put!.Item!.SK)).toEqual(['OUTBOX#visitor-bridge', 'OUTBOX#crm-emit']);
+    for (const i of items.slice(2)) expect(i.Put!.ConditionExpression).toBe('attribute_not_exists(PK)');
+  });
+
+  it('skips the RFQ backfill when org matchedOrgId is null but still creates successors', () => {
+    const items = buildEffectCompletionItems({ ...CBASE, effect: 'org-upsert', result: { matchedOrgId: null } });
+    expect(items.some((i) => i.Update && (i.Update.Key as { SK: string }).SK === 'META')).toBe(false);
+    expect(items.slice(1).map((i) => i.Put!.Item!.SK)).toEqual(['OUTBOX#visitor-bridge', 'OUTBOX#crm-emit']);
+  });
+
+  it('marks attachment-move done, backfills attachmentKeys (moved only), creates email successors', () => {
+    const items = buildEffectCompletionItems({
+      ...CBASE, effect: 'attachment-move', result: { movedKeys: ['rfqs/rfq-1/a.pdf'], failedKeys: ['temp/rfq/x/b.pdf'] },
+    });
+    expect(items[0].Update!.UpdateExpression).toContain('#result = :result');
+    const backfill = items.find((i) => i.Update && (i.Update.Key as { SK: string }).SK === 'META')!;
+    expect(backfill.Update!.UpdateExpression).toBe('SET attachmentKeys = :keys');
+    expect(backfill.Update!.ExpressionAttributeValues).toMatchObject({ ':keys': ['rfqs/rfq-1/a.pdf'] });
+    expect(items.filter((i) => i.Put).map((i) => i.Put!.Item!.SK))
+      .toEqual(['OUTBOX#confirmation-email', 'OUTBOX#internal-email']);
+  });
+
+  it('marks a leaf effect (crm-emit) done with no backfill and no successors', () => {
+    const items = buildEffectCompletionItems({ ...CBASE, effect: 'crm-emit', result: { accepted: true } });
+    expect(items).toHaveLength(1);
+    expect(items[0].Update!.Key).toEqual({ PK: 'RFQ#rfq-1', SK: 'OUTBOX#crm-emit' });
+  });
+
+  it('rejects an email effect — it must use the claim-before-send latch', () => {
+    expect(() => buildEffectCompletionItems({
+      ...CBASE, effect: 'confirmation-email' as never, result: { attemptedAt: 'x', outcome: 'accepted' } as never,
+    })).toThrow(/latch/);
+  });
+});

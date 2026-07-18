@@ -1,6 +1,14 @@
 // amplify/lib/rfq/effectTransitions.ts
 import { UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import type { TransactWriteCommandInput } from '@aws-sdk/lib-dynamodb';
 import { outboxEffectKey, type OutboxEffectName } from './outboxEffects';
+import {
+  EFFECT_SUCCESSORS, buildOutboxEffectItem, isEmailEffect,
+  type AttachmentMoveResult, type CrmEmitResult,
+  type OrgUpsertResult, type VisitorBridgeResult,
+} from './outboxEffects';
+
+type TransactItem = NonNullable<TransactWriteCommandInput['TransactItems']>[number];
 
 export interface ClaimParams {
   tableName: string; rfqId: string; effect: OutboxEffectName; owner: string; leaseMs: number;
@@ -32,4 +40,89 @@ export function buildEffectClaimItems(p: ClaimParams): UpdateCommand {
     ExpressionAttributeNames: { '#status': 'status', '#version': 'version' },
     ExpressionAttributeValues: values,
   });
+}
+
+/**
+ * Discriminated union — each non-email effect is locked to its own result type, so a
+ * caller cannot pair (e.g.) an org effect with an attachment result. Email effects are
+ * DELIBERATELY absent: they must use the claim-before-send latch (buildEmailClaimItems /
+ * buildEmailFinalizeItems), never this normal completion path.
+ */
+type CompletionResult =
+  | { effect: 'org-upsert'; result: OrgUpsertResult }
+  | { effect: 'attachment-move'; result: AttachmentMoveResult }
+  | { effect: 'visitor-bridge'; result: VisitorBridgeResult }
+  | { effect: 'crm-emit'; result: CrmEmitResult };
+
+export type CompletionParams = {
+  tableName: string; rfqId: string; owner: string; claimedVersion: number; now: string;
+} & CompletionResult;
+
+/** Optional RFQ#/META backfill patch for the effects that project a result onto the RFQ. */
+function rfqBackfill(p: CompletionParams): { UpdateExpression: string; values: Record<string, unknown> } | null {
+  if (p.effect === 'org-upsert' && p.result.matchedOrgId !== null) {
+    return {
+      UpdateExpression: 'SET matchedOrgId = :id, GSI2PK = :gsi2',
+      values: { ':id': p.result.matchedOrgId, ':gsi2': `ORG#${p.result.matchedOrgId}` },
+    };
+  }
+  if (p.effect === 'attachment-move') {
+    return { UpdateExpression: 'SET attachmentKeys = :keys', values: { ':keys': p.result.movedKeys } };
+  }
+  return null;
+}
+
+/**
+ * Complete a normal effect atomically: conditionally mark done (fenced on the claimed
+ * version), persist the typed result, backfill the RFQ where required, and create the
+ * effect's successors (attribute_not_exists → safe on retry). A stale worker's version
+ * fails clause 1, cancelling the whole transaction — no double result/backfill/successor.
+ */
+export function buildEffectCompletionItems(p: CompletionParams): TransactItem[] {
+  // Defense in depth: email effects must never reach normal completion (the type union
+  // already excludes them; this guards a widened/`as`-cast call site).
+  if (isEmailEffect(p.effect)) {
+    throw new Error(`${p.effect} must use the email claim-before-send latch, not buildEffectCompletionItems`);
+  }
+  const items: TransactItem[] = [
+    {
+      Update: {
+        TableName: p.tableName,
+        Key: outboxEffectKey(p.rfqId, p.effect),
+        // `result` and `version` are DynamoDB reserved words — alias both.
+        UpdateExpression: 'SET #status = :done, #result = :result, completedAt = :now, #version = :nv',
+        ConditionExpression: '#status = :processing AND leaseOwner = :owner AND #version = :cv',
+        ExpressionAttributeNames: { '#status': 'status', '#version': 'version', '#result': 'result' },
+        ExpressionAttributeValues: {
+          ':done': 'done', ':processing': 'processing', ':owner': p.owner,
+          ':cv': p.claimedVersion, ':nv': p.claimedVersion + 1, ':result': p.result, ':now': p.now,
+        },
+      },
+    },
+  ];
+
+  const backfill = rfqBackfill(p);
+  if (backfill) {
+    items.push({
+      Update: {
+        TableName: p.tableName,
+        Key: { PK: `RFQ#${p.rfqId}`, SK: 'META' },
+        UpdateExpression: backfill.UpdateExpression,
+        ConditionExpression: 'attribute_exists(PK) AND #status = :pendingRfq',
+        ExpressionAttributeNames: { '#status': 'status' },
+        ExpressionAttributeValues: { ...backfill.values, ':pendingRfq': 'pending' },
+      },
+    });
+  }
+
+  for (const successor of EFFECT_SUCCESSORS[p.effect]) {
+    items.push({
+      Put: {
+        TableName: p.tableName,
+        Item: buildOutboxEffectItem({ rfqId: p.rfqId, effect: successor, now: p.now }) as unknown as Record<string, unknown>,
+        ConditionExpression: 'attribute_not_exists(PK)',
+      },
+    });
+  }
+  return items;
 }
