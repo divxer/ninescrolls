@@ -31,6 +31,16 @@ describe('credential codec', () => {
   it('rejects a credential with non-base64url characters', () => {
     expect(() => decodeCredential('not*valid*base64url')).toThrow(InvalidCredentialError);
   });
+
+  it('rejects non-canonical base64url aliases with unused trailing bits', () => {
+    const bytes = Buffer.alloc(32, 1);
+    const canonical = encodeCredential(bytes);
+    const alias = `${canonical.slice(0, -1)}F`;
+
+    expect(alias).not.toBe(canonical);
+    expect(Buffer.from(alias, 'base64url').equals(bytes)).toBe(true);
+    expect(() => decodeCredential(alias)).toThrow(InvalidCredentialError);
+  });
 });
 
 describe('draft token + id derivation', () => {
@@ -69,6 +79,12 @@ describe('peppered hash + verify', () => {
     const stored = hashDraftToken(pepperV1, 1, token);
     expect(stored).toMatch(/^v1:[0-9a-f]{64}$/);
     expect(verifyDraftToken(stored, token, resolve)).toBe(true);
+  });
+
+  it('rejects invalid pepper key versions before creating an unusable hash', () => {
+    for (const version of [-1, 1.5, Number.POSITIVE_INFINITY, Number.MAX_SAFE_INTEGER + 1]) {
+      expect(() => hashDraftToken(pepperV1, version, token)).toThrow(RangeError);
+    }
   });
 
   it('rejects a wrong token', () => {

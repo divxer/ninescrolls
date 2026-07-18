@@ -26,7 +26,7 @@ export function decodeCredential(value: string): Buffer {
     throw new InvalidCredentialError();
   }
   const bytes = Buffer.from(value, 'base64url');
-  if (bytes.length !== CREDENTIAL_BYTES) {
+  if (bytes.length !== CREDENTIAL_BYTES || bytes.toString('base64url') !== value) {
     throw new InvalidCredentialError();
   }
   return bytes;
@@ -64,6 +64,9 @@ const DUMMY_PEPPER = Buffer.alloc(CREDENTIAL_BYTES, 0);
 
 /** Peppered token hash, stored as `v<keyVersion>:<hmac-sha256 hex>`. */
 export function hashDraftToken(pepper: Buffer, keyVersion: number, token: Buffer): string {
+  if (!Number.isSafeInteger(keyVersion) || keyVersion < 0) {
+    throw new RangeError('keyVersion must be a non-negative safe integer');
+  }
   const mac = crypto.createHmac('sha256', pepper).update(token).digest('hex');
   return `v${keyVersion}:${mac}`;
 }

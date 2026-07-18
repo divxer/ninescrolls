@@ -35,7 +35,7 @@ const draftFields = {
   needsBudgetaryQuote: z.boolean().optional(),
 };
 
-export const DRAFT_FIELD_KEYS = Object.keys(draftFields);
+export const DRAFT_FIELD_KEYS: readonly string[] = Object.freeze(Object.keys(draftFields));
 
 /** Full draft (create): required fields present, unknown keys rejected. */
 export const draftCreateSchema = z.object(draftFields).strict();

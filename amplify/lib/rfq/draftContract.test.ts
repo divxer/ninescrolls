@@ -42,6 +42,10 @@ describe('draftCreateSchema', () => {
       expect(DRAFT_FIELD_KEYS).not.toContain(banned);
     }
   });
+
+  it('exports immutable whitelist metadata', () => {
+    expect(Object.isFrozen(DRAFT_FIELD_KEYS)).toBe(true);
+  });
 });
 
 describe('normalized draft patch', () => {
