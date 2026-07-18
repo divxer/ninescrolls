@@ -1,8 +1,9 @@
 /**
  * Minimal in-memory DynamoDB fake with REAL conditional-write semantics for the
  * expression subset price-api uses. Not a general emulator — supported grammar:
- *   Conditions: attribute_not_exists(f) | f = :v | f < :v, joined by a single AND/OR
- *   Updates:    SET f = :v [, ...] | SET f = f + :v | ADD f :v
+ *   Conditions: attribute_not_exists(f) | f = :v | f < :v | f > :v,
+ *               joined by a single AND/OR
+ *   Updates:    SET f = :v [, ...] | SET f = f + :v | ADD f :v | REMOVE f [, ...]
  * TransactWrite evaluates ALL conditions first, applies all-or-nothing, and throws
  * name='TransactionCanceledException' on any failure — matching the real client.
  */
@@ -25,6 +26,14 @@ function evalAtom(atom: string, item: Item | undefined, values: Record<string, u
   if (eq) return item !== undefined && item[eq[1]] === values[eq[2]];
   const lt = atom.match(/^(\w+) < (:\w+)$/);
   if (lt) return item !== undefined && (item[lt[1]] as number) < (values[lt[2]] as number);
+  const gt = atom.match(/^(\w+) > (:\w+)$/);
+  if (gt && item !== undefined) {
+    const left = item[gt[1]];
+    const right = values[gt[2]];
+    if (typeof left === 'number' && typeof right === 'number') return left > right;
+    if (typeof left === 'string' && typeof right === 'string') return left > right;
+    return false;
+  }
   throw new Error(`fakeDdb: unsupported condition atom: ${atom}`);
 }
 
@@ -55,7 +64,8 @@ function applyUpdate(expr: string, item: Item, values: Record<string, unknown>, 
   const removeMatch = e.match(/(?:^|\s)REMOVE (.+?)(?:\sSET\s|\sADD\s|$)/);
   if (removeMatch) {
     for (const field of removeMatch[1].split(',').map((f) => f.trim())) {
-      if (field) delete item[field];
+      if (!/^\w+$/.test(field)) throw new Error(`fakeDdb: unsupported REMOVE clause: ${field}`);
+      delete item[field];
     }
   }
 }

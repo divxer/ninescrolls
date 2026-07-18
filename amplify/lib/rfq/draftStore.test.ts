@@ -54,6 +54,26 @@ describe('buildDraftItem', () => {
     }
     expect(DRAFT_TTL_DAYS).toBe(30);
   });
+
+  it('cannot persist forbidden fields or overwrite protected metadata at runtime', () => {
+    const hostile = {
+      ...INPUT,
+      PK: 'ATTACKER',
+      status: 'pending',
+      draftTokenHash: 'attacker-hash',
+      expiresAt: '2099-01-01T00:00:00.000Z',
+      attachmentKeys: ['temp/rfq/secret.pdf'],
+    } as unknown as typeof INPUT;
+    const item = buildDraftItem({
+      rfqId: 'abc123', draftTokenHash: 'v1:real-hash', input: hostile, now: NOW,
+    });
+
+    expect(item.PK).toBe('RFQ#abc123');
+    expect(item.status).toBe('draft');
+    expect(item.draftTokenHash).toBe('v1:real-hash');
+    expect(item.expiresAt).toBe('2026-08-14T00:00:00.000Z');
+    expect(item).not.toHaveProperty('attachmentKeys');
+  });
 });
 
 describe('createDraft', () => {
@@ -75,6 +95,26 @@ describe('createDraft', () => {
     expect(b.rfqId).toBe(a.rfqId);
     expect(b.draftToken).toBe(a.draftToken);
     expect([...ddb.store.values()]).toHaveLength(1);
+  });
+
+  it('uses a strongly consistent read when recovering an idempotent create', async () => {
+    const ddb = new FakeDdb();
+    const gets: Array<Record<string, unknown>> = [];
+    const strongDeps = {
+      ...deps(ddb),
+      send: async (command: unknown) => {
+        if ((command as { constructor: { name: string } }).constructor.name === 'GetCommand') {
+          gets.push((command as { input: Record<string, unknown> }).input);
+        }
+        return ddb.send(command as never);
+      },
+    };
+    const nonce = encodeCredential(crypto.randomBytes(32));
+    await createDraft(strongDeps, nonce, INPUT);
+    await createDraft(strongDeps, nonce, INPUT);
+
+    expect(gets).toHaveLength(1);
+    expect(gets[0].ConsistentRead).toBe(true);
   });
 });
 
@@ -107,12 +147,49 @@ describe('getDraft', () => {
     expect((await getDraft(deps(ddb), 'does-not-exist', anyToken)).ok).toBe(false);
   });
 
+  it('keeps malformed credentials on the same read-and-verify path', async () => {
+    const ddb = new FakeDdb();
+    let getCount = 0;
+    const nondisclosingDeps = {
+      ...deps(ddb),
+      send: async (command: unknown) => {
+        if ((command as { constructor: { name: string } }).constructor.name === 'GetCommand') {
+          getCount += 1;
+        }
+        return ddb.send(command as never);
+      },
+    };
+
+    expect((await getDraft(nondisclosingDeps, 'does-not-exist', 'malformed*token')).ok).toBe(false);
+    expect(getCount).toBe(1);
+  });
+
   it('returns DraftUnavailable for an expired draft', async () => {
     const ddb = new FakeDdb();
     const nonce = encodeCredential(crypto.randomBytes(32));
     const created = await createDraft(deps(ddb), nonce, INPUT);
     const future = deps(ddb, { now: () => '2026-10-01T00:00:00.000Z' });
     expect((await getDraft(future, created.rfqId, created.draftToken)).ok).toBe(false);
+  });
+
+  it('uses a strongly consistent read for authentication', async () => {
+    const ddb = new FakeDdb();
+    const nonce = encodeCredential(crypto.randomBytes(32));
+    const created = await createDraft(deps(ddb), nonce, INPUT);
+    const gets: Array<Record<string, unknown>> = [];
+    const strongDeps = {
+      ...deps(ddb),
+      send: async (command: unknown) => {
+        if ((command as { constructor: { name: string } }).constructor.name === 'GetCommand') {
+          gets.push((command as { input: Record<string, unknown> }).input);
+        }
+        return ddb.send(command as never);
+      },
+    };
+
+    await getDraft(strongDeps, created.rfqId, created.draftToken);
+    expect(gets).toHaveLength(1);
+    expect(gets[0].ConsistentRead).toBe(true);
   });
 });
 
@@ -168,5 +245,45 @@ describe('updateDraft', () => {
     const wrong = encodeCredential(crypto.randomBytes(32));
     expect((await updateDraft(deps(ddb), c.rfqId, wrong, 1, patch({ quantity: 3 }))).status)
       .toBe('unavailable');
+  });
+
+  it('cannot update a draft that expires between authentication and the write', async () => {
+    const ddb = new FakeDdb();
+    const nonce = encodeCredential(crypto.randomBytes(32));
+    const c = await createDraft(deps(ddb), nonce, INPUT);
+    const racingDeps = {
+      ...deps(ddb),
+      send: async (command: unknown) => {
+        if ((command as { constructor: { name: string } }).constructor.name === 'UpdateCommand') {
+          const item = [...ddb.store.values()][0];
+          item.expiresAt = '2026-01-01T00:00:00.000Z';
+        }
+        return ddb.send(command as never);
+      },
+    };
+
+    const result = await updateDraft(racingDeps, c.rfqId, c.draftToken, 1, patch({ quantity: 3 }));
+    expect(result.status).toBe('unavailable');
+    expect([...ddb.store.values()][0].draftVersion).toBe(1);
+  });
+
+  it('cannot update after the authenticated token hash is invalidated', async () => {
+    const ddb = new FakeDdb();
+    const nonce = encodeCredential(crypto.randomBytes(32));
+    const c = await createDraft(deps(ddb), nonce, INPUT);
+    const racingDeps = {
+      ...deps(ddb),
+      send: async (command: unknown) => {
+        if ((command as { constructor: { name: string } }).constructor.name === 'UpdateCommand') {
+          const item = [...ddb.store.values()][0];
+          item.draftTokenHash = `v1:${'0'.repeat(64)}`;
+        }
+        return ddb.send(command as never);
+      },
+    };
+
+    const result = await updateDraft(racingDeps, c.rfqId, c.draftToken, 1, patch({ quantity: 3 }));
+    expect(result.status).toBe('unavailable');
+    expect([...ddb.store.values()][0].draftVersion).toBe(1);
   });
 });

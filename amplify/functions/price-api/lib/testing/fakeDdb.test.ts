@@ -34,4 +34,27 @@ describe('fakeDdb REMOVE', () => {
     }));
     expect([...ddb.store.values()]).toEqual([{ PK: 'D#1', SK: 'META', a: 1 }]);
   });
+
+  it('rejects malformed REMOVE attribute names', async () => {
+    const ddb = new FakeDdb();
+    ddb.seed([{ PK: 'D#1', SK: 'META', keep: 'y' }]);
+    await expect(ddb.send(new UpdateCommand({
+      TableName: 't', Key: { PK: 'D#1', SK: 'META' },
+      UpdateExpression: 'REMOVE keep;DROP',
+    }))).rejects.toThrow('unsupported REMOVE clause');
+  });
+});
+
+describe('fakeDdb conditions', () => {
+  it('supports greater-than comparisons used by draft expiry guards', async () => {
+    const ddb = new FakeDdb();
+    ddb.seed([{ PK: 'D#1', SK: 'META', expiresAt: '2026-08-01T00:00:00.000Z', value: 1 }]);
+    await ddb.send(new UpdateCommand({
+      TableName: 't', Key: { PK: 'D#1', SK: 'META' },
+      UpdateExpression: 'SET value = :value',
+      ConditionExpression: 'expiresAt > :now',
+      ExpressionAttributeValues: { ':value': 2, ':now': '2026-07-01T00:00:00.000Z' },
+    }));
+    expect([...ddb.store.values()][0].value).toBe(2);
+  });
 });

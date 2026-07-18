@@ -30,6 +30,7 @@ export function buildDraftItem(args: {
   const { rfqId, draftTokenHash, input, now } = args;
   const { expiresAt, TTL } = expiryFrom(now);
   return {
+    ...whitelist(input),
     PK: draftPk(rfqId),
     SK: 'META',
     status: 'draft',
@@ -41,7 +42,6 @@ export function buildDraftItem(args: {
     draftTokenHash,
     GSI1PK: 'RFQ_STATUS#draft',
     GSI1SK: `${now}#${rfqId}`,
-    ...input,
   };
 }
 
@@ -81,6 +81,7 @@ export async function createDraft(
     // Idempotent retry: same nonce already created this record — return its version.
     const existing = await deps.send(new GetCommand({
       TableName: deps.tableName, Key: { PK: draftPk(rfqId), SK: 'META' },
+      ConsistentRead: true,
     }));
     const draftVersion = (existing.Item?.draftVersion as number) ?? 1;
     return { rfqId, draftToken: encodeCredential(token), draftVersion };
@@ -108,12 +109,22 @@ async function loadLiveDraft(
   deps: DraftStoreDeps, rfqId: string, tokenB64: string,
 ): Promise<Record<string, unknown> | null> {
   let token: Buffer;
-  try { token = decodeCredential(tokenB64); } catch { return null; }
+  let credentialValid = true;
+  try {
+    token = decodeCredential(tokenB64);
+  } catch {
+    token = Buffer.alloc(32, 0);
+    credentialValid = false;
+  }
   const res = await deps.send(new GetCommand({
     TableName: deps.tableName, Key: { PK: draftPk(rfqId), SK: 'META' },
+    ConsistentRead: true,
   }));
   const item = res.Item;
-  const authed = verifyDraftToken(item?.draftTokenHash as string | undefined, token, deps.resolvePepper);
+  const tokenMatches = verifyDraftToken(
+    item?.draftTokenHash as string | undefined, token, deps.resolvePepper,
+  );
+  const authed = credentialValid && tokenMatches;
   if (!item || !authed || item.status !== 'draft') return null;
   if (Date.parse(item.expiresAt as string) <= Date.parse(deps.now())) return null;
   return item;
@@ -167,6 +178,7 @@ export async function updateDraft(
   const values: Record<string, unknown> = {
     ':nv': currentVersion + 1, ':la': now, ':ea': expiresAt, ':ttl': TTL,
     ':g1sk': `${now}#${rfqId}`, ':ev': expectedVersion, ':draft': 'draft',
+    ':tokenHash': item.draftTokenHash, ':now': now,
   };
   for (const [k, v] of Object.entries(patch.set)) { sets.push(`${k} = :s_${k}`); values[`:s_${k}`] = v; }
   const removeClause = patch.remove.length ? ` REMOVE ${patch.remove.join(', ')}` : '';
@@ -174,7 +186,12 @@ export async function updateDraft(
     await deps.send(new UpdateCommand({
       TableName: deps.tableName, Key: { PK: draftPk(rfqId), SK: 'META' },
       UpdateExpression: `SET ${sets.join(', ')}${removeClause}`,
-      ConditionExpression: 'draftVersion = :ev AND #status = :draft',
+      ConditionExpression: [
+        'draftVersion = :ev',
+        '#status = :draft',
+        'draftTokenHash = :tokenHash',
+        'expiresAt > :now',
+      ].join(' AND '),
       ExpressionAttributeNames: { '#ttl': 'TTL', '#status': 'status' },
       ExpressionAttributeValues: values,
     }));
