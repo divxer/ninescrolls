@@ -390,3 +390,171 @@ describe('describeSubmitError', () => {
       .toContain('Validation failed');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Attachments — presigned S3 upload flow
+//
+// These deliberately route each of the three requests an attachment submission
+// makes (presign → S3 PUT → submit RFQ) instead of blanket-mocking `ok: true`.
+// A blanket mock is what let the old multipart path look healthy while every
+// RFQ with a file 400'd in production.
+// ---------------------------------------------------------------------------
+const PRESIGNED_PUT_URL = 'https://s3.example.com/temp-put?sig=abc';
+const TEMP_KEY = 'temp/rfq/0123456789abcdef/spec.pdf';
+
+function makeFile(name = 'spec.pdf', type = 'application/pdf') {
+  return new File(['spec-bytes'], name, { type });
+}
+
+type FetchStep = () => unknown;
+
+function stubAttachmentFetch(overrides: { presign?: FetchStep; put?: FetchStep; submit?: FetchStep } = {}) {
+  const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+    // Check upload-url first — it also contains the '/api/rfq' substring.
+    if (url.includes('/api/rfq/upload-url')) {
+      return (overrides.presign?.() ?? {
+        ok: true,
+        json: async () => ({ success: true, uploadUrl: PRESIGNED_PUT_URL, s3Key: TEMP_KEY, expiresAt: 'x' }),
+      }) as Response;
+    }
+    if (url === PRESIGNED_PUT_URL) {
+      return (overrides.put?.() ?? { ok: true, status: 200 }) as Response;
+    }
+    void init;
+    return (overrides.submit?.() ?? {
+      ok: true,
+      json: async () => ({ referenceNumber: 'RFQ-123456-TEST', rfqId: 'rfq-test' }),
+    }) as Response;
+  });
+  vi.stubGlobal('fetch', fetchMock);
+  return fetchMock;
+}
+
+function callsTo(fetchMock: ReturnType<typeof stubAttachmentFetch>, match: (url: string) => boolean) {
+  return fetchMock.mock.calls.filter(([url]) => match(url as string));
+}
+
+async function submitWithFile(file?: File) {
+  renderRfq('/request-quote?category=ICP');
+
+  fireEvent.change(screen.getByLabelText(/Full Name/i), { target: { value: 'Ada Lovelace' } });
+  fireEvent.change(screen.getByLabelText(/^Email/i), { target: { value: 'ada@example.edu' } });
+  fireEvent.change(screen.getByLabelText(/Institution/i), { target: { value: 'Example Lab' } });
+  fireEvent.change(screen.getByLabelText(/Application \/ Research Goal/i), {
+    target: { value: 'Deep silicon etching process development for MEMS sensors.' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: /Continue to Project Details/i }));
+
+  await waitFor(() => {
+    expect(screen.getByRole('button', { name: /Request Proposal/i })).toBeInTheDocument();
+  });
+
+  if (file) {
+    const input = document.getElementById('rfq-file-upload') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [file] } });
+    await waitFor(() => {
+      expect(screen.getByText(file.name)).toBeInTheDocument();
+    });
+  }
+
+  fireEvent.click(screen.getByRole('button', { name: /Request Proposal/i }));
+}
+
+describe('RFQPage attachments', () => {
+  it('uploads the file to S3 and submits its key as attachmentKeys', async () => {
+    const fetchMock = stubAttachmentFetch();
+
+    await submitWithFile(makeFile());
+
+    await waitFor(() => {
+      expect(callsTo(fetchMock, (u) => u === 'https://api.ninescrolls.com/api/rfq')).toHaveLength(1);
+    });
+
+    // 1. Presign request describes the exact file.
+    const [, presignInit] = callsTo(fetchMock, (u) => u.includes('/upload-url'))[0];
+    expect(JSON.parse((presignInit as RequestInit).body as string)).toMatchObject({
+      action: 'getUploadUrl',
+      fileName: 'spec.pdf',
+      mimeType: 'application/pdf',
+    });
+
+    // 2. Bytes go straight to S3 via PUT.
+    const [, putInit] = callsTo(fetchMock, (u) => u === PRESIGNED_PUT_URL)[0];
+    expect((putInit as RequestInit).method).toBe('PUT');
+
+    // 3. The RFQ itself stays JSON and carries only the key.
+    const [, submitInit] = callsTo(fetchMock, (u) => u === 'https://api.ninescrolls.com/api/rfq')[0];
+    const init = submitInit as RequestInit;
+    expect(init.headers).toEqual({ 'Content-Type': 'application/json' });
+    expect(init.body).not.toBeInstanceOf(FormData);
+    expect(JSON.parse(init.body as string).attachmentKeys).toEqual([TEMP_KEY]);
+  });
+
+  it('never sends multipart/form-data — the body the Lambda cannot parse', async () => {
+    const fetchMock = stubAttachmentFetch();
+
+    await submitWithFile(makeFile());
+
+    await waitFor(() => {
+      expect(callsTo(fetchMock, (u) => u === 'https://api.ninescrolls.com/api/rfq')).toHaveLength(1);
+    });
+    for (const [, init] of fetchMock.mock.calls) {
+      expect((init as RequestInit | undefined)?.body).not.toBeInstanceOf(FormData);
+    }
+  });
+
+  it('omits attachmentKeys and skips presigning when no file is attached', async () => {
+    const fetchMock = stubAttachmentFetch();
+
+    await submitWithFile();
+
+    await waitFor(() => {
+      expect(callsTo(fetchMock, (u) => u === 'https://api.ninescrolls.com/api/rfq')).toHaveLength(1);
+    });
+    expect(callsTo(fetchMock, (u) => u.includes('/upload-url'))).toHaveLength(0);
+
+    const [, submitInit] = callsTo(fetchMock, (u) => u === 'https://api.ninescrolls.com/api/rfq')[0];
+    expect(JSON.parse((submitInit as RequestInit).body as string).attachmentKeys).toBeUndefined();
+  });
+
+  it('surfaces the server error and submits nothing when presigning fails', async () => {
+    const fetchMock = stubAttachmentFetch({
+      presign: () => ({
+        ok: false,
+        json: async () => ({ success: false, error: 'Unsupported file type: text/html' }),
+      }),
+    });
+
+    await submitWithFile(makeFile());
+
+    // The { success, error } contract — reading `.message` here would show a generic
+    // fallback and hide what the server actually said.
+    expect(await screen.findByText(/Unsupported file type: text\/html/i)).toBeInTheDocument();
+    expect(callsTo(fetchMock, (u) => u === 'https://api.ninescrolls.com/api/rfq')).toHaveLength(0);
+  });
+
+  it('surfaces an error and submits nothing when the S3 upload fails', async () => {
+    const fetchMock = stubAttachmentFetch({
+      put: () => ({ ok: false, status: 403 }),
+    });
+
+    await submitWithFile(makeFile());
+
+    expect(await screen.findByText(/Upload failed for "spec\.pdf"/i)).toBeInTheDocument();
+    // Never silently submit an RFQ missing the attachment the user chose.
+    expect(callsTo(fetchMock, (u) => u === 'https://api.ninescrolls.com/api/rfq')).toHaveLength(0);
+  });
+
+  it('surfaces the server error contract when the RFQ submit itself fails', async () => {
+    stubAttachmentFetch({
+      submit: () => ({
+        ok: false,
+        json: async () => ({ success: false, error: 'Invalid equipment category' }),
+      }),
+    });
+
+    await submitWithFile(makeFile());
+
+    expect(await screen.findByText(/Invalid equipment category/i)).toBeInTheDocument();
+  });
+});

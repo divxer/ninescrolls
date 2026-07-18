@@ -5,6 +5,7 @@ import { useCombinedAnalytics } from '../hooks/useCombinedAnalytics';
 import { behaviorAnalytics } from '../services/behaviorAnalytics';
 import { getVisitorId } from '../services/analyticsStorageService';
 import { describeSubmitError, type SubmitErrorBody } from './rfqSubmitError';
+import { uploadRfqAttachments, RFQ_API_URL } from '../services/rfqAttachmentService';
 import { parseRfqUrlParams } from './rfqUrlParams';
 import { ConversionCard, ConversionHero, TrustSignalList } from '../components/conversion';
 // Shared source of truth for field length caps — the server's rfqSchema
@@ -596,19 +597,16 @@ export function RFQPage() {
       if (turnstileToken) payload.turnstileToken = turnstileToken;
       if (referrerSource) payload.referrerSource = referrerSource;
 
-      let response: Response;
+      // Attachments go straight to S3 first; the RFQ payload carries only their keys.
       if (files.length > 0) {
-        const fd = new FormData();
-        fd.append('data', JSON.stringify(payload));
-        files.forEach(file => fd.append('attachments', file));
-        response = await fetch('https://api.ninescrolls.com/api/rfq', { method: 'POST', body: fd });
-      } else {
-        response = await fetch('https://api.ninescrolls.com/api/rfq', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
+        payload.attachmentKeys = await uploadRfqAttachments(files);
       }
+
+      const response = await fetch(RFQ_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => null) as SubmitErrorBody;

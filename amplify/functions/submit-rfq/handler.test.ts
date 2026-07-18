@@ -1,8 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { APIGatewayProxyEventV2 } from 'aws-lambda';
-import { rfqSchema } from './handler';
+import { rfqSchema, isValidTempAttachmentKey } from './handler';
 import { RFQ_FIELD_LIMITS } from '../../lib/rfq/limits';
 import { PutCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+
+// Attachment keys in the exact shape getUploadUrl issues: temp/rfq/<16 hex>/<name>
+const TEMP_KEY_A = `temp/rfq/${'a'.repeat(16)}/spec.pdf`;
+const TEMP_KEY_B = `temp/rfq/${'b'.repeat(16)}/drawing.pdf`;
+const TEMP_KEY_C = `temp/rfq/${'c'.repeat(16)}/notes.docx`;
 
 // ---------------------------------------------------------------------------
 // Mocks — must be set up before importing handler
@@ -47,12 +52,20 @@ vi.mock('@aws-sdk/lib-dynamodb', () => ({
 }));
 
 // Mock S3
+const mockS3Send = vi.fn().mockResolvedValue({});
 vi.mock('@aws-sdk/client-s3', () => ({
     S3Client: vi.fn().mockImplementation(() => ({
-        send: vi.fn().mockResolvedValue({}),
+        send: (cmd: unknown) => mockS3Send(cmd),
     })),
-    CopyObjectCommand: vi.fn(),
-    DeleteObjectCommand: vi.fn(),
+    CopyObjectCommand: vi.fn().mockImplementation((params) => ({ __type: 'CopyObject', ...params })),
+    DeleteObjectCommand: vi.fn().mockImplementation((params) => ({ __type: 'DeleteObject', ...params })),
+    PutObjectCommand: vi.fn().mockImplementation((params) => ({ __type: 'PutObject', ...params })),
+}));
+
+// Mock the presigner — capture the command so tests can assert what was signed
+const mockGetSignedUrl = vi.fn().mockResolvedValue('https://s3.example.com/presigned-put');
+vi.mock('@aws-sdk/s3-request-presigner', () => ({
+    getSignedUrl: (...args: unknown[]) => mockGetSignedUrl(...args),
 }));
 
 // Mock organization-api invocation
@@ -250,7 +263,7 @@ describe('rfqSchema (Zod validation)', () => {
     it('rejects too many attachment keys', () => {
         const result = rfqSchema.safeParse({
             ...VALID_RFQ,
-            attachmentKeys: ['a', 'b', 'c', 'd'],
+            attachmentKeys: [TEMP_KEY_A, TEMP_KEY_B, TEMP_KEY_C, `temp/rfq/${'d'.repeat(16)}/d.pdf`],
         });
         expect(result.success).toBe(false);
     });
@@ -258,7 +271,7 @@ describe('rfqSchema (Zod validation)', () => {
     it('accepts up to 3 attachment keys', () => {
         const result = rfqSchema.safeParse({
             ...VALID_RFQ,
-            attachmentKeys: ['temp/a.pdf', 'temp/b.pdf', 'temp/c.docx'],
+            attachmentKeys: [TEMP_KEY_A, TEMP_KEY_B, TEMP_KEY_C],
         });
         expect(result.success).toBe(true);
     });
@@ -334,6 +347,50 @@ describe('rfqSchema (Zod validation)', () => {
             additionalComments: 'c'.repeat(RFQ_FIELD_LIMITS.additionalComments.max),
         });
         expect(result.success).toBe(true);
+    });
+
+    // moveAttachments() copies then DELETES whatever key it is given, using the
+    // Lambda's bucket-wide write grant. Keys outside temp/rfq/ must never parse.
+    it('rejects an attachment key pointing outside temp/rfq/', () => {
+        const result = rfqSchema.safeParse({
+            ...VALID_RFQ,
+            attachmentKeys: ['orders/ord-123/CONTRACT/doc-abc_contract.pdf'],
+        });
+        expect(result.success).toBe(false);
+    });
+
+    it('rejects an attachment key escaping temp/rfq/ via traversal', () => {
+        const result = rfqSchema.safeParse({
+            ...VALID_RFQ,
+            attachmentKeys: [`temp/rfq/${'a'.repeat(16)}/../../../orders/ord-123/CONTRACT/x.pdf`],
+        });
+        expect(result.success).toBe(false);
+    });
+
+    it('rejects a bare temp/ key that this Lambda never issued', () => {
+        const result = rfqSchema.safeParse({
+            ...VALID_RFQ,
+            attachmentKeys: ['temp/a.pdf'],
+        });
+        expect(result.success).toBe(false);
+    });
+});
+
+describe('isValidTempAttachmentKey', () => {
+    it('accepts a key of the shape getUploadUrl issues', () => {
+        expect(isValidTempAttachmentKey(TEMP_KEY_A)).toBe(true);
+    });
+
+    it.each([
+        ['an order document key', 'orders/ord-123/CONTRACT/doc-abc_contract.pdf'],
+        ['another RFQ\'s attachments', 'rfqs/rfq-20260310-abc123/spec.pdf'],
+        ['a traversal escape', `temp/rfq/${'a'.repeat(16)}/../../orders/x.pdf`],
+        ['a temp key outside rfq/', 'temp/ord-1/abcd_x.pdf'],
+        ['a short upload id', 'temp/rfq/abc/x.pdf'],
+        ['a nested sub-path', `temp/rfq/${'a'.repeat(16)}/nested/x.pdf`],
+        ['an empty string', ''],
+    ])('rejects %s', (_label, key) => {
+        expect(isValidTempAttachmentKey(key)).toBe(false);
     });
 });
 
@@ -736,5 +793,134 @@ describe('submit-rfq handler', () => {
             expect(mockInvokeCrmAction).not.toHaveBeenCalled();
             errSpy.mockRestore();
         });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// getUploadUrl action — presigned PUT for public RFQ attachments
+// ---------------------------------------------------------------------------
+describe('submit-rfq getUploadUrl action', () => {
+    let handler: typeof import('./handler').handler;
+
+    const VALID_UPLOAD_REQ = {
+        action: 'getUploadUrl',
+        fileName: 'spec.pdf',
+        mimeType: 'application/pdf',
+        fileSize: 1024,
+    };
+
+    beforeEach(async () => {
+        vi.clearAllMocks();
+        process.env.INTELLIGENCE_TABLE = 'NineScrolls-Intelligence';
+        process.env.DOCUMENTS_BUCKET = 'ninescrolls-order-documents';
+        process.env.TURNSTILE_SECRET_KEY = 'test-secret';
+        mockGetSignedUrl.mockResolvedValue('https://s3.example.com/presigned-put');
+
+        const mod = await import('./handler');
+        handler = mod.handler;
+    });
+
+    it('returns a presigned URL and a temp/rfq/ key', async () => {
+        const result = await handler(makeEvent(VALID_UPLOAD_REQ), {} as never, (() => {}) as never);
+        const body = JSON.parse((result as { body: string }).body);
+
+        expect((result as { statusCode: number }).statusCode).toBe(200);
+        expect(body.success).toBe(true);
+        expect(body.uploadUrl).toBe('https://s3.example.com/presigned-put');
+        expect(body.s3Key).toMatch(/^temp\/rfq\/[a-f0-9]{16}\/spec\.pdf$/);
+        expect(body.expiresAt).toBeTruthy();
+    });
+
+    it('issues keys the RFQ schema will accept — the two halves must agree', async () => {
+        const result = await handler(makeEvent(VALID_UPLOAD_REQ), {} as never, (() => {}) as never);
+        const { s3Key } = JSON.parse((result as { body: string }).body);
+
+        expect(isValidTempAttachmentKey(s3Key)).toBe(true);
+    });
+
+    it('signs the exact ContentLength so S3 rejects an oversized body', async () => {
+        await handler(makeEvent({ ...VALID_UPLOAD_REQ, fileSize: 4096 }), {} as never, (() => {}) as never);
+
+        const signedCommand = mockGetSignedUrl.mock.calls[0][1] as Record<string, unknown>;
+        expect(signedCommand.ContentLength).toBe(4096);
+        expect(signedCommand.ContentType).toBe('application/pdf');
+    });
+
+    it('never runs the RFQ path — no Turnstile call, no DynamoDB write', async () => {
+        await handler(makeEvent(VALID_UPLOAD_REQ), {} as never, (() => {}) as never);
+
+        expect(mockFetch).not.toHaveBeenCalled();
+        expect(mockPut).not.toHaveBeenCalled();
+    });
+
+    it('gives each file a distinct key so same-named files cannot collide', async () => {
+        const first = await handler(makeEvent(VALID_UPLOAD_REQ), {} as never, (() => {}) as never);
+        const second = await handler(makeEvent(VALID_UPLOAD_REQ), {} as never, (() => {}) as never);
+
+        const keyA = JSON.parse((first as { body: string }).body).s3Key;
+        const keyB = JSON.parse((second as { body: string }).body).s3Key;
+        expect(keyA).not.toBe(keyB);
+    });
+
+    it('strips path components from the supplied fileName', async () => {
+        const result = await handler(
+            makeEvent({ ...VALID_UPLOAD_REQ, fileName: '../../../etc/passwd' }),
+            {} as never, (() => {}) as never,
+        );
+        const { s3Key } = JSON.parse((result as { body: string }).body);
+
+        expect(s3Key).toMatch(/^temp\/rfq\/[a-f0-9]{16}\/passwd$/);
+        expect(isValidTempAttachmentKey(s3Key)).toBe(true);
+    });
+
+    it('rejects a file above the 10MB cap', async () => {
+        const result = await handler(
+            makeEvent({ ...VALID_UPLOAD_REQ, fileSize: 10 * 1024 * 1024 + 1 }),
+            {} as never, (() => {}) as never,
+        );
+
+        expect((result as { statusCode: number }).statusCode).toBe(400);
+        expect(mockGetSignedUrl).not.toHaveBeenCalled();
+    });
+
+    it('rejects a disallowed MIME type', async () => {
+        const result = await handler(
+            makeEvent({ ...VALID_UPLOAD_REQ, fileName: 'evil.html', mimeType: 'text/html' }),
+            {} as never, (() => {}) as never,
+        );
+
+        expect((result as { statusCode: number }).statusCode).toBe(400);
+        expect(mockGetSignedUrl).not.toHaveBeenCalled();
+    });
+
+    it('rejects with the { success, error } contract — never `message`', async () => {
+        const result = await handler(
+            makeEvent({ ...VALID_UPLOAD_REQ, fileSize: -1 }),
+            {} as never, (() => {}) as never,
+        );
+        const body = JSON.parse((result as { body: string }).body);
+
+        expect((result as { statusCode: number }).statusCode).toBe(400);
+        expect(body.success).toBe(false);
+        expect(body.error).toBeTruthy();
+        expect(body.message).toBeUndefined();
+    });
+
+    it('accepts every MIME type the RFQ form offers', async () => {
+        const formTypes = [
+            'application/pdf',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'image/jpeg',
+            'image/png',
+        ];
+
+        for (const mimeType of formTypes) {
+            const result = await handler(
+                makeEvent({ ...VALID_UPLOAD_REQ, mimeType }),
+                {} as never, (() => {}) as never,
+            );
+            expect((result as { statusCode: number }).statusCode).toBe(200);
+        }
     });
 });
