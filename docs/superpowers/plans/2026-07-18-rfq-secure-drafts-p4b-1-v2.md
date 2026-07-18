@@ -1082,6 +1082,10 @@ git commit -m "feat(rfq): compose atomic submit transaction (direct + upgrade, g
 
 ```ts
 // amplify/lib/rfq/effectTransitions.test.ts
+// NOTE: buildEffectClaimItems / buildEmail*Items return an `UpdateCommand`, whose params
+// live on `.input` (that is what fakeDdb.send reads). Assert on `cmd.input.*`, never
+// `cmd.Update` (undefined on a command). buildEffectCompletionItems is different — it
+// returns raw TransactItem[] (`{ Update: {...} }`), so Task 9 correctly uses `items[0].Update`.
 import { describe, it, expect } from 'vitest';
 import { buildEffectClaimItems } from './effectTransitions';
 
@@ -1093,13 +1097,13 @@ const BASE = {
 describe('buildEffectClaimItems — fresh', () => {
   it('claims a pending effect, setting processing + lease + bumped version', () => {
     const cmd = buildEffectClaimItems({ ...BASE, from: 'pending', expectedVersion: 0 });
-    expect(cmd.Update!.Key).toEqual({ PK: 'RFQ#rfq-1', SK: 'OUTBOX#org-upsert' });
-    expect(cmd.Update!.ConditionExpression)
+    expect(cmd.input.Key).toEqual({ PK: 'RFQ#rfq-1', SK: 'OUTBOX#org-upsert' });
+    expect(cmd.input.ConditionExpression)
       .toBe('attribute_exists(PK) AND #status = :pending AND #version = :ev');
-    expect(cmd.Update!.UpdateExpression)
+    expect(cmd.input.UpdateExpression)
       .toBe('SET #status = :processing, leaseOwner = :owner, leaseExpiresAt = :exp, #version = :nv, claimedAt = :now ADD attempts :one');
-    expect(cmd.Update!.ExpressionAttributeNames).toEqual({ '#status': 'status', '#version': 'version' });
-    expect(cmd.Update!.ExpressionAttributeValues).toMatchObject({
+    expect(cmd.input.ExpressionAttributeNames).toEqual({ '#status': 'status', '#version': 'version' });
+    expect(cmd.input.ExpressionAttributeValues).toMatchObject({
       ':pending': 'pending', ':ev': 0, ':processing': 'processing', ':owner': 'worker-A',
       ':exp': Date.parse('2026-07-18T00:00:00.000Z') + 30000, ':nv': 1, ':now': '2026-07-18T00:00:00.000Z', ':one': 1,
     });
@@ -1109,9 +1113,9 @@ describe('buildEffectClaimItems — fresh', () => {
 describe('buildEffectClaimItems — expired-lease re-claim', () => {
   it('re-claims a stale processing effect fenced on the prior version', () => {
     const cmd = buildEffectClaimItems({ ...BASE, from: 'expired-lease', expectedVersion: 1 });
-    expect(cmd.Update!.ConditionExpression)
+    expect(cmd.input.ConditionExpression)
       .toBe('#status = :processing AND leaseExpiresAt < :nowMs AND #version = :ev');
-    expect(cmd.Update!.ExpressionAttributeValues).toMatchObject({
+    expect(cmd.input.ExpressionAttributeValues).toMatchObject({
       ':processing': 'processing', ':nowMs': Date.parse('2026-07-18T00:00:00.000Z'), ':ev': 1, ':nv': 2,
     });
   });
@@ -1365,10 +1369,10 @@ describe('email claim-before-send latch', () => {
     const cmd = buildEmailClaimItems({
       tableName: 'T', rfqId: 'rfq-1', effect: 'confirmation-email', owner: 'worker-A', now: '2026-07-18T00:00:00.000Z',
     });
-    expect(cmd.Update!.Key).toEqual({ PK: 'RFQ#rfq-1', SK: 'OUTBOX#confirmation-email' });
-    expect(cmd.Update!.ConditionExpression).toBe('#status = :pending');
-    expect(cmd.Update!.UpdateExpression).toBe('SET #status = :claimed, claimedAt = :now, leaseOwner = :owner');
-    expect(cmd.Update!.ExpressionAttributeValues).toMatchObject({
+    expect(cmd.input.Key).toEqual({ PK: 'RFQ#rfq-1', SK: 'OUTBOX#confirmation-email' });
+    expect(cmd.input.ConditionExpression).toBe('#status = :pending');
+    expect(cmd.input.UpdateExpression).toBe('SET #status = :claimed, claimedAt = :now, leaseOwner = :owner');
+    expect(cmd.input.ExpressionAttributeValues).toMatchObject({
       ':pending': 'pending', ':claimed': 'send-claimed', ':owner': 'worker-A', ':now': '2026-07-18T00:00:00.000Z',
     });
   });
@@ -1378,9 +1382,9 @@ describe('email claim-before-send latch', () => {
       tableName: 'T', rfqId: 'rfq-1', effect: 'internal-email', owner: 'worker-A',
       now: '2026-07-18T00:00:05.000Z', attemptedAt: '2026-07-18T00:00:05.000Z', outcome: 'failed',
     });
-    expect(cmd.Update!.ConditionExpression).toBe('#status = :claimed AND leaseOwner = :owner');
-    expect(cmd.Update!.UpdateExpression).toBe('SET #status = :done, #result = :result, completedAt = :now');
-    expect(cmd.Update!.ExpressionAttributeValues).toMatchObject({
+    expect(cmd.input.ConditionExpression).toBe('#status = :claimed AND leaseOwner = :owner');
+    expect(cmd.input.UpdateExpression).toBe('SET #status = :done, #result = :result, completedAt = :now');
+    expect(cmd.input.ExpressionAttributeValues).toMatchObject({
       ':claimed': 'send-claimed', ':owner': 'worker-A', ':done': 'done',
       ':result': { attemptedAt: '2026-07-18T00:00:05.000Z', outcome: 'failed' },
     });
