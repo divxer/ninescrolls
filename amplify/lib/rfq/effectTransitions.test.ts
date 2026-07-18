@@ -122,3 +122,52 @@ describe('email claim-before-send latch', () => {
     });
   });
 });
+
+describe('buildEffectCompletionItems — runtime result validation (unknown from P4b-2)', () => {
+  const base = { tableName: 'T', rfqId: 'rfq-1', owner: 'W', claimedVersion: 1, now: '2026-07-18T00:00:00.000Z' };
+
+  it('rejects a malformed org result (empty matchedOrgId)', () => {
+    expect(() => buildEffectCompletionItems({ ...base, effect: 'org-upsert', result: { matchedOrgId: '' } as never }))
+      .toThrow(/matchedOrgId/);
+  });
+
+  it('rejects a crm result that is not accepted:true', () => {
+    expect(() => buildEffectCompletionItems({ ...base, effect: 'crm-emit', result: { accepted: false } as never }))
+      .toThrow(/accepted/);
+  });
+
+  it('rejects a visitor result with non-boolean fields', () => {
+    expect(() => buildEffectCompletionItems({ ...base, effect: 'visitor-bridge', result: { created: 'yes', orgUpgraded: false } as never }))
+      .toThrow(/created\/orgUpgraded/);
+  });
+
+  it('rejects attachment movedKeys with a wrong prefix or over the max', () => {
+    expect(() => buildEffectCompletionItems({ ...base, effect: 'attachment-move',
+      result: { movedKeys: ['temp/rfq/x/a.pdf'], failedKeys: [] } as never })).toThrow(/rfqs\//);
+    expect(() => buildEffectCompletionItems({ ...base, effect: 'attachment-move',
+      result: { movedKeys: ['rfqs/rfq-1/a', 'rfqs/rfq-1/b', 'rfqs/rfq-1/c', 'rfqs/rfq-1/d'], failedKeys: [] } as never }))
+      .toThrow(/MAX_RFQ_ATTACHMENTS/);
+  });
+
+  it('rejects empty owner / negative version / non-ISO now', () => {
+    expect(() => buildEffectCompletionItems({ ...base, owner: '', effect: 'crm-emit', result: { accepted: true } }))
+      .toThrow(/owner/);
+    expect(() => buildEffectCompletionItems({ ...base, claimedVersion: -1, effect: 'crm-emit', result: { accepted: true } }))
+      .toThrow(/claimedVersion/);
+    expect(() => buildEffectCompletionItems({ ...base, now: 'not-a-date', effect: 'crm-emit', result: { accepted: true } }))
+      .toThrow(/now/);
+  });
+});
+
+describe('buildEffectClaimItems — param validation', () => {
+  const base = {
+    tableName: 'T', rfqId: 'rfq-1', effect: 'org-upsert' as const, owner: 'W', leaseMs: 30000,
+    now: '2026-07-18T00:00:00.000Z', from: 'pending' as const, expectedVersion: 0,
+  };
+  it('rejects empty owner, non-positive lease, negative version, non-ISO now', () => {
+    expect(() => buildEffectClaimItems({ ...base, owner: '' })).toThrow(/owner/);
+    expect(() => buildEffectClaimItems({ ...base, leaseMs: 0 })).toThrow(/leaseMs/);
+    expect(() => buildEffectClaimItems({ ...base, expectedVersion: -1 })).toThrow(/expectedVersion/);
+    expect(() => buildEffectClaimItems({ ...base, now: 'nope' })).toThrow(/now/);
+  });
+});

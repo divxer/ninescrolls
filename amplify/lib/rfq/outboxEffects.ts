@@ -1,4 +1,5 @@
 // amplify/lib/rfq/outboxEffects.ts
+import { MAX_RFQ_ATTACHMENTS } from './contract';
 
 export type OutboxEffectName =
   | 'org-upsert' | 'visitor-bridge' | 'crm-emit'
@@ -87,11 +88,23 @@ export function buildOutboxEffectItem(args: {
   if (input && effect !== 'attachment-move') {
     throw new Error(`input is only valid for attachment-move, not ${effect}`);
   }
+  let safeInput: AttachmentMoveInput | undefined;
   if (effect === 'attachment-move') {
-    if (!input || input.tempKeys.length === 0) throw new Error('attachment-move requires a non-empty tempKeys input');
+    if (!input || !Array.isArray(input.tempKeys) || input.tempKeys.length === 0) {
+      throw new Error('attachment-move requires a non-empty tempKeys input');
+    }
+    if (input.tempKeys.length > MAX_RFQ_ATTACHMENTS) {
+      throw new Error(`attachment-move tempKeys exceeds MAX_RFQ_ATTACHMENTS (${MAX_RFQ_ATTACHMENTS})`);
+    }
+    if (new Set(input.tempKeys).size !== input.tempKeys.length) {
+      throw new Error('attachment-move tempKeys must not contain duplicates');
+    }
     for (const k of input.tempKeys) {
       if (!isValidTempAttachmentKey(k)) throw new Error(`invalid temp attachment key: ${String(k).slice(0, 80)}`);
     }
+    // Defensive copy: persist our OWN array, so a caller mutating the passed array after
+    // validation (a TOCTOU between build and send) cannot alter the persisted keys.
+    safeInput = { tempKeys: [...input.tempKeys] };
   }
   const item: OutboxEffectItem = {
     ...outboxEffectKey(rfqId, effect),
@@ -104,6 +117,6 @@ export function buildOutboxEffectItem(args: {
     leaseExpiresAt: null,
     createdAt: now,
   };
-  if (effect === 'attachment-move' && input) item.input = input;
+  if (safeInput) item.input = safeInput;
   return item;
 }

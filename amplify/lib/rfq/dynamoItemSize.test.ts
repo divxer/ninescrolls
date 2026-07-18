@@ -52,3 +52,18 @@ describe('assertWithinItemLimits', () => {
       .toThrow(/item size/i);
   });
 });
+
+describe('estimateDynamoItemBytes — conservative vs real DynamoDB encoding', () => {
+  it('never under-counts the documented DynamoDB size Σ(nameBytes + valueBytes)', () => {
+    // DynamoDB item size = sum over attributes of (UTF-8 attr-name bytes + value bytes);
+    // for strings the value is its UTF-8 byte length. The estimate must be >= that.
+    const item = { PK: 'RFQ#abc', SK: 'META', name: 'Adaé', quantity: 2, flag: true };
+    const realSize =
+      Buffer.byteLength('PK') + Buffer.byteLength('RFQ#abc') +
+      Buffer.byteLength('SK') + Buffer.byteLength('META') +
+      Buffer.byteLength('name') + Buffer.byteLength('Adaé') + // 'é' = 2 UTF-8 bytes
+      Buffer.byteLength('quantity') + 1 + // number: at least 1 byte
+      Buffer.byteLength('flag') + 1;      // bool: 1 byte
+    expect(estimateDynamoItemBytes(item)).toBeGreaterThanOrEqual(realSize);
+  });
+});

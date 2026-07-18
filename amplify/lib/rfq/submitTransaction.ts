@@ -66,6 +66,11 @@ export function buildSubmitTransaction(params: SubmitTransactionParams): Transac
     })),
   ];
 
+  // Guards below are defensive-by-construction: the fixed root tuple + distinct key prefixes
+  // (RFQ#/META, SUBMIT_RECEIPT#/META, RFQ#/OUTBOX#<effect>) mean a duplicate target is
+  // unreachable via this API, and the ≤5 items each capped at 400KB can never reach the 4MB
+  // total. They exist to fail closed if a future change breaks those invariants; there is no
+  // public-API input that triggers them, so they have no direct negative test.
   // Guard: no two transaction items may target the same primary key (real DynamoDB rejects it).
   const keys = new Set<string>();
   for (const it of items) {

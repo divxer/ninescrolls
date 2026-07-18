@@ -78,4 +78,24 @@ describe('buildOutboxEffectItem', () => {
       rfqId: 'rfq-1', effect: 'attachment-move', now: 'n', input: { tempKeys: ['rfqs/rfq-1/evil.pdf'] },
     })).toThrow(/invalid temp attachment key/);
   });
+
+  it('defensively copies tempKeys (mutating the caller array after build does not leak in)', () => {
+    const tempKeys = ['temp/rfq/aaaaaaaaaaaaaaaa/a.pdf'];
+    const item = buildOutboxEffectItem({ rfqId: 'rfq-1', effect: 'attachment-move', now: 'n', input: { tempKeys } });
+    tempKeys.push('temp/rfq/bbbbbbbbbbbbbbbb/evil.pdf'); // caller mutates after validation
+    expect(item.input).toEqual({ tempKeys: ['temp/rfq/aaaaaaaaaaaaaaaa/a.pdf'] });
+    expect(item.input!.tempKeys).not.toBe(tempKeys);
+  });
+
+  it('rejects more than MAX_RFQ_ATTACHMENTS temp keys', () => {
+    const tempKeys = ['0', '1', '2', '3'].map((d) => `temp/rfq/aaaaaaaaaaaaaaa${d}/f.pdf`); // 4 distinct valid keys
+    expect(() => buildOutboxEffectItem({ rfqId: 'rfq-1', effect: 'attachment-move', now: 'n', input: { tempKeys } }))
+      .toThrow(/MAX_RFQ_ATTACHMENTS/);
+  });
+
+  it('rejects duplicate temp keys', () => {
+    const k = 'temp/rfq/aaaaaaaaaaaaaaaa/f.pdf';
+    expect(() => buildOutboxEffectItem({ rfqId: 'rfq-1', effect: 'attachment-move', now: 'n', input: { tempKeys: [k, k] } }))
+      .toThrow(/duplicate/i);
+  });
 });

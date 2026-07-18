@@ -7,8 +7,69 @@ import {
   type AttachmentMoveResult, type CrmEmitResult,
   type OrgUpsertResult, type VisitorBridgeResult,
 } from './outboxEffects';
+import { MAX_RFQ_ATTACHMENTS } from './contract';
 
 type TransactItem = NonNullable<TransactWriteCommandInput['TransactItems']>[number];
+
+const MAX_ORG_ID_LEN = 256;
+const MAX_MOVED_KEY_LEN = 256;
+
+// These builders are the trust boundary between the P4b-2 worker (which passes results
+// derived from helpers / DynamoDB streams as effectively `unknown`) and what gets durably
+// persisted + backfilled onto the RFQ. TypeScript types alone don't survive a cast, so we
+// validate at runtime and fail closed rather than persist a malformed/oversized result.
+function assertNonEmptyString(v: unknown, label: string): void {
+  if (typeof v !== 'string' || v.length === 0) throw new Error(`${label} must be a non-empty string`);
+}
+function assertIsoTime(v: unknown, label: string): void {
+  if (typeof v !== 'string' || !Number.isFinite(Date.parse(v))) throw new Error(`${label} must be an ISO timestamp`);
+}
+function assertNonNegSafeInt(v: unknown, label: string): void {
+  if (!Number.isSafeInteger(v) || (v as number) < 0) throw new Error(`${label} must be a non-negative safe integer`);
+}
+
+/** Fail closed if a completion result is malformed, mismatched to its effect, or oversized. */
+function assertValidCompletionResult(p: CompletionParams): void {
+  const r = p.result as unknown;
+  if (r === null || typeof r !== 'object') throw new Error(`${p.effect} result must be an object`);
+  const rec = r as Record<string, unknown>;
+  switch (p.effect) {
+    case 'org-upsert':
+      if (!(rec.matchedOrgId === null
+        || (typeof rec.matchedOrgId === 'string' && rec.matchedOrgId.length > 0 && rec.matchedOrgId.length <= MAX_ORG_ID_LEN))) {
+        throw new Error('org-upsert result.matchedOrgId must be null or a bounded non-empty string');
+      }
+      break;
+    case 'visitor-bridge':
+      if (typeof rec.created !== 'boolean' || typeof rec.orgUpgraded !== 'boolean') {
+        throw new Error('visitor-bridge result requires boolean created/orgUpgraded');
+      }
+      break;
+    case 'crm-emit':
+      if (rec.accepted !== true) throw new Error('crm-emit result.accepted must be true');
+      break;
+    case 'attachment-move': {
+      const moved = rec.movedKeys, failed = rec.failedKeys;
+      if (!Array.isArray(moved) || !Array.isArray(failed)) {
+        throw new Error('attachment-move result requires movedKeys/failedKeys arrays');
+      }
+      // moved+failed partition the ≤MAX validated temp keys, so total is bounded.
+      if (moved.length + failed.length > MAX_RFQ_ATTACHMENTS) {
+        throw new Error(`attachment-move movedKeys+failedKeys exceeds MAX_RFQ_ATTACHMENTS (${MAX_RFQ_ATTACHMENTS})`);
+      }
+      const destPrefix = `rfqs/${p.rfqId}/`;
+      for (const k of moved) {
+        if (typeof k !== 'string' || !k.startsWith(destPrefix) || k.length > MAX_MOVED_KEY_LEN || k.includes('..')) {
+          throw new Error(`attachment-move movedKeys must be bounded rfqs/${p.rfqId}/ keys`);
+        }
+      }
+      for (const k of failed) if (typeof k !== 'string' || k.length > MAX_MOVED_KEY_LEN) {
+        throw new Error('attachment-move failedKeys must be bounded strings');
+      }
+      break;
+    }
+  }
+}
 
 export interface ClaimParams {
   tableName: string; rfqId: string; effect: OutboxEffectName; owner: string; leaseMs: number;
@@ -22,6 +83,10 @@ export interface ClaimParams {
  * real numeric comparison.
  */
 export function buildEffectClaimItems(p: ClaimParams): UpdateCommand {
+  assertNonEmptyString(p.owner, 'owner');
+  assertIsoTime(p.now, 'now');
+  assertNonNegSafeInt(p.expectedVersion, 'expectedVersion');
+  if (!Number.isFinite(p.leaseMs) || p.leaseMs <= 0) throw new Error('leaseMs must be a positive number');
   const nowMs = Date.parse(p.now);
   const values: Record<string, unknown> = {
     ':processing': 'processing', ':owner': p.owner, ':exp': nowMs + p.leaseMs,
@@ -84,6 +149,10 @@ export function buildEffectCompletionItems(p: CompletionParams): TransactItem[] 
   if (isEmailEffect(p.effect)) {
     throw new Error(`${p.effect} must use the email claim-before-send latch, not buildEffectCompletionItems`);
   }
+  assertNonEmptyString(p.owner, 'owner');
+  assertIsoTime(p.now, 'now');
+  assertNonNegSafeInt(p.claimedVersion, 'claimedVersion');
+  assertValidCompletionResult(p);
   const items: TransactItem[] = [
     {
       Update: {
@@ -138,6 +207,8 @@ import type { EmailEffectName, EmailOutcome } from './outboxEffects';
 export function buildEmailClaimItems(p: {
   tableName: string; rfqId: string; effect: EmailEffectName; owner: string; now: string;
 }): UpdateCommand {
+  assertNonEmptyString(p.owner, 'owner');
+  assertIsoTime(p.now, 'now');
   return new UpdateCommand({
     TableName: p.tableName,
     Key: outboxEffectKey(p.rfqId, p.effect),
@@ -157,6 +228,10 @@ export function buildEmailFinalizeItems(p: {
   tableName: string; rfqId: string; effect: EmailEffectName; owner: string; now: string;
   attemptedAt: string; outcome: EmailOutcome;
 }): UpdateCommand {
+  assertNonEmptyString(p.owner, 'owner');
+  assertIsoTime(p.now, 'now');
+  assertIsoTime(p.attemptedAt, 'attemptedAt');
+  if (!['accepted', 'failed', 'unknown'].includes(p.outcome)) throw new Error('outcome must be accepted|failed|unknown');
   return new UpdateCommand({
     TableName: p.tableName,
     Key: outboxEffectKey(p.rfqId, p.effect),

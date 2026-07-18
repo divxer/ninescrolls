@@ -100,4 +100,11 @@ describe('buildReceiptItem', () => {
     }) as unknown as Record<string, unknown>;
     for (const k of ['name', 'email', 'institution', 'applicationDescription']) expect(k in item).toBe(false);
   });
+
+  it('fails closed on a malformed binding / result at the write boundary', () => {
+    const good = { opKind: 'direct' as const, result: { rfqId: 'r', referenceNumber: 'R', status: 200 }, now: '2026-07-18T00:00:00.000Z' };
+    expect(() => buildReceiptItem('SUBMIT_RECEIPT#x', { ...good, binding: 'nothex' })).toThrow(/binding/);
+    expect(() => buildReceiptItem('SUBMIT_RECEIPT#x', { ...good, binding: 'f'.repeat(64), result: { rfqId: '', referenceNumber: 'R', status: 200 } })).toThrow(/rfqId/);
+    expect(() => buildReceiptItem('SUBMIT_RECEIPT#x', { ...good, binding: 'f'.repeat(64), now: 'not-a-date' })).toThrow(/now/);
+  });
 });
