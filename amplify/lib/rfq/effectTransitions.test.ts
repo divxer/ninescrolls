@@ -93,3 +93,32 @@ describe('buildEffectCompletionItems', () => {
     })).toThrow(/latch/);
   });
 });
+
+import { buildEmailClaimItems, buildEmailFinalizeItems } from './effectTransitions';
+
+describe('email claim-before-send latch', () => {
+  it('claims pending→send-claimed conditioned only on pending (no lease-expiry re-claim)', () => {
+    const cmd = buildEmailClaimItems({
+      tableName: 'T', rfqId: 'rfq-1', effect: 'confirmation-email', owner: 'worker-A', now: '2026-07-18T00:00:00.000Z',
+    });
+    expect(cmd.input.Key).toEqual({ PK: 'RFQ#rfq-1', SK: 'OUTBOX#confirmation-email' });
+    expect(cmd.input.ConditionExpression).toBe('#status = :pending');
+    expect(cmd.input.UpdateExpression).toBe('SET #status = :claimed, claimedAt = :now, leaseOwner = :owner');
+    expect(cmd.input.ExpressionAttributeValues).toMatchObject({
+      ':pending': 'pending', ':claimed': 'send-claimed', ':owner': 'worker-A', ':now': '2026-07-18T00:00:00.000Z',
+    });
+  });
+
+  it('finalizes send-claimed→done recording attemptedAt + outcome, fenced on owner', () => {
+    const cmd = buildEmailFinalizeItems({
+      tableName: 'T', rfqId: 'rfq-1', effect: 'internal-email', owner: 'worker-A',
+      now: '2026-07-18T00:00:05.000Z', attemptedAt: '2026-07-18T00:00:05.000Z', outcome: 'failed',
+    });
+    expect(cmd.input.ConditionExpression).toBe('#status = :claimed AND leaseOwner = :owner');
+    expect(cmd.input.UpdateExpression).toBe('SET #status = :done, #result = :result, completedAt = :now');
+    expect(cmd.input.ExpressionAttributeValues).toMatchObject({
+      ':claimed': 'send-claimed', ':owner': 'worker-A', ':done': 'done',
+      ':result': { attemptedAt: '2026-07-18T00:00:05.000Z', outcome: 'failed' },
+    });
+  });
+});

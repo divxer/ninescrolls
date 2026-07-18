@@ -126,3 +126,47 @@ export function buildEffectCompletionItems(p: CompletionParams): TransactItem[] 
   }
   return items;
 }
+
+// EmailEffectName/EmailOutcome are new symbols, not previously imported.
+import type { EmailEffectName, EmailOutcome } from './outboxEffects';
+
+/**
+ * At-most-once latch: pending → send-claimed, committed BEFORE the send. Conditioned
+ * only on `status = pending` — there is intentionally NO lease-expiry re-claim, so a
+ * crash while send-claimed is terminal and the email is never re-attempted.
+ */
+export function buildEmailClaimItems(p: {
+  tableName: string; rfqId: string; effect: EmailEffectName; owner: string; now: string;
+}): UpdateCommand {
+  return new UpdateCommand({
+    TableName: p.tableName,
+    Key: outboxEffectKey(p.rfqId, p.effect),
+    UpdateExpression: 'SET #status = :claimed, claimedAt = :now, leaseOwner = :owner',
+    ConditionExpression: '#status = :pending',
+    ExpressionAttributeNames: { '#status': 'status' },
+    ExpressionAttributeValues: { ':pending': 'pending', ':claimed': 'send-claimed', ':owner': p.owner, ':now': p.now },
+  });
+}
+
+/**
+ * send-claimed → done after the single send attempt, recording attemptedAt + the
+ * observed outcome (`accepted`/`failed`/`unknown`). The latch guarantees at most one
+ * attempt, not delivery — so a non-success outcome is recorded, never retried.
+ */
+export function buildEmailFinalizeItems(p: {
+  tableName: string; rfqId: string; effect: EmailEffectName; owner: string; now: string;
+  attemptedAt: string; outcome: EmailOutcome;
+}): UpdateCommand {
+  return new UpdateCommand({
+    TableName: p.tableName,
+    Key: outboxEffectKey(p.rfqId, p.effect),
+    // `result` is a DynamoDB reserved word — alias it.
+    UpdateExpression: 'SET #status = :done, #result = :result, completedAt = :now',
+    ConditionExpression: '#status = :claimed AND leaseOwner = :owner',
+    ExpressionAttributeNames: { '#status': 'status', '#result': 'result' },
+    ExpressionAttributeValues: {
+      ':claimed': 'send-claimed', ':owner': p.owner, ':done': 'done',
+      ':result': { attemptedAt: p.attemptedAt, outcome: p.outcome }, ':now': p.now,
+    },
+  });
+}
