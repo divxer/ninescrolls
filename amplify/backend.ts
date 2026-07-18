@@ -133,6 +133,45 @@ const restApi = new RestApi(apiStack, 'RestApi', {
     deploy: true,
     deployOptions: {
         stageName: STAGE_NAME,
+        // Per-method throttling for the public, pre-CAPTCHA RFQ attachment routes.
+        //
+        // POST /api/rfq/upload-url mints presigned S3 PUT URLs *before* the Turnstile
+        // check (files upload while the visitor is still filling the form, so there is
+        // no token yet — see submit-rfq/handler.ts). Storage is bounded by the bucket's
+        // 1-day temp/ expiry, but Lambda invocations and new-URL minting were otherwise
+        // unbounded: an anonymous caller could loop getUploadUrl to run up cost or as a
+        // light DoS. This caps that.
+        //
+        // Note: API Gateway REST throttling is stage-wide *aggregate per-method*, not
+        // per-IP (only a WAFv2 rate-based rule gives per-IP, and no WebACL is attached
+        // to this API today). These are total ceilings across all callers. Legitimate
+        // use is tiny — the browser presigns up to MAX_ATTACHMENTS (3) files
+        // sequentially per RFQ (rfqAttachmentService.uploadRfqAttachments), so a rate of
+        // 10 req/s with a burst of 20 clears real traffic with wide margin while capping
+        // abuse at ~864k requests/day worst case.
+        //
+        // Scope of this control: it achieves cost containment (a fixed ceiling on Lambda
+        // invocations and new-URL minting). It is NOT a per-IP availability guarantee —
+        // because the cap is aggregate, a determined flood from one source can consume
+        // the bucket and 429 legitimate callers of that route; defending availability
+        // under such a flood needs the WAFv2 WebACL + rate-based rule described above.
+        // It also only governs *minting* presigned URLs: a minted URL PUTs straight to
+        // S3, bypassing API Gateway, so this does not throttle the S3 PUTs themselves
+        // (residual storage abuse there is bounded by the bucket's 1-day temp/ expiry).
+        methodOptions: {
+            '/api/rfq/upload-url/POST': {
+                throttlingRateLimit: 10,
+                throttlingBurstLimit: 20,
+            },
+            // Defense-in-depth for the submit route. It is already Turnstile-gated (lower
+            // priority), but each call does heavier downstream work — DDB writes, the
+            // organization/CRM API, SendGrid email — so a matching ceiling is cheap
+            // insurance against a token-farm or a bug that loops submissions.
+            '/api/rfq/POST': {
+                throttlingRateLimit: 10,
+                throttlingBurstLimit: 20,
+            },
+        },
     },
 });
 
