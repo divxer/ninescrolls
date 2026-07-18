@@ -42,7 +42,11 @@ Sequencing follows the spec's rollout: **P1 → P2 → P4 (submission idempotenc
 - **P2** — [`…p2-storage.md`](2026-07-15-rfq-secure-drafts-p2-storage.md) *(merged, #307)*
 - **P3** — [`…p3-public-api.md`](2026-07-15-rfq-secure-drafts-p3-public-api.md) *(merged, #308)*
 - **P4a** — [`…p4a-receipt-idempotency.md`](2026-07-15-rfq-secure-drafts-p4a-receipt-idempotency.md) *(merged, #309)* — receipt + idempotency store, dark
-- **P4b** — [`…p4b-submit-refactor.md`](2026-07-15-rfq-secure-drafts-p4b-submit-refactor.md) *(written — the live submit-rfq refactor; flag-gated)*
+- **P4b** — the live `submit-rfq` refactor. [`…p4b-submit-refactor.md`](2026-07-15-rfq-secure-drafts-p4b-submit-refactor.md) is a **⛔ BLOCKED historical/restructure record only** — its original draft was found not implementable in review and has been neutered. The actual work is four phases that are **not yet written and not yet reviewed**:
+  - **P4b-1** — receipt-as-transaction-item + atomic submit transaction + dependency-ordered outbox model (pure, dark)
+  - **P4b-2** — outbox worker (DynamoDB Streams + Lambda), DLQ/alarms, at-most-once email (dark)
+  - **P4b-3** — frontend sends `X-RFQ-Submit-Key` (compat) + handler opt-in
+  - **P4b-4** — mandatory header, soak, remove legacy + flag
 - P5 (admin/cleanup) · P6 (frontend autosave) — to be written per-phase.
 
-**Note:** P4 split into **P4a** (pure receipt/idempotency core, shipped dark) and **P4b** (the live `submit-rfq` cutover behind `RFQ_IDEMPOTENT_SUBMIT`) so the production-path change lands small and reviewed.
+**Note:** P4 split into **P4a** (pure receipt/idempotency core, shipped dark, #309) and **P4b** (the live `submit-rfq` cutover). P4b's first plan draft failed independent review (architectural); it is now a blocked record only, and P4b itself is re-split into P4b-1…P4b-4, each to be written and reviewed before any production-path code.
