@@ -1169,7 +1169,12 @@ async function runTx(fake: FakeDdb, params: SubmitTransactionParams) {
 function seedDraft(fake: FakeDdb) {
   const item = buildDraftItem({
     rfqId: RFQ_ID, draftTokenHash: STORED_HASH,
-    input: { name: 'STALE NAME', institution: 'STALE INST', equipmentCategory: 'ICP' },
+    // buildDraftItem's input is DraftCreateInput — all required fields must be present
+    // or `tsc -p amplify --noEmit` (Task 8) fails even though Vitest strips the types.
+    input: {
+      name: 'STALE NAME', email: 'stale@lab.edu', institution: 'STALE INST',
+      equipmentCategory: 'ICP', applicationDescription: 'stale application description', quantity: 1,
+    },
     now: '2026-07-18T00:00:00.000Z',
   });
   fake.seed([item]);
@@ -1252,14 +1257,16 @@ describe('submit transaction against FakeDdb — draft-upgrade', () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [ ] **Step 2: Run the suite (characterization, not a red phase)**
+
+This task adds tests against the already-built Task 6 composer, so with a correct Task 6 they pass on the first run — there is no red phase to force.
 
 Run: `npx vitest run amplify/lib/rfq/submitTransaction.integration.test.ts`
-Expected: FAIL — the module + helpers compile, but assertions cannot run until the composer behaves correctly under `FakeDdb`'s conditional-write semantics; confirm the suite executes and any behavioral gaps surface as assertion failures (not compile errors).
+Expected: PASS. A failure here indicates a real bug in the Task 6 composer (or the pending/condition builders) surfaced by `FakeDdb`'s conditional-write semantics — not a missing implementation.
 
-- [ ] **Step 3: Make the tests pass**
+- [ ] **Step 3: If any assertion fails, fix the source (not the test)**
 
-No product code changes are expected — the transaction composer from Task 6 already produces correct items. If a test fails on behavior (not the intentional `opKindDirect` typo), fix the composer or the pending/condition builders, not the test. Re-run until green.
+No product code changes are expected. If an assertion fails on behavior, fix the composer or the pending/condition builders and re-run until green. Do not weaken an assertion to make it pass.
 
 - [ ] **Step 4: Run the full rfq lib suite**
 
