@@ -11,6 +11,10 @@ import { ConversionCard, ConversionHero, TrustSignalList } from '../components/c
 // Shared source of truth for field length caps — the server's rfqSchema
 // derives its .max() from this same object, so client and server cannot drift.
 import { RFQ_FIELD_LIMITS } from '../../amplify/lib/rfq/limits';
+// Equipment categories + attachment constraints derive from the shared RFQ
+// contract that the submit-rfq Lambda also uses — see the 2026-07-15
+// Probe-Station enum-drift outage.
+import { EQUIPMENT_CATEGORIES, ALLOWED_FILE_TYPES, MAX_FILES, MAX_FILE_SIZE } from './rfqEquipmentOptions';
 
 // ---------------------------------------------------------------------------
 // Turnstile
@@ -33,22 +37,6 @@ function getTurnstile(): TurnstileExtended | undefined {
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
-const EQUIPMENT_CATEGORIES = [
-  { value: 'ICP', label: 'ICP Etching System' },
-  { value: 'PECVD', label: 'PECVD System' },
-  { value: 'Sputter', label: 'Sputter Deposition System' },
-  { value: 'E-Beam', label: 'E-Beam Evaporation System' },
-  { value: 'ALD', label: 'ALD System' },
-  { value: 'RIE', label: 'RIE / Reactive Ion Etching' },
-  { value: 'IBE', label: 'Ion Beam Etching (IBE)' },
-  { value: 'HDP-CVD', label: 'HDP-CVD System' },
-  { value: 'Plasma-Cleaner', label: 'Plasma Cleaner / Surface Treatment' },
-  { value: 'Stripper', label: 'Photoresist Stripping System' },
-  { value: 'Coater-Developer', label: 'Coater / Developer (Spin Coater)' },
-  { value: 'Probe-Station', label: 'Wafer Probe Station' },
-  { value: 'Other', label: 'Not Sure / Need Recommendation' },
-];
-
 const ROLES = [
   { value: 'PI', label: 'Professor / PI' },
   { value: 'Research Scientist', label: 'Research Scientist' },
@@ -109,17 +97,6 @@ const COUNTRIES = [
   'Ireland', 'New Zealand', 'Israel', 'Taiwan', 'Hong Kong', 'China', 'India',
   'Brazil', 'Mexico',
 ];
-
-const ALLOWED_FILE_TYPES = [
-  'application/pdf',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  'image/jpeg',
-  'image/png',
-];
-
-const MAX_FILES = 3;
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 // ---------------------------------------------------------------------------
 // Types
