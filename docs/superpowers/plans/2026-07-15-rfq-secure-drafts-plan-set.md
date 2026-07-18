@@ -38,5 +38,6 @@ Sequencing follows the spec's rollout: **P1 → P2 → P4 (submission idempotenc
 
 ## Detailed plans
 
-- **P1** — [`2026-07-15-rfq-secure-drafts-p1-contract-and-crypto.md`](2026-07-15-rfq-secure-drafts-p1-contract-and-crypto.md) *(written)*
-- P2–P6 — to be written after P1 review.
+- **P1** — [`2026-07-15-rfq-secure-drafts-p1-contract-and-crypto.md`](2026-07-15-rfq-secure-drafts-p1-contract-and-crypto.md) *(merged, #306)*
+- **P2** — [`2026-07-15-rfq-secure-drafts-p2-storage.md`](2026-07-15-rfq-secure-drafts-p2-storage.md) *(written)*
+- P3–P6 — to be written per-phase.
