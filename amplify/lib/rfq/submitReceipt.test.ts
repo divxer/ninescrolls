@@ -38,16 +38,33 @@ describe('canonicalizeRfqPayload', () => {
     expect(c1).not.toContain('secret');
     expect(c1).not.toContain(key);
   });
+
+  it('canonicalizes nested objects recursively and excludes credentials at every depth', () => {
+    const a = { ...PAYLOAD, metadata: { z: 1, nested: { b: 2, a: 1, draftToken: 'nested-secret' } } };
+    const b = { ...PAYLOAD, metadata: { nested: { draftToken: 'other', a: 1, b: 2 }, z: 1 } };
+    expect(canonicalizeRfqPayload(a)).toBe(canonicalizeRfqPayload(b));
+    expect(canonicalizeRfqPayload(a)).not.toContain('nested-secret');
+  });
+
+  it('rejects non-JSON payload values instead of silently changing the binding', () => {
+    expect(() => canonicalizeRfqPayload({ ...PAYLOAD, bad: Number.NaN })).toThrow();
+    expect(() => canonicalizeRfqPayload({ ...PAYLOAD, bad: () => undefined })).toThrow();
+  });
 });
 
 describe('computeRequestBinding', () => {
   it('binds payload + operation kind (+ rfqId for upgrade); differs across modes/payloads', () => {
-    const direct = computeRequestBinding(PAYLOAD, 'direct');
-    const upgrade = computeRequestBinding(PAYLOAD, 'draft-upgrade', 'rfq-1');
+    const direct = computeRequestBinding(PAYLOAD, { kind: 'direct' });
+    const upgrade = computeRequestBinding(PAYLOAD, { kind: 'draft-upgrade', rfqId: 'rfq-1' });
     expect(direct).toMatch(/^[0-9a-f]{64}$/);
     expect(direct).not.toBe(upgrade);
-    expect(computeRequestBinding(PAYLOAD, 'draft-upgrade', 'rfq-2')).not.toBe(upgrade);
-    expect(computeRequestBinding({ ...PAYLOAD, quantity: 2 }, 'direct')).not.toBe(direct);
-    expect(computeRequestBinding(PAYLOAD, 'direct')).toBe(direct);
+    expect(computeRequestBinding(PAYLOAD, { kind: 'draft-upgrade', rfqId: 'rfq-2' })).not.toBe(upgrade);
+    expect(computeRequestBinding({ ...PAYLOAD, quantity: 2 }, { kind: 'direct' })).not.toBe(direct);
+    expect(computeRequestBinding(PAYLOAD, { kind: 'direct' })).toBe(direct);
+  });
+
+  it('rejects empty upgrade ids and direct operations carrying an rfqId at runtime', () => {
+    expect(() => computeRequestBinding(PAYLOAD, { kind: 'draft-upgrade', rfqId: '' })).toThrow();
+    expect(() => computeRequestBinding(PAYLOAD, { kind: 'direct', rfqId: 'rfq-1' } as never)).toThrow();
   });
 });

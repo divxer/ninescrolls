@@ -26,25 +26,38 @@ function bindingMatches(a: string, b: string): boolean {
   return ab.length === bb.length && crypto.timingSafeEqual(ab, bb);
 }
 
-/** Classify a submit attempt against any stored receipt. `binding` omitted on the pre-write probe. */
+function validStoredReceipt(item: Record<string, unknown>): item is Record<string, unknown> & {
+  binding: string; replayExpiresAt: string; rfqId: string; referenceNumber: string; status: number;
+} {
+  return typeof item.binding === 'string' && /^[0-9a-f]{64}$/.test(item.binding)
+    && typeof item.replayExpiresAt === 'string' && Number.isFinite(Date.parse(item.replayExpiresAt))
+    && typeof item.rfqId === 'string' && item.rfqId.length > 0
+    && typeof item.referenceNumber === 'string' && item.referenceNumber.length > 0
+    && typeof item.status === 'number' && Number.isSafeInteger(item.status);
+}
+
+/** Classify a submit attempt against any stored receipt using its request binding. */
 export async function checkReceipt(
-  deps: ReceiptDeps, receiptId: string, binding?: string,
+  deps: ReceiptDeps, receiptId: string, binding: string,
 ): Promise<CheckReceiptResult> {
   const res = await deps.send(new GetCommand({
     TableName: deps.tableName, Key: { PK: receiptId, SK: 'META' },
+    ConsistentRead: true,
   }));
   const item = res.Item;
   if (!item) return { outcome: 'first-use' };
+  if (!validStoredReceipt(item)) throw new Error('Invalid stored receipt');
   if (Date.parse(deps.now()) >= Date.parse(item.replayExpiresAt as string)) {
     return { outcome: 'window-expired' }; // tombstone through TTL
   }
-  if (binding && !bindingMatches(binding, item.binding as string)) return { outcome: 'conflict' };
+  if (!/^[0-9a-f]{64}$/.test(binding)) throw new TypeError('Invalid request binding');
+  if (!bindingMatches(binding, item.binding)) return { outcome: 'conflict' };
   return {
     outcome: 'replay',
     result: {
-      rfqId: item.rfqId as string,
-      referenceNumber: item.referenceNumber as string,
-      status: item.status as number,
+      rfqId: item.rfqId,
+      referenceNumber: item.referenceNumber,
+      status: item.status,
     },
   };
 }

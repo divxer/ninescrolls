@@ -8,6 +8,8 @@
 
 **Tech Stack:** TypeScript, Node.js `crypto` (`createHash`, `timingSafeEqual`), `@aws-sdk/lib-dynamodb`, `fakeDdb`, Vitest.
 
+> **Post-review hardening (implemented):** The executable code supersedes the initial minimal snippets below in four ways: request bindings take a discriminated operation (`direct` or `draft-upgrade` with a required non-empty `rfqId`); payload canonicalization recursively sorts JSON object keys and rejects non-JSON values; every receipt classification requires a binding and uses `ConsistentRead`; stored receipt records are validated before replay. Regression coverage includes a competing conditional-write race, just-before/at-day-7 and retained-day-90 boundaries, simulated post-TTL deletion, strong-read command input, and malformed stored data.
+
 ---
 
 ## File Structure
@@ -354,6 +356,6 @@ Expected: no runtime import.
 
 **Placeholder scan:** none — every code step is complete.
 
-**Type consistency:** `SubmitOperationKind`, `deriveSubmitReceiptId`, `canonicalizeRfqPayload`, `computeRequestBinding` (Task 1) are consumed by `receiptStore` + its tests (Task 2); `ReceiptDeps`/`StoredResult`/`CheckReceiptResult` are defined once and used consistently.
+**Type consistency:** `SubmitOperation`, `SubmitOperationKind`, `deriveSubmitReceiptId`, `canonicalizeRfqPayload`, `computeRequestBinding` (Task 1) are consumed by `receiptStore` + its tests (Task 2); `ReceiptDeps`/`StoredResult`/`CheckReceiptResult` are defined once and used consistently.
 
 **Note for the implementer:** `checkReceipt` is called twice by P4b — once as a pre-write probe (no `binding`, to short-circuit an obvious replay) and once with the binding after canonicalizing the validated payload. The `window-expired` tombstone is returned whenever `now >= replayExpiresAt`, independent of whether DynamoDB TTL has physically deleted the item — TTL is cleanup, never the logical boundary.
