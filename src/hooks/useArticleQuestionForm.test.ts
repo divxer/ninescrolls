@@ -101,7 +101,11 @@ describe('useArticleQuestionForm — submission', () => {
   });
 
   it('on API failure: sets error, does not redirect even if purchaseIntent=true', async () => {
-    vi.spyOn(svc, 'submitQuestion').mockResolvedValue({ success: false, message: 'rate limited' });
+    // Real 403 shape from submit-question/handler.ts — `error`, never `message`.
+    vi.spyOn(svc, 'submitQuestion').mockResolvedValue({
+      success: false,
+      error: 'CAPTCHA verification failed',
+    });
     const onSuccessRedirect = vi.fn();
     const { result } = renderHook(() =>
       useArticleQuestionForm({ slug: 's', onSuccessRedirect }),
@@ -109,9 +113,41 @@ describe('useArticleQuestionForm — submission', () => {
     fillValidForm(result);
     act(() => result.current.setPurchaseIntent(true));
     await act(async () => { await result.current.handleSubmit(fakeEvent); });
-    expect(result.current.error).toBe('rate limited');
+    expect(result.current.error).toBe('CAPTCHA verification failed');
     expect(result.current.isSuccess).toBe(false);
     expect(onSuccessRedirect).not.toHaveBeenCalled();
+  });
+
+  it('on 400: surfaces the field-level validation detail, not a generic string', async () => {
+    // Real 400 shape from submit-question/handler.ts — error + details[], no message.
+    vi.spyOn(svc, 'submitQuestion').mockResolvedValue({
+      success: false,
+      error: 'Validation failed',
+      details: [{ field: 'email', message: 'Invalid email address' }],
+    });
+    const { result } = renderHook(() => useArticleQuestionForm({ slug: 's' }));
+    fillValidForm(result);
+    await act(async () => { await result.current.handleSubmit(fakeEvent); });
+    expect(result.current.error).toBe('Validation failed — email: Invalid email address');
+  });
+
+  it('on 500: surfaces the server error rather than a generic string', async () => {
+    vi.spyOn(svc, 'submitQuestion').mockResolvedValue({
+      success: false,
+      error: 'Internal server error',
+    });
+    const { result } = renderHook(() => useArticleQuestionForm({ slug: 's' }));
+    fillValidForm(result);
+    await act(async () => { await result.current.handleSubmit(fakeEvent); });
+    expect(result.current.error).toBe('Internal server error');
+  });
+
+  it('falls back to a generic message when the body carries no reason', async () => {
+    vi.spyOn(svc, 'submitQuestion').mockResolvedValue({ success: false });
+    const { result } = renderHook(() => useArticleQuestionForm({ slug: 's' }));
+    fillValidForm(result);
+    await act(async () => { await result.current.handleSubmit(fakeEvent); });
+    expect(result.current.error).toBe('Failed to submit request. Please try again.');
   });
 
   it('on network error: shows generic message', async () => {

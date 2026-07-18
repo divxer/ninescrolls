@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { submitQuestion } from '../services/articleQuestionsService';
+import { describeSubmitError } from '../pages/rfqSubmitError';
 
 interface UseArticleQuestionFormOpts {
   slug: string;
@@ -99,7 +100,7 @@ export function useArticleQuestionForm({ slug, onSuccessRedirect, onPurchaseInte
           purchaseIntent: form.purchaseIntent,
         });
         if (!result.success) {
-          setError(result.message || 'Submission failed. Please try again.');
+          setError(describeSubmitError(result));
           return;
         }
         const wasPurchaseIntent = form.purchaseIntent;
