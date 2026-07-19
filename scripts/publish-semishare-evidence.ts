@@ -28,6 +28,7 @@ import {
   evidenceBySlug,
   requireApply,
   type EvidenceGraphqlClient,
+  type EvidenceRecord,
 } from './lib/evidenceSeedOperations';
 import amplifyOutputs from '../amplify_outputs.json';
 
@@ -62,7 +63,7 @@ async function main() {
   await authenticate();
 
   // Preflight ALL before any write.
-  const records: Array<{ rec: any; meta: Record<string, any>; priority: 'wave1' | 'wave2' }> = [];
+  const records: Array<{ rec: EvidenceRecord; meta: Record<string, any>; priority: 'wave1' | 'wave2' }> = [];
   for (const [slug, priority] of LAUNCH) {
     const rec = await evidenceBySlug(client, slug);
     if (!rec) throw new Error(`preflight: ${slug} not found`);
