@@ -62,4 +62,45 @@ describe('evidence-api listPublishedEvidence', () => {
     delete process.env.EVIDENCE_TABLE;
     await expect(invoke()).rejects.toThrow(/EVIDENCE_TABLE/);
   });
+
+  it('projects each record to a whitelist: strips slug + OEM meta, hoists safe meta fields', async () => {
+    mockScan.mockResolvedValueOnce({
+      Items: [{
+        id: 'x',
+        slug: 'pub-tailong-icp100a-nanomaterials-2020',
+        type: 'publication',
+        status: 'published',
+        title: 'A paper',
+        sourceUrl: 'https://doi.org/10.1/x',
+        publishDate: '2026-07-18',
+        products: ['icp-etcher'],
+        meta: JSON.stringify({
+          journal: 'Nanomaterials', year: 2020, doi: '10.1/x',
+          manufacturerAsNamed: 'Tailong Electronics', instrumentAsNamed: 'ICP-100A',
+          verification: 'quote', publicSummary: 'Etched structures.',
+        }),
+      }],
+      LastEvaluatedKey: undefined,
+    });
+    const [rec] = (await invoke()) as Record<string, unknown>[];
+    expect(rec).toEqual({
+      id: 'x', type: 'publication', status: 'published', title: 'A paper',
+      sourceUrl: 'https://doi.org/10.1/x', publishDate: '2026-07-18', products: ['icp-etcher'],
+      journal: 'Nanomaterials', year: 2020, doi: '10.1/x', publicSummary: 'Etched structures.',
+    });
+    expect(rec).not.toHaveProperty('slug');
+    expect(rec).not.toHaveProperty('meta');
+    expect(JSON.stringify(rec)).not.toMatch(/tailong|ICP-100A/i);
+  });
+
+  it('omits publicSummary when the record has none (treatment A)', async () => {
+    mockScan.mockResolvedValueOnce({
+      Items: [{ id: 'y', type: 'publication', status: 'published', title: 'T',
+        meta: JSON.stringify({ journal: 'J', year: 2024, doi: '10.2/y' }) }],
+      LastEvaluatedKey: undefined,
+    });
+    const [rec] = (await invoke()) as Record<string, unknown>[];
+    expect(rec).not.toHaveProperty('publicSummary');
+    expect(rec.journal).toBe('J');
+  });
 });
