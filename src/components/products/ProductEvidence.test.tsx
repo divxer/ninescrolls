@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { ProductEvidence } from './ProductEvidence';
 
 const fetchPublishedEvidence = vi.fn();
@@ -33,14 +33,28 @@ describe('ProductEvidence', () => {
     expect(links[0]).toHaveAttribute('href', 'https://doi.org/10.1/lpr');
   });
 
-  it('ignores non-publication records and shows a Show-all toggle beyond the preview count', async () => {
+  it('ignores non-publication records and expands on clicking the Show-all toggle', async () => {
     const many = Array.from({ length: 7 }, (_, i) => ({
       id: String(i), type: 'publication', title: `P${i}`, journal: 'Obscure J', year: 2020,
       sourceUrl: `https://doi.org/10/${i}`,
     }));
     fetchPublishedEvidence.mockResolvedValueOnce([...many, { id: 'n', type: 'application_note', title: 'a note' }]);
     render(<ProductEvidence productSlug="icp-etcher" />);
-    expect(await screen.findByText('Show all 7 →')).toBeInTheDocument();
+
+    // Non-publication records are filtered out entirely.
+    const toggle = await screen.findByText('Show all 7 →');
     expect(screen.queryByText('a note')).not.toBeInTheDocument();
+
+    // Collapsed: only the first 5 (P0–P4) render; P5/P6 are hidden.
+    expect(screen.getByText('P4')).toBeInTheDocument();
+    expect(screen.queryByText('P5')).not.toBeInTheDocument();
+    expect(screen.queryByText('P6')).not.toBeInTheDocument();
+
+    // Expand: all 7 render and the toggle flips to "Show fewer".
+    fireEvent.click(toggle);
+    expect(screen.getByText('P5')).toBeInTheDocument();
+    expect(screen.getByText('P6')).toBeInTheDocument();
+    expect(screen.getByText('Show fewer')).toBeInTheDocument();
+    expect(screen.queryByText('Show all 7 →')).not.toBeInTheDocument();
   });
 });

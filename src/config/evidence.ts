@@ -51,15 +51,6 @@ export function hasPayload(input: PayloadInput): boolean {
   return nonBlank(input.articleSlug) || nonBlank(input.pdfUrl) || nonBlank(input.sourceUrl) || hasImages;
 }
 
-export type EvidenceTypeCount = { type: EvidenceType; label: string; count: number };
-export function countEvidenceByType(records: { type: string }[]): EvidenceTypeCount[] {
-  const counts = new Map<string, number>();
-  for (const r of records) counts.set(r.type, (counts.get(r.type) ?? 0) + 1);
-  return EVIDENCE_TYPE_ORDER
-    .filter((type) => (counts.get(type) ?? 0) > 0)
-    .map((type) => ({ type, label: evidenceTypeLabel(type), count: counts.get(type)! }));
-}
-
 // --- Phase 2 product-page rendering helpers ---
 
 // Curated short badges for well-known journals. Unmapped journals show their

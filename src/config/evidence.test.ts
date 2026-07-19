@@ -2,10 +2,8 @@ import { describe, it, expect } from 'vitest';
 import {
   EVIDENCE_STATUS,
   EVIDENCE_TYPE,
-  EVIDENCE_TYPE_ORDER,
   evidenceTypeLabel,
   hasPayload,
-  countEvidenceByType,
   journalBadge,
   productPlatformLabel,
 } from './evidence';
@@ -37,32 +35,6 @@ describe('hasPayload', () => {
     expect(hasPayload({ images: ['sem-1.webp'] })).toBe(true);
   });
 });
-describe('countEvidenceByType', () => {
-  it('returns per-type counts in canonical order, omitting zero-count types', () => {
-    const records = [
-      { type: EVIDENCE_TYPE.APPLICATION_NOTE }, { type: EVIDENCE_TYPE.APPLICATION_NOTE },
-      { type: EVIDENCE_TYPE.PUBLICATION }, { type: EVIDENCE_TYPE.VALIDATION },
-      { type: EVIDENCE_TYPE.VALIDATION }, { type: EVIDENCE_TYPE.APPLICATION_NOTE },
-    ];
-    expect(countEvidenceByType(records)).toEqual([
-      { type: EVIDENCE_TYPE.APPLICATION_NOTE, label: 'Application Note', count: 3 },
-      { type: EVIDENCE_TYPE.PUBLICATION, label: 'Published Research', count: 1 },
-      { type: EVIDENCE_TYPE.VALIDATION, label: 'Process Validation', count: 2 },
-    ]);
-  });
-  it('follows EVIDENCE_TYPE_ORDER regardless of insertion order', () => {
-    const out = countEvidenceByType([
-      { type: EVIDENCE_TYPE.VALIDATION }, { type: EVIDENCE_TYPE.APPLICATION_NOTE },
-    ]);
-    expect(out.map((g) => g.type)).toEqual([EVIDENCE_TYPE.APPLICATION_NOTE, EVIDENCE_TYPE.VALIDATION]);
-    expect(EVIDENCE_TYPE_ORDER[0]).toBe(EVIDENCE_TYPE.APPLICATION_NOTE);
-  });
-  it('returns [] for no records and ignores unknown types', () => {
-    expect(countEvidenceByType([])).toEqual([]);
-    expect(countEvidenceByType([{ type: 'bogus' }])).toEqual([]);
-  });
-});
-
 describe('journalBadge', () => {
   it('maps curated journals to short badges and returns null otherwise', () => {
     expect(journalBadge('Light: Science & Applications')).toBe('LSA');
