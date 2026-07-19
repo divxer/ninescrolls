@@ -155,27 +155,6 @@ export const icpEtcherConfig: ProductDetailConfig = {
       'Materials research',
     ],
   },
-  research: {
-    eyebrow: 'Research Validation',
-    title: 'Evidence should support the equipment conversation.',
-    cards: [
-      {
-        eyebrow: 'Peer-reviewed research',
-        title: 'ICP-RIE process capability cited in peer-reviewed research',
-        meta: 'Connect platform capabilities to published process work during technical review.',
-      },
-      {
-        eyebrow: 'Process evidence',
-        title: 'Plasma etching support for photonics and metasurface research',
-        meta: 'Research validation for process-sensitive device fabrication.',
-      },
-      {
-        eyebrow: 'Application Notes',
-        title: 'ICP vs RIE process selection for research labs',
-        meta: 'Connects the platform to the engineering decision path.',
-      },
-    ],
-  },
   resources: {
     eyebrow: 'Related Resources',
     title: 'Help engineers choose the right process path.',

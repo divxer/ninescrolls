@@ -41,9 +41,9 @@ export function ProductEvidence({ productSlug }: ProductEvidenceProps) {
   return (
     <section data-testid="product-evidence" className="border-y border-slate-200 bg-white px-6 py-20 md:px-10 lg:px-16">
       <div className="mx-auto max-w-screen-2xl">
-        <p className="text-sm font-semibold uppercase tracking-wide text-sky-700">Research validation</p>
-        <h2 className="mt-1 font-headline text-4xl font-semibold tracking-normal text-slate-950">Peer-reviewed research</h2>
-        <p className="mt-3 text-lg text-slate-600">
+        <p className="text-sm font-bold uppercase tracking-[0.22em] text-sky-600">Research validation</p>
+        <h2 className="mt-4 font-headline text-4xl font-semibold tracking-normal text-slate-950">Peer-reviewed research</h2>
+        <p className="mt-5 text-base leading-8 text-slate-600">
           Published work using {productPlatformLabel(productSlug)} · {records.length} {records.length === 1 ? 'paper' : 'papers'}
         </p>
         <ul className="mt-8 flex flex-col divide-y divide-slate-200">
