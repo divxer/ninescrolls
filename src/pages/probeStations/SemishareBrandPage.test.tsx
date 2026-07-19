@@ -48,7 +48,13 @@ describe('SemishareBrandPage', () => {
     expect(screen.getAllByText(/SAM\.gov/).length).toBeGreaterThan(0);
     const faqHeadings = screen.getAllByRole('heading', { level: 3 }).filter((h) => h.textContent?.endsWith('?'));
     expect(faqHeadings.length).toBeGreaterThanOrEqual(4);
-    expect(screen.getByRole('link', { name: /Request a quote/i })).toHaveAttribute('href', '/request-quote?products=semishare-probe-station');
+    // Hero and final-CTA each carry a primary "Request a quote" link (template
+    // pattern); every one must point at the pre-filled RFQ.
+    const quoteLinks = screen.getAllByRole('link', { name: /Request a quote/i });
+    expect(quoteLinks.length).toBeGreaterThanOrEqual(1);
+    for (const link of quoteLinks) {
+      expect(link).toHaveAttribute('href', '/request-quote?products=semishare-probe-station');
+    }
   });
 
   it('sources peer-reviewed research from the Evidence framework (dynamic), not a hardcoded list', () => {

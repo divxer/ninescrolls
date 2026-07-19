@@ -32,17 +32,23 @@ describe('WaferProbeStationsPage', () => {
     expect(
       screen.getByRole('heading', { level: 1, name: /Wafer probe stations for research labs/i })
     ).toBeInTheDocument();
-    expect(screen.getByText('Semi-automatic')).toBeInTheDocument(); // StationTypeComparison
-    expect(screen.getByRole('link', { name: /SEMISHARE product lines/i })).toHaveAttribute(
-      'href', '/wafer-probe-stations/semishare'
-    );
+    // A cell unique to StationTypeComparison (the automation labels themselves
+    // now also appear in the hero at-a-glance panel).
+    expect(screen.getByText('Recipe-assisted multi-site stepping')).toBeInTheDocument();
+    // SEMISHARE + Request-a-quote links now appear in the hero, body, and final
+    // CTA (dark-theme bookends), so assert every instance points to the right place.
+    const semishareLinks = screen.getAllByRole('link', { name: /SEMISHARE product lines/i });
+    expect(semishareLinks.length).toBeGreaterThanOrEqual(1);
+    for (const link of semishareLinks) expect(link).toHaveAttribute('href', '/wafer-probe-stations/semishare');
     expect(screen.getByRole('link', { name: /Cryogenic probing guide/i })).toHaveAttribute(
       'href', '/applications/cryogenic-probing'
     );
     expect(screen.getByRole('link', { name: /Silicon photonics probing guide/i })).toHaveAttribute(
       'href', '/applications/silicon-photonics-probing'
     );
-    expect(screen.getByRole('link', { name: /Request a quote/i })).toHaveAttribute('href', '/request-quote?products=wafer-probe-station');
+    const quoteLinks = screen.getAllByRole('link', { name: /Request a quote/i });
+    expect(quoteLinks.length).toBeGreaterThanOrEqual(1);
+    for (const link of quoteLinks) expect(link).toHaveAttribute('href', '/request-quote?products=wafer-probe-station');
     const faqHeadings = screen.getAllByRole('heading', { level: 3 }).filter((h) => h.textContent?.endsWith('?'));
     expect(faqHeadings.length).toBeGreaterThanOrEqual(4);
   });
