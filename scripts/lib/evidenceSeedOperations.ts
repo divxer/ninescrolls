@@ -217,6 +217,56 @@ export async function correctFalsePositives(
   return tally;
 }
 
+export interface ProceedingsExclusion {
+  slug: string;
+  /** Cleaned, proper conference short name to store in meta.journal. */
+  journal: string;
+}
+
+/**
+ * Enforce the conference-proceedings policy (2026-07-18) on one record: clean its
+ * meta.journal to a proper short name, tag venueType:'conference', force it out of
+ * launch (launchEligible:false, publishPriority:'wave3'), and unpublish it
+ * (status -> draft) so it leaves the public listPublishedEvidence payload.
+ *
+ * Convergent + idempotent: a record already in the target state is reported
+ * 'converged' with no write. Dry-run (options.apply === false) reports
+ * 'would-exclude' for a record that needs the change but writes nothing.
+ *
+ * This mirrors the classifier's PROCEEDINGS gate — running the classifier
+ * afterwards re-derives the identical launchEligible/publishPriority/venueType, so
+ * the two never fight. The classifier does NOT touch status, so this op owns the
+ * draft flip.
+ */
+export async function excludeProceedingsFromLaunch(
+  client: EvidenceGraphqlClient,
+  exclusion: ProceedingsExclusion,
+  options: { apply: boolean },
+): Promise<'excluded' | 'would-exclude' | 'converged' | 'missing'> {
+  const record = await evidenceBySlug(client, exclusion.slug);
+  if (!record) return 'missing';
+
+  const meta = parseMeta(record);
+  meta.journal = exclusion.journal;
+  meta.venueType = 'conference';
+  meta.launchEligible = false;
+  meta.publishPriority = 'wave3';
+  const serializedMeta = JSON.stringify(meta);
+
+  if (record.status === 'draft' && record.meta === serializedMeta) return 'converged';
+  if (!options.apply) return 'would-exclude';
+
+  const result = await checkedGraphql<UpdateResponse>(client, {
+    query: UPDATE,
+    variables: { input: { id: record.id, status: 'draft', meta: serializedMeta } },
+    ...AUTH,
+  }, `exclude proceedings ${exclusion.slug}`);
+  if (result.data.updateEvidence?.status !== 'draft') {
+    throw new Error(`exclude proceedings ${exclusion.slug} failed: draft postcondition not met`);
+  }
+  return 'excluded';
+}
+
 export async function listRawEvidence(client: EvidenceGraphqlClient): Promise<EvidenceRecord[]> {
   const items: EvidenceRecord[] = [];
   let nextToken: string | null = null;
@@ -285,12 +335,23 @@ export async function classifyPublications(
   client: EvidenceGraphqlClient,
   classifications: Record<string, Classification>,
   wave1Slugs: ReadonlySet<string>,
+  proceedingsSlugs: ReadonlySet<string> = new Set(),
 ): Promise<{
   classified: number;
   updated: number;
   converged: number;
   tally: Record<string, number>;
 }> {
+  // Fail fast (before any network call) if a slug is in both sets. A wave1 hero
+  // that is also a proceedings record would be internally contradictory
+  // (publishPriority wave1 vs the forced wave3 + launchEligible:false), and would
+  // never converge against excludeProceedingsFromLaunch. The two sets are disjoint
+  // by policy — a proceedings record is never a launch hero.
+  const overlap = [...proceedingsSlugs].filter((slug) => wave1Slugs.has(slug)).sort();
+  if (overlap.length) {
+    throw new Error(`wave1 and proceedings sets must be disjoint; overlap: ${overlap.join(', ')}`);
+  }
+
   const items: EvidenceRecord[] = [];
   let nextToken: string | null = null;
   do {
@@ -328,15 +389,28 @@ export async function classifyPublications(
 
   for (const record of publications) {
     const [tier, role] = classifications[record.slug];
-    const launchEligible = tier === 'A' && role !== 'incidental';
-    const publishPriority = wave1Slugs.has(record.slug)
-      ? 'wave1'
-      : launchEligible ? 'wave2' : 'wave3';
+    // Policy (2026-07-18): conference proceedings are excluded from the product-
+    // page "Peer-reviewed research" list by default — a distinct, generally lower
+    // evidence tier than journal articles, and "Peer-reviewed research" reads as
+    // journal-grade to the academic/industry audience. A proceedings record is
+    // never launch-eligible regardless of its tier/role; promoting a strong,
+    // on-topic one is a deliberate exception (remove it from PROCEEDINGS).
+    const isProceedings = proceedingsSlugs.has(record.slug);
+    const launchEligible = tier === 'A' && role !== 'incidental' && !isProceedings;
+    // Proceedings-first so this stays consistent even if the disjointness guard
+    // above were ever removed, and so it matches excludeProceedingsFromLaunch's
+    // hard-coded 'wave3' (the two must reach the same fixpoint).
+    const publishPriority = isProceedings
+      ? 'wave3'
+      : wave1Slugs.has(record.slug) ? 'wave1' : launchEligible ? 'wave2' : 'wave3';
     const meta = parseMeta(record);
     meta.verificationTier = tier;
     meta.capabilityRole = role;
     meta.launchEligible = launchEligible;
     meta.publishPriority = publishPriority;
+    // Self-describing venue axis so the exclusion is visible in the record's own
+    // meta (never reaches the public projection). Absence ⇒ journal.
+    if (isProceedings) meta.venueType = 'conference';
     const serializedMeta = JSON.stringify(meta);
 
     if (record.meta === serializedMeta) {

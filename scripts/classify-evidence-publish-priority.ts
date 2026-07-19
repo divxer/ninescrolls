@@ -100,10 +100,19 @@ const WAVE1 = new Set([
   'pub-tailong-sputter100-cu-catalysis-acsami-2024',
 ]);
 
+// Conference proceedings — excluded from launch-eligibility by policy (2026-07-18),
+// regardless of tier/role, because the product-page "Peer-reviewed research" list
+// is for journal-grade evidence (see README "Conference proceedings"). ANY
+// conference/proceedings record MUST be listed here; promoting a strong, on-topic
+// one is a deliberate case-by-case exception (remove it from this set).
+const PROCEEDINGS = new Set([
+  'pub-tailong-sputter-tio2-cuox-robots-raits-2026', // IEEE RAITS 2026 (robotics/ITS venue)
+]);
+
 async function main() {
   requireApply(process.argv.slice(2), 'classify-evidence-publish-priority');
   await authenticate();
-  const { classified, updated, converged, tally } = await classifyPublications(client, CLASS, WAVE1);
+  const { classified, updated, converged, tally } = await classifyPublications(client, CLASS, WAVE1, PROCEEDINGS);
   console.log(`classified ${classified} publication records (${updated} updated, ${converged} converged)`);
   console.log('  publishPriority:', JSON.stringify({ wave1: tally.wave1, wave2: tally.wave2, wave3: tally.wave3 }));
   console.log('  verificationTier:', JSON.stringify({ A: tally.A, B: tally.B }));
