@@ -20,7 +20,7 @@ Six type profiles, in article order:
 5. RF & microwave
 6. Silicon photonics / optical
 
-**High-power is NOT a seventh type.** It is woven into High-Temperature and Vacuum profiles as boundary-parameter passages (qualitative form, e.g. chuck insulation and breakdown protection under high current and voltage — SiC/GaN test context), placed inside "key specs to review" or "when not to choose".
+**High-power is NOT a seventh type.** It is woven into High-Temperature and Vacuum profiles as boundary-parameter passages (qualitative form — SiC/GaN test context), placed inside "key specs to review" or "when not to choose". Approved wording register for these passages: "dielectric breakdown thresholds of thermal isolation stacks", "transient current capacity of vacuum feedthroughs" — architecture abstractions only; the SiC/GaN scenario must never pull in absolute voltage or current digits (the no-unit family enforces this).
 
 ## Article structure (locked)
 
@@ -55,6 +55,8 @@ Locked cell copy (review-refinable during spec/plan review, then frozen):
 
 Matrix content rules: purely qualitative; **no digits with physical units, no currency, no relative-cost symbols, no vendor/brand names**. The single-source array is guard-tested directly (see below), so neither the figure generator nor the HTML renderer can be bypassed.
 
+**Responsive defense (HTML side):** the 6-column table renders inside an `overflow-x: auto` container (existing InsightsPostPage table CSS pattern) so narrow viewports scroll the table instead of crushing cells; the page body must never scroll horizontally.
+
 ## Wording and guard contract
 
 Reused families (from #3, verbatim discipline):
@@ -66,7 +68,7 @@ New families specific to this article:
 
 - **no-unit-regex:** body text and matrix cells must contain no performance number with a physical unit (nm, µm, K, °C, GHz, MHz, dB, torr, Pa, A, V, W …). The article teaches WHAT to review, never HOW MUCH. Wording direction: architecture abstraction — "leakage-current dynamics", "thermal gradient control", "transition-loss behavior" (owner-approved register).
 - **no-currency-regex:** no currency symbols, currency codes, or price digits anywhere; no $–$$$$ relative symbols. Price-intent traffic is routed to article #1's price table by interlink.
-- **References exemption window:** external standards / literature citations in the References section MAY contain numbers, but the guard applies the no-unit family only OUTSIDE the references block (explicit scoping in the test, not a global weakening), AND a brand-proximity check ensures no NineScrolls/SEMISHARE mention shares a citation's context window.
+- **References exemption window:** external standards / literature citations in the References section MAY contain numbers, but the guard applies the no-unit family only OUTSIDE the references block (explicit scoping in the test, not a global weakening), AND a brand-proximity sentinel ensures no NineScrolls/SEMISHARE mention shares a citation's context window — the sentinel's scan window covers at least 3 sentences (or an equivalent character window) on each side of every exempted number.
 - Both new families live in the single-source `GUARD_FAMILIES` structure consumed by (a) article-content assertions, (b) matrix-cell literal assertions, (c) the mutation meta-test with negative controls. Sabotage verification required (delete a pattern → its mutation row reds).
 
 ## Figures
@@ -89,7 +91,7 @@ Outbound (in-article):
 - Type-selection checklist → article #2 (procurement lane)
 - Where NineScrolls Fits → `/wafer-probe-stations/semishare`
 
-**Post-deployment hooks (required, after this article publishes):** add reciprocal links pointing to #4 from article #1 (types survey from the five-decisions frame) and article #3 (Further reading), via the established repo-HTML-edit → guard-tests → `update-insight-from-html` path (one commit each, main).
+**Post-deployment hooks (required, after this article publishes):** add reciprocal links pointing to #4 from article #1 (types survey from the five-decisions frame) and article #3 (Further reading), via the established repo-HTML-edit → guard-tests → `update-insight-from-html` path. Sequencing: these land as separate commits AFTER the main PR merges, and are the LAST step of the publish checklist (after llms sync and GSC submission) so the cluster-weight loop cannot be left half-configured.
 
 ## SEO and metadata (locked)
 
