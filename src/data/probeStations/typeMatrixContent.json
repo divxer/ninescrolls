@@ -1,0 +1,22 @@
+{
+  "types": [
+    "Standard ambient",
+    "Cryogenic",
+    "High-temperature",
+    "Vacuum",
+    "RF & microwave",
+    "Silicon photonics"
+  ],
+  "dimensions": [
+    "Environment hardware signature",
+    "Best-fit applications",
+    "Cost drivers",
+    "Buyer’s key question"
+  ],
+  "cells": [
+    ["Open platen, micropositioners, isolation table", "Sealed chamber; cryocooler or cryogen cooling; multi-stage vibration isolation", "Heated chuck with thermal-isolation stack", "Vacuum chamber, feedthrough wiring, in-chamber probe arms", "High-frequency positioners, calibration-substrate holder, low-loss cabling", "Fiber positioners with alignment optics alongside electrical probes"],
+    ["General current–voltage and capacitance characterization; wafer-level debug", "Low-temperature device physics; superconducting and quantum-device screening", "Elevated-temperature device behavior; reliability studies", "Surface-sensitive devices; MEMS; moisture-free measurement", "On-wafer high-frequency parameter extraction", "Wafer-level optical coupling and photonic-circuit test"],
+    ["Positioner precision; platform isolation grade", "Cooling architecture; isolation stages; radiation shielding", "Chuck uniformity engineering; thermal isolation of positioners", "Chamber and pumping stack; feedthrough count and signal integrity", "Calibration substrates; low-loss interconnect; probe replacement cycle", "Alignment automation; optical instrumentation integration"],
+    ["Which upgrades will the platform accept later?", "What does the stage deliver under your real heat load?", "How uniform and stable is the chuck across a long soak?", "Which signals must cross the chamber wall?", "What does the daily calibration workflow look like?", "How repeatable is fiber-to-chip alignment?"]
+  ]
+}
