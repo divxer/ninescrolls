@@ -17,11 +17,16 @@
 import { Amplify } from 'aws-amplify';
 import { generateClient } from 'aws-amplify/data';
 import { authenticate } from './lib/auth';
-import { createEvidenceIfMissing, requireApply } from './lib/evidenceSeedOperations';
+import {
+  assertUniqueSlugs,
+  createEvidenceIfMissing,
+  requireApply,
+  type EvidenceGraphqlClient,
+} from './lib/evidenceSeedOperations';
 import amplifyOutputs from '../amplify_outputs.json';
 
 Amplify.configure(amplifyOutputs as any);
-const client: any = generateClient();
+const client = generateClient() as unknown as EvidenceGraphqlClient;
 
 const DISCLOSURE =
   'NineScrolls is the authorized distributor of this platform (Beijing Zhongke Tailong Electronics).';
@@ -138,6 +143,7 @@ const RECORDS: Seed[] = [
 
 async function main() {
   requireApply(process.argv.slice(2), 'seed-evidence-spotlights');
+  assertUniqueSlugs(RECORDS.map((rec) => rec.slug), 'seed-evidence-spotlights');
   await authenticate();
   let created = 0;
   let skipped = 0;

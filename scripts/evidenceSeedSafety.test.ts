@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import {
+  assertUniqueSlugs,
   classifyPublications,
   correctFalsePositives,
   createEvidenceIfMissing,
@@ -170,6 +171,38 @@ describe('evidence seeder safety contracts', () => {
       .rejects.toThrow(/create new-record failed.*not authorized/i);
   });
 
+  it('creates records as status:draft when the caller omits status (no-leak default)', async () => {
+    let createdInput: any = null;
+    const client: EvidenceGraphqlClient = {
+      graphql: vi.fn(async (request: any) => {
+        if (request.query.includes('listEvidenceBySlug')) {
+          return { data: { listEvidenceBySlug: { items: [] } } };
+        }
+        createdInput = request.variables.input;
+        return { data: { createEvidence: { id: 'new', slug: request.variables.input.slug } } };
+      }),
+    };
+
+    await expect(createEvidenceIfMissing(client, { slug: 'no-status' })).resolves.toBe('created');
+    expect(createdInput.status).toBe('draft');
+  });
+
+  it('refuses to create a non-draft record and issues no GraphQL call', async () => {
+    const graphql = vi.fn();
+    const client: EvidenceGraphqlClient = { graphql };
+
+    await expect(
+      createEvidenceIfMissing(client, { slug: 'sneaky', status: 'published' }),
+    ).rejects.toThrow(/refused: seeders may only create status:draft/i);
+    expect(graphql).not.toHaveBeenCalled();
+  });
+
+  it('rejects duplicate slugs within a seeder input array before any network call', () => {
+    expect(() => assertUniqueSlugs(['a', 'b', 'a', 'c', 'b'], 'seed'))
+      .toThrow(/duplicate slug\(s\) in seed input: a, b/i);
+    expect(() => assertUniqueSlugs(['a', 'b', 'c'], 'seed')).not.toThrow();
+  });
+
   it('preserves original refinement provenance and skips a converged rerun', async () => {
     let record = {
       id: 'id-1', slug: 'paper', meta: JSON.stringify({ instrumentAsNamed: 'RIE (Tailong)' }),
@@ -253,31 +286,58 @@ describe('evidence seeder safety contracts', () => {
     expect(classifier).toBeGreaterThan(correction);
   });
 
-  it('keeps classification and documentation at the reproducible 49-record set', () => {
+  it('keeps README Phase-2 tallies derived-consistent with the classifier CLASS table', () => {
     const classifier = readFileSync(
       resolve(process.cwd(), 'scripts/classify-evidence-publish-priority.ts'),
       'utf8',
-    );
-    const classTable = classifier.slice(
-      classifier.indexOf('const CLASS'),
-      classifier.indexOf('const WAVE1'),
     );
     const readme = readFileSync(
       resolve(process.cwd(), 'scripts/README-evidence-seeders.md'),
       'utf8',
     );
-    const classifiedRows = [...classTable.matchAll(
-      /'[^']+': \['[AB]', '(?:primary|substantial|incidental)'\]/g,
-    )];
 
+    const classTable = classifier.slice(
+      classifier.indexOf('const CLASS'),
+      classifier.indexOf('const WAVE1'),
+    );
+    const entries = [...classTable.matchAll(
+      /'([^']+)': \['([AB])', '(primary|substantial|incidental)'\]/g,
+    )].map(([, slug, tier, role]) => ({ slug, tier, role }));
+
+    const wave1Block = classifier.slice(
+      classifier.indexOf('const WAVE1'),
+      classifier.indexOf('async function main'),
+    );
+    const wave1 = new Set([...wave1Block.matchAll(/'([^']+)'/g)].map(([, slug]) => slug));
+
+    // Recompute exactly what classifyPublications() derives — from the source of
+    // truth (CLASS) — instead of string-matching the prose. A future CLASS edit
+    // that desyncs the README now fails this test.
+    const d: Record<string, number> = {
+      total: entries.length, A: 0, B: 0, eligible: 0, wave1: 0, wave2: 0, wave3: 0,
+    };
+    for (const { slug, tier, role } of entries) {
+      d[tier]++;
+      const launchEligible = tier === 'A' && role !== 'incidental';
+      if (launchEligible) d.eligible++;
+      d[wave1.has(slug) ? 'wave1' : launchEligible ? 'wave2' : 'wave3']++;
+    }
+
+    // Reconstructed legacy tail slugs must not sneak back in as invented data.
     expect(classTable).not.toContain('pub-tailong-rie100-nanoforest-ev-capture-acsnano-2025');
     expect(classTable).not.toContain('pub-tailong-rie150-wafer-graphene-cvd-acsanm-2023');
     expect(classTable).not.toContain('pub-tailong-rie100-vdw-photodiode-infomat-2022');
-    expect(classifiedRows).toHaveLength(49);
-    expect(readme).toContain('49 active Evidence records');
-    expect(readme).not.toContain('52 active Evidence records');
-    expect(readme).toContain('wave1 **6** · wave2 **29** ·');
-    expect(readme).toContain('wave3 **14**; tier A **42** / B **7**; launchEligible **35**');
+    // Every wave1 hero must actually be a classified record.
+    for (const slug of wave1) {
+      expect(entries.some((entry) => entry.slug === slug)).toBe(true);
+    }
+
+    // The README must state the DERIVED numbers verbatim — self-verifying doc.
+    expect(readme).toContain(`${d.total} active Evidence records`);
+    expect(readme).toContain(`wave1 **${d.wave1}** · wave2 **${d.wave2}** ·`);
+    expect(readme).toContain(
+      `wave3 **${d.wave3}**; tier A **${d.A}** / B **${d.B}**; launchEligible **${d.eligible}**`,
+    );
   });
 
   it('uses the checked raw-GraphQL path for the first documented seeder', () => {

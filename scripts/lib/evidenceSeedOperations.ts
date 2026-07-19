@@ -36,6 +36,23 @@ const CREATE = `mutation CreateEvidence($input:CreateEvidenceInput!){ createEvid
 const UPDATE = `mutation UpdateEvidence($input:UpdateEvidenceInput!){ updateEvidence(input:$input){ id slug status meta } }`;
 const LIST = `query ListEvidence($nextToken:String){ listEvidences(limit:200,nextToken:$nextToken){ items{ id slug type status meta } nextToken } }`;
 
+// No-leak boundary: seeders create review-only drafts. Nothing here may create a
+// public record — publishing is a deliberate, separate Phase-2 step.
+const CREATE_STATUS = 'draft';
+
+interface BySlugResponse {
+  data: { listEvidenceBySlug: { items: EvidenceRecord[] } | null };
+}
+interface CreateResponse {
+  data: { createEvidence: { id: string; slug: string } | null };
+}
+interface UpdateResponse {
+  data: { updateEvidence: { id: string; slug: string; status?: string; meta?: string } | null };
+}
+interface ListResponse {
+  data: { listEvidences: { items: EvidenceRecord[]; nextToken: string | null } | null };
+}
+
 function graphQlError(operation: string, errors: Array<{ message?: string }>): Error {
   const detail = errors.map((error) => error.message ?? JSON.stringify(error)).join('; ');
   return new Error(`${operation} failed: ${detail}`);
@@ -46,6 +63,26 @@ export function requireApply(argv: string[], scriptName: string): void {
   if (unknown.length) throw new Error(`${scriptName}: unknown argument(s): ${unknown.join(', ')}`);
   if (argv.filter((arg) => arg === '--apply').length !== 1) {
     throw new Error(`${scriptName}: refusing writes without exactly one --apply confirmation`);
+  }
+}
+
+/**
+ * Fail fast (before any network call) if a seeder's own input array contains a
+ * duplicate slug. Without this, a copy-paste typo would silently create one
+ * record and "skip (exists)" the other, masking an authoring error as normal
+ * output.
+ */
+export function assertUniqueSlugs(slugs: string[], scriptName: string): void {
+  const seen = new Set<string>();
+  const duplicates = new Set<string>();
+  for (const slug of slugs) {
+    if (seen.has(slug)) duplicates.add(slug);
+    seen.add(slug);
+  }
+  if (duplicates.size) {
+    throw new Error(
+      `${scriptName}: duplicate slug(s) in seed input: ${[...duplicates].sort().join(', ')}`,
+    );
   }
 }
 
@@ -73,7 +110,7 @@ export async function evidenceBySlug(
   client: EvidenceGraphqlClient,
   slug: string,
 ): Promise<EvidenceRecord | null> {
-  const result = await checkedGraphql<any>(client, {
+  const result = await checkedGraphql<BySlugResponse>(client, {
     query: BY_SLUG,
     variables: { slug },
     ...AUTH,
@@ -87,10 +124,23 @@ export async function createEvidenceIfMissing(
   client: EvidenceGraphqlClient,
   input: Record<string, unknown> & { slug: string },
 ): Promise<'created' | 'skipped'> {
+  // Enforce the no-leak boundary in one place: default to draft when the caller
+  // omits status, and refuse to create anything else here (publishing is a
+  // separate Phase-2 step). This makes the draft guarantee independent of every
+  // current and future caller remembering to set it.
+  const status = input.status ?? CREATE_STATUS;
+  if (status !== CREATE_STATUS) {
+    throw new Error(
+      `create ${input.slug} refused: seeders may only create status:${CREATE_STATUS} records (got ${JSON.stringify(status)})`,
+    );
+  }
+  // TOCTOU note: idempotency is a lookup-then-create by slug (a GSI, not a unique
+  // key). Safe for the single-operator, serial usage these ops scripts assume;
+  // two concurrent runs could still race to create duplicates.
   if (await evidenceBySlug(client, input.slug)) return 'skipped';
-  const result = await checkedGraphql<any>(client, {
+  const result = await checkedGraphql<CreateResponse>(client, {
     query: CREATE,
-    variables: { input },
+    variables: { input: { ...input, status } },
     ...AUTH,
   }, `create ${input.slug}`);
   if (!result.data.createEvidence?.id) {
@@ -124,7 +174,7 @@ export async function refineEvidence(
 
   if (record.meta === serializedMeta && record.summary === summary) return 'converged';
 
-  const result = await checkedGraphql<any>(client, {
+  const result = await checkedGraphql<UpdateResponse>(client, {
     query: UPDATE,
     variables: { input: { id: record.id, meta: serializedMeta, summary } },
     ...AUTH,
@@ -153,7 +203,7 @@ export async function correctFalsePositives(
       tally.converged++;
       continue;
     }
-    const result = await checkedGraphql<any>(client, {
+    const result = await checkedGraphql<UpdateResponse>(client, {
       query: UPDATE,
       variables: { input: { id: record.id, status: 'archived', meta: serializedMeta } },
       ...AUTH,
@@ -179,7 +229,7 @@ export async function classifyPublications(
   const items: EvidenceRecord[] = [];
   let nextToken: string | null = null;
   do {
-    const result = await checkedGraphql<any>(client, {
+    const result = await checkedGraphql<ListResponse>(client, {
       query: LIST,
       variables: { nextToken },
       ...AUTH,
@@ -227,7 +277,7 @@ export async function classifyPublications(
     if (record.meta === serializedMeta) {
       converged++;
     } else {
-      const result = await checkedGraphql<any>(client, {
+      const result = await checkedGraphql<UpdateResponse>(client, {
         query: UPDATE,
         variables: { input: { id: record.id, meta: serializedMeta } },
         ...AUTH,

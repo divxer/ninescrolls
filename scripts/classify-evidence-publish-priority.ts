@@ -20,10 +20,14 @@
 import { Amplify } from 'aws-amplify';
 import { generateClient } from 'aws-amplify/data';
 import { authenticate } from './lib/auth';
-import { classifyPublications, requireApply } from './lib/evidenceSeedOperations';
+import {
+  classifyPublications,
+  requireApply,
+  type EvidenceGraphqlClient,
+} from './lib/evidenceSeedOperations';
 import amplifyOutputs from '../amplify_outputs.json';
 Amplify.configure(amplifyOutputs as any);
-const client: any = generateClient();
+const client = generateClient() as unknown as EvidenceGraphqlClient;
 
 // slug -> [verificationTier, capabilityRole]
 const CLASS: Record<string, ['A' | 'B', 'primary' | 'substantial' | 'incidental']> = {

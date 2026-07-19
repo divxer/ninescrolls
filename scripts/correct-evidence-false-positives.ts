@@ -9,12 +9,13 @@ import { authenticate } from './lib/auth';
 import {
   correctFalsePositives,
   requireApply,
+  type EvidenceGraphqlClient,
   type FalsePositiveCorrection,
 } from './lib/evidenceSeedOperations';
 import amplifyOutputs from '../amplify_outputs.json';
 
 Amplify.configure(amplifyOutputs as any);
-const client: any = generateClient();
+const client = generateClient() as unknown as EvidenceGraphqlClient;
 
 const CORRECTIONS: FalsePositiveCorrection[] = [
   {

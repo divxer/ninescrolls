@@ -15,14 +15,16 @@ import { Amplify } from 'aws-amplify';
 import { generateClient } from 'aws-amplify/data';
 import { authenticate } from './lib/auth';
 import {
+  assertUniqueSlugs,
   createEvidenceIfMissing,
   refineEvidence,
   requireApply,
+  type EvidenceGraphqlClient,
 } from './lib/evidenceSeedOperations';
 import amplifyOutputs from '../amplify_outputs.json';
 
 Amplify.configure(amplifyOutputs as any);
-const client: any = generateClient();
+const client = generateClient() as unknown as EvidenceGraphqlClient;
 const DISCLOSURE =
   'NineScrolls is the authorized distributor of this platform (Tailong Electronics / Beijing Zhongke Tailong Electronic Technology).';
 const toolType = (p: string[]) =>
@@ -57,6 +59,7 @@ const REFINE: [string, string, string][] = [
 
 async function main() {
   requireApply(process.argv.slice(2), 'seed-evidence-scholar-verified');
+  assertUniqueSlugs(NEW.map(([slug]) => slug), 'seed-evidence-scholar-verified');
   await authenticate();
 
   // (1) seed new

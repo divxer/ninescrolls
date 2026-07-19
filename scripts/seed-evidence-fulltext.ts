@@ -11,13 +11,15 @@ import { Amplify } from 'aws-amplify';
 import { generateClient } from 'aws-amplify/data';
 import { authenticate } from './lib/auth';
 import {
+  assertUniqueSlugs,
   createEvidenceIfMissing,
   refineEvidence,
   requireApply,
+  type EvidenceGraphqlClient,
 } from './lib/evidenceSeedOperations';
 import amplifyOutputs from '../amplify_outputs.json';
 Amplify.configure(amplifyOutputs as any);
-const client: any = generateClient();
+const client = generateClient() as unknown as EvidenceGraphqlClient;
 const DISCLOSURE = 'NineScrolls is the authorized distributor of this platform (Tailong Electronics / Beijing Zhongke Tailong Electronic Technology).';
 
 // [slug, title, products, doi, instrument, journal, year, quote, tier]
@@ -50,6 +52,7 @@ const summaryFor = (j: string, y: number, inst: string, p: string[]) =>
 
 async function main() {
   requireApply(process.argv.slice(2), 'seed-evidence-fulltext');
+  assertUniqueSlugs(NEW.map(([slug]) => slug), 'seed-evidence-fulltext');
   await authenticate();
   let created = 0, skipped = 0, refined = 0, converged = 0;
   for (const [slug, title, products, doi, instrument, journal, year, quote, tier] of NEW) {
