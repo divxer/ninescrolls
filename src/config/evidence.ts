@@ -77,7 +77,6 @@ const JOURNAL_BADGE_RAW: Record<string, string> = {
   'Materials Research Express': 'Mater. Res. Express',
   'Nanoscale Advances': 'Nanoscale Adv.',
   'Scientific Reports': 'Sci. Rep.',
-  '2026 International Conference (IEEE)': 'IEEE Conf.',
 };
 // Normalize keys once so lookups tolerate case/whitespace drift in stored
 // journal names (defensive — the seeded values are exact today).

@@ -6,6 +6,7 @@ import {
   classifyPublications,
   correctFalsePositives,
   createEvidenceIfMissing,
+  excludeProceedingsFromLaunch,
   publishLaunchEligible,
   refineEvidence,
   requireApply,
@@ -161,6 +162,48 @@ describe('evidence seeder safety contracts', () => {
     expect(updates).toBe(1);
   });
 
+  it('excludes conference proceedings from launch-eligibility regardless of tier/role', async () => {
+    // A tier-A, primary (i.e. would-be launch-eligible) record that is a
+    // conference proceedings must be forced launchEligible:false + wave3 + tagged
+    // venueType:'conference' — the 2026-07-18 policy.
+    let record = {
+      id: 'proc', slug: 'pub-conf', type: 'publication', status: 'draft', meta: '{}',
+    };
+    const client: EvidenceGraphqlClient = {
+      graphql: vi.fn(async (request: any) => {
+        if (!request.variables.input) return queryResult([record]);
+        record = { ...record, ...request.variables.input };
+        return { data: { updateEvidence: { id: record.id, slug: record.slug } } };
+      }),
+    };
+
+    const res = await classifyPublications(
+      client,
+      { 'pub-conf': ['A', 'primary'] },
+      new Set(),
+      new Set(['pub-conf']),
+    );
+
+    expect(res.tally).toMatchObject({ A: 1, primary: 1, eligible: 0, wave3: 1 });
+    const meta = JSON.parse(record.meta);
+    expect(meta.launchEligible).toBe(false);
+    expect(meta.publishPriority).toBe('wave3');
+    expect(meta.venueType).toBe('conference');
+  });
+
+  it('refuses to classify when a slug is in both wave1 and proceedings (no network call)', async () => {
+    const graphql = vi.fn();
+    const client: EvidenceGraphqlClient = { graphql };
+
+    await expect(classifyPublications(
+      client,
+      { 'pub-x': ['A', 'primary'] },
+      new Set(['pub-x']),
+      new Set(['pub-x']),
+    )).rejects.toThrow(/wave1 and proceedings sets must be disjoint.*pub-x/i);
+    expect(graphql).not.toHaveBeenCalled();
+  });
+
   it('treats a create mutation GraphQL error as fatal', async () => {
     const client: EvidenceGraphqlClient = {
       graphql: vi.fn()
@@ -307,21 +350,35 @@ describe('evidence seeder safety contracts', () => {
 
     const wave1Block = classifier.slice(
       classifier.indexOf('const WAVE1'),
+      classifier.indexOf('const PROCEEDINGS'),
+    );
+    // Anchor the slug shape (`pub-…`) so a stray apostrophe in a comment inside
+    // these marker regions can't inject a garbage "slug" into the sets.
+    const wave1 = new Set([...wave1Block.matchAll(/'(pub-[^']+)'/g)].map(([, slug]) => slug));
+
+    const proceedingsBlock = classifier.slice(
+      classifier.indexOf('const PROCEEDINGS'),
       classifier.indexOf('async function main'),
     );
-    const wave1 = new Set([...wave1Block.matchAll(/'([^']+)'/g)].map(([, slug]) => slug));
+    const proceedings = new Set(
+      [...proceedingsBlock.matchAll(/'(pub-[^']+)'/g)].map(([, slug]) => slug),
+    );
+
+    // wave1 and proceedings must be disjoint — the classifier throws otherwise, and
+    // a "held hero" would never converge against excludeProceedingsFromLaunch.
+    expect([...proceedings].some((slug) => wave1.has(slug))).toBe(false);
 
     // Recompute exactly what classifyPublications() derives — from the source of
-    // truth (CLASS) — instead of string-matching the prose. A future CLASS edit
-    // that desyncs the README now fails this test.
+    // truth (CLASS + PROCEEDINGS) — instead of string-matching the prose. A future
+    // CLASS/PROCEEDINGS edit that desyncs the README now fails this test.
     const d: Record<string, number> = {
       total: entries.length, A: 0, B: 0, eligible: 0, wave1: 0, wave2: 0, wave3: 0,
     };
     for (const { slug, tier, role } of entries) {
       d[tier]++;
-      const launchEligible = tier === 'A' && role !== 'incidental';
+      const launchEligible = tier === 'A' && role !== 'incidental' && !proceedings.has(slug);
       if (launchEligible) d.eligible++;
-      d[wave1.has(slug) ? 'wave1' : launchEligible ? 'wave2' : 'wave3']++;
+      d[proceedings.has(slug) ? 'wave3' : wave1.has(slug) ? 'wave1' : launchEligible ? 'wave2' : 'wave3']++;
     }
 
     // Reconstructed legacy tail slugs must not sneak back in as invented data.
@@ -407,6 +464,60 @@ describe('evidence seeder safety contracts', () => {
     };
     const res = await publishLaunchEligible(client, { apply: false, publishDate: '2026-07-18T00:00:00.000Z' });
     expect(res).toMatchObject({ eligible: 1, published: 0, byProduct: { 'icp-etcher': 1 } });
+  });
+
+  it('excludes + unpublishes a proceedings record, is dry-run-safe, and converges', async () => {
+    let record: any = {
+      id: 'raits', slug: 'pub-conf', type: 'publication', status: 'published',
+      publishDate: '2026-07-19T00:00:00.000Z',
+      meta: JSON.stringify({
+        journal: '2026 International Conference (IEEE)', year: 2026,
+        launchEligible: true, publishPriority: 'wave2', verificationTier: 'A',
+      }),
+    };
+    let writes = 0;
+    const client: EvidenceGraphqlClient = {
+      graphql: vi.fn(async (request: any) => {
+        if (request.variables.slug) {
+          return { data: { listEvidenceBySlug: { items: [record] } } };
+        }
+        writes++;
+        record = { ...record, ...request.variables.input };
+        return { data: { updateEvidence: { id: record.id, slug: record.slug, status: record.status } } };
+      }),
+    };
+    const exclusion = { slug: 'pub-conf', journal: 'IEEE RAITS' };
+
+    // Dry-run: reports the pending change, writes nothing.
+    await expect(excludeProceedingsFromLaunch(client, exclusion, { apply: false }))
+      .resolves.toBe('would-exclude');
+    expect(writes).toBe(0);
+    expect(record.status).toBe('published');
+
+    // Apply: unpublishes + rewrites meta.
+    await expect(excludeProceedingsFromLaunch(client, exclusion, { apply: true }))
+      .resolves.toBe('excluded');
+    expect(record.status).toBe('draft');
+    const meta = JSON.parse(record.meta);
+    expect(meta.journal).toBe('IEEE RAITS');
+    expect(meta.venueType).toBe('conference');
+    expect(meta.launchEligible).toBe(false);
+    expect(meta.publishPriority).toBe('wave3');
+
+    // Re-run converges with no further write.
+    await expect(excludeProceedingsFromLaunch(client, exclusion, { apply: true }))
+      .resolves.toBe('converged');
+    expect(writes).toBe(1);
+  });
+
+  it('reports a missing proceedings record without writing', async () => {
+    const client: EvidenceGraphqlClient = {
+      graphql: vi.fn(async () => ({ data: { listEvidenceBySlug: { items: [] } } })),
+    };
+    await expect(
+      excludeProceedingsFromLaunch(client, { slug: 'nope', journal: 'IEEE RAITS' }, { apply: true }),
+    ).resolves.toBe('missing');
+    expect(client.graphql).toHaveBeenCalledTimes(1);
   });
 
   it('never publishes an archived record even when launchEligible', async () => {
