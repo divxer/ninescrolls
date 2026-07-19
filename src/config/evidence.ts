@@ -105,6 +105,12 @@ const PLATFORM_LABEL: Record<string, string> = {
   // named directly rather than using the "…we represent" discretion wording.
   'e-beam-evaporator': 'the MEB-600 e-beam evaporation platform',
   'plasma-cleaner': 'the plasma cleaner platform we represent',
+  // Per-model plasma-cleaner SKU pages query by their own slug; same platform-level
+  // wording (never the OEM).
+  'pluto-t': 'the plasma cleaner platform we represent',
+  'pluto-f': 'the plasma cleaner platform we represent',
+  'pluto-m': 'the plasma cleaner platform we represent',
+  'pluto-30': 'the plasma cleaner platform we represent',
 };
 export function productPlatformLabel(slug: string): string {
   return PLATFORM_LABEL[slug] ?? 'the platform we represent';
