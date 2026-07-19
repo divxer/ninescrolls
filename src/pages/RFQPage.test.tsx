@@ -609,4 +609,19 @@ describe('RFQPage step 1 UX & accessibility', () => {
     renderRfq('/request-quote');
     expect(screen.getByText(/nothing is submitted yet/i)).toBeInTheDocument();
   });
+
+  it('replaces the time estimate with a final-step hint on Step 2', async () => {
+    renderRfq('/request-quote?category=ICP');
+    fireEvent.change(screen.getByLabelText(/Full Name/i), { target: { value: 'Ada Lovelace' } });
+    fireEvent.change(screen.getByLabelText(/^Email/i), { target: { value: 'ada@example.edu' } });
+    fireEvent.change(screen.getByLabelText(/Institution/i), { target: { value: 'Example Lab' } });
+    fireEvent.change(screen.getByLabelText(/Application \/ Research Goal/i), {
+      target: { value: 'Deep silicon etching process development for MEMS sensors.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Continue to Project Details/i }));
+    await waitFor(() => expect(screen.getByLabelText(/Preferred Model/i)).toBeInTheDocument());
+    // On Step 2 the "about 3–5 minutes" estimate would overstate the remaining time.
+    expect(screen.queryByText(/3–5 minutes/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/final step/i)).toBeInTheDocument();
+  });
 });

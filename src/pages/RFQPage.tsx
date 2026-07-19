@@ -165,8 +165,9 @@ const initialFormData: RFQFormData = {
 // (the prior behavior) left AT and keyboard users stranded at the button.
 const FIELD_FOCUS_ORDER = [
   'name', 'email', 'phone', 'institution', 'department', 'equipmentCategory', 'applicationDescription',
-  'specificModel', 'keySpecifications', 'quantity', 'existingEquipment', 'additionalComments',
+  'keySpecifications', 'specificModel', 'quantity',
   'shippingAddress', 'shippingCity', 'shippingState', 'shippingZipCode',
+  'existingEquipment', 'additionalComments',
 ];
 
 function focusFirstError(errors: FieldErrors) {
@@ -776,7 +777,7 @@ export function RFQPage() {
               {currentStep === 1 ? 'Your Information' : 'Project Details'}
               {' · '}
             </span>
-            About 3–5 minutes · 2 steps
+            {currentStep === 1 ? 'About 3–5 minutes · 2 steps' : 'Final step'}
           </p>
 
           <form onSubmit={handleSubmit} ref={formRef} noValidate>
