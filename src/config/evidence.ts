@@ -51,11 +51,45 @@ export function hasPayload(input: PayloadInput): boolean {
   return nonBlank(input.articleSlug) || nonBlank(input.pdfUrl) || nonBlank(input.sourceUrl) || hasImages;
 }
 
-export type EvidenceTypeCount = { type: EvidenceType; label: string; count: number };
-export function countEvidenceByType(records: { type: string }[]): EvidenceTypeCount[] {
-  const counts = new Map<string, number>();
-  for (const r of records) counts.set(r.type, (counts.get(r.type) ?? 0) + 1);
-  return EVIDENCE_TYPE_ORDER
-    .filter((type) => (counts.get(type) ?? 0) > 0)
-    .map((type) => ({ type, label: evidenceTypeLabel(type), count: counts.get(type)! }));
+// --- Phase 2 product-page rendering helpers ---
+
+// Curated short badges for well-known journals. Unmapped journals show their
+// full name (no badge). Never fabricate an abbreviation — add entries explicitly.
+const JOURNAL_BADGE_RAW: Record<string, string> = {
+  'Light: Science & Applications': 'LSA',
+  'Laser & Photonics Reviews': 'LPR',
+  'Nature Communications': 'Nat. Commun.',
+  'Science Advances': 'Sci. Adv.',
+  'Nano Letters': 'Nano Lett.',
+  'Advanced Materials': 'Adv. Mater.',
+  'Advanced Functional Materials': 'Adv. Funct. Mater.',
+  'Advanced Optical Materials': 'Adv. Opt. Mater.',
+  'ACS Applied Nano Materials': 'ACS ANM',
+  'ACS Applied Materials & Interfaces': 'ACS AMI',
+};
+// Normalize keys once so lookups tolerate case/whitespace drift in stored
+// journal names (defensive — the seeded values are exact today).
+const norm = (s: string) => s.toLowerCase().trim();
+const JOURNAL_BADGE = new Map(
+  Object.entries(JOURNAL_BADGE_RAW).map(([name, abbr]) => [norm(name), abbr]),
+);
+export function journalBadge(journal?: string | null): string | null {
+  if (!journal) return null;
+  return JOURNAL_BADGE.get(norm(journal)) ?? null;
+}
+
+// Represented-platform wording per product line. NEVER names the OEM. Falls back
+// to a generic phrase for lines without bespoke wording.
+const PLATFORM_LABEL: Record<string, string> = {
+  'icp-etcher': 'the ICP etching platform we represent',
+  'rie-etcher': 'the RIE etching platform we represent',
+  'compact-rie': 'the RIE etching platform we represent',
+  'pecvd': 'the PECVD platform we represent',
+  'hdp-cvd': 'the CVD platform we represent',
+  'sputter': 'the magnetron sputtering platform we represent',
+  'ibe-ribe': 'the ion-beam etching platform we represent',
+  'striper': 'the plasma-strip platform we represent',
+};
+export function productPlatformLabel(slug: string): string {
+  return PLATFORM_LABEL[slug] ?? 'the platform we represent';
 }
