@@ -55,8 +55,8 @@ export function HomeResearchValidation() {
               Peer-reviewed validation for the platforms we represent.
             </h2>
             <p className="mt-6 text-base leading-8 text-slate-600">
-              Research using corresponding plasma, deposition, and vacuum process platforms has appeared
-              in Nature Portfolio journals, Science Advances, Physical Review, and more.
+              Independent labs at universities and research institutes have used the plasma, deposition,
+              and vacuum process platforms we represent in their published work.
             </p>
             {hasData ? (
               <>

@@ -77,9 +77,10 @@ describe('HomePage redesign', () => {
     const pageText = document.body.textContent ?? '';
 
     // Evergreen framing always renders (heading + intro), independent of the
-    // runtime Evidence fetch.
+    // runtime Evidence fetch. Specific journal names live in the data-driven
+    // hero/cards, NOT the evergreen copy (avoids duplicating the journal list).
     expect(pageText).toContain('Peer-reviewed validation for the platforms we represent.');
-    expect(pageText).toContain('Nature Portfolio');
+    expect(pageText).toContain('Independent labs at universities and research institutes have used the plasma, deposition');
 
     // The old hardcoded, drift-prone content is GONE — cards + the count are now
     // fetched from published Evidence at runtime (HomeResearchValidation), not
