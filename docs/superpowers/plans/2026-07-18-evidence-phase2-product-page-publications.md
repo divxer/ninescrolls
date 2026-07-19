@@ -41,6 +41,8 @@
 - Modify: `amplify/functions/evidence-api/handler.ts`
 - Test: `amplify/functions/evidence-api/handler.test.ts`
 
+> **Note (no change needed):** the existing `contains(products, :slug)` filter is safe. `products` is declared `a.string().array()` in `amplify/data/resource.ts`, which Amplify maps to a **native DynamoDB List** — so `contains` is exact **element** matching, not substring matching. No cross-matching between product slugs. This task only adds the projection to the returned items; the filter is unchanged. (Scan-over-table is fine at this scale; a `status` GSI is a deliberately deferred optimization per the spec, revisited at ~100–200 records.)
+
 - [ ] **Step 1: Write the failing tests** — append inside the existing `describe('evidence-api listPublishedEvidence', …)` block in `handler.test.ts`:
 
 ```ts
@@ -478,7 +480,9 @@ export function ProductEvidence({ productSlug }: ProductEvidenceProps) {
   useEffect(() => {
     let active = true;
     fetchPublishedEvidence(productSlug).then((all) => {
-      if (active) setRecords(all.filter((r) => r.type === 'publication'));
+      // `r?.type` is defensive: tolerate a null/malformed array element rather
+      // than throwing and blanking the whole page.
+      if (active) setRecords(all.filter((r) => r?.type === 'publication'));
     });
     return () => { active = false; };
   }, [productSlug]);
@@ -825,7 +829,14 @@ async function harvestSensitive(): Promise<string[]> {
       if (typeof v === 'string' && v.trim().length >= 3) values.add(v);
     }
   }
-  return [...values];
+  // Drop any harvested token that is a substring of a known-safe product slug
+  // (e.g. a bare "ICP" would false-positive against the payload's own `products`
+  // field). Distinctive brand/model strings are never product-slug substrings,
+  // so they are retained.
+  return [...values].filter((token) => {
+    const t = token.toLowerCase();
+    return !PRODUCTS.some((slug) => slug.includes(t));
+  });
 }
 
 async function main() {
