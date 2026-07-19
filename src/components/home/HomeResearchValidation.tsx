@@ -36,6 +36,15 @@ export function HomeResearchValidation() {
   const count = verifiedCount ?? pubs?.length ?? 0;
   const hasData = cards.length > 0;
 
+  // Quality is the hero (journal prestige), not the raw count — the count is a
+  // supporting fact. Journal breadth is floored to a round "N+" and only shown
+  // when it's substantial; otherwise a generic phrase.
+  const journalCount = pubs ? new Set(pubs.map((p) => p.journal).filter(Boolean)).size : 0;
+  const journalFloor = Math.floor(journalCount / 5) * 5;
+  const journalPhrase = journalFloor >= 10
+    ? `${journalFloor}+ peer-reviewed journals`
+    : 'other leading peer-reviewed journals';
+
   return (
     <section id="research" className="scroll-mt-24 border-y border-slate-200 bg-white px-6 py-24 md:px-10 lg:px-16">
       <div className="mx-auto max-w-screen-2xl">
@@ -51,9 +60,13 @@ export function HomeResearchValidation() {
             </p>
             {hasData ? (
               <>
-                <p className="mt-8 font-mono text-5xl font-semibold tracking-normal text-slate-950">{count}</p>
-                <p className="mt-2 text-sm font-semibold leading-6 text-slate-500">
-                  peer-reviewed studies across the platforms we represent
+                {/* Hero = quality (journal prestige), not a raw count. */}
+                <p className="mt-8 font-headline text-2xl font-semibold leading-snug text-slate-950 md:text-3xl">
+                  Published across Nature Portfolio, Science Advances, and {journalPhrase}.
+                </p>
+                {/* The count is a supporting fact, deliberately small. */}
+                <p className="mt-3 text-sm font-semibold leading-6 text-slate-500">
+                  {count} verified studies across the platforms we represent · and growing
                 </p>
               </>
             ) : null}
