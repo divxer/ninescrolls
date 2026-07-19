@@ -54,6 +54,8 @@
 
 Note: `Buyer’s` uses U+2019; `current–voltage` uses U+2013. `cells` is dimension-major: `cells[row][col]` where row follows `dimensions`, col follows `types`.
 
+**ESLint character discipline (applies to every task touching the .ts test file):** in `typesArticle.test.ts` string/regex literals, write typographic characters as Unicode escapes — `’` for ’, `–` for – — never as raw characters (`no-irregular-whitespace` family lesson from PR #327). The JSON file keeps the real characters (content is data, not lint-scoped).
+
 - [ ] **Step 2: Write failing cell-rule tests** — create `src/pages/probeStations/typesArticle.test.ts`:
 
 ```ts
@@ -301,7 +303,7 @@ git -C <worktree> commit -m "feat(article): types article head, framework, first
   - Silicon-photonics profile links `<a href="/applications/silicon-photonics-probing">…</a>`.
   - RF profile: no GHz/frequency digits; calibration workflow emphasis.
 
-- [ ] **Step 2: Insert the matrix figure + HTML table.** Figure block mirrors the cryo article's `<picture>` pattern with CDN URLs `https://cdn.ninescrolls.com/insights/types-of-wafer-probe-stations/type-matrix-{sm,md,lg,xl}.{webp,png}` (img fallback = `type-matrix-lg.png`, `loading="lazy"`), followed by `<figcaption>An illustrative comparison. Configuration determines actual capability; verify each dimension against the quoted system.</figcaption>`, followed by the responsive table: `<div class="table-scroll" style="overflow-x:auto">` wrapping a 7-column table (dimension label column + 6 types), every cell text pasted VERBATIM from `typeMatrixContent.json` (the test enforces byte equality). Alt text for the figure (kelvin-free, unit-free): "Six wafer probe station types compared across environment hardware, best-fit applications, cost drivers, and the buyer's key question: standard ambient, cryogenic, high-temperature, vacuum, RF and microwave, and silicon photonics."
+- [ ] **Step 2: Insert the matrix figure + HTML table.** Figure block mirrors the cryo article's `<picture>` pattern with CDN URLs `https://cdn.ninescrolls.com/insights/types-of-wafer-probe-stations/type-matrix-{sm,md,lg,xl}.{webp,png}` (img fallback = `type-matrix-lg.png`, `loading="lazy"`), followed by `<figcaption>An illustrative comparison. Configuration determines actual capability; verify each dimension against the quoted system.</figcaption>`, followed by the responsive table: `<div class="table-scroll" style="overflow-x:auto">` wrapping a 7-column table (dimension label column + 6 types), every cell text pasted VERBATIM from `typeMatrixContent.json` (the test enforces byte equality). Mobile defense: give type-column `<td>`/`<th>` cells `min-width:150px` (inline style or the article table class) so narrow viewports scroll horizontally smoothly instead of crushing columns into vertical word-break stacks; verify at 375px in Task 8 Step 2. Alt text for the figure (kelvin-free, unit-free): "Six wafer probe station types compared across environment hardware, best-fit applications, cost drivers, and the buyer's key question: standard ambient, cryogenic, high-temperature, vacuum, RF and microwave, and silicon photonics."
 
 - [ ] **Step 3: Write the Type-selection checklist** (RFQ-ready, acceptance-criteria style: 6–8 `<li>` items phrased as verifiable requests to a vendor — no numbers), then "Where NineScrolls Fits" (registry-safe: US & Canada sales/support framing, link `/wafer-probe-stations/semishare`; NO partner/authorized wording), then Further reading (links to #1, #2, #3) and References wrapped in the exemption markers:
 
@@ -510,7 +512,7 @@ These steps run after merge, in the established order. They are recorded here as
 6. Owner reviews and publishes in `/admin/insights/<id>/edit`.
 7. llms entries (74→75) in `public/llms.txt` + `public/llms-full.txt`, `npx tsx scripts/check-llms-sync.ts` (expect in-sync), commit to main.
 8. GSC URL Inspection → Request Indexing (property `sc-domain:ninescrolls.com`, Chrome profile /u/2/).
-9. **LAST — reciprocal backlinks** (spec §Post-deployment hooks): separate commits, one per article — add a link to #4 from article #1 (five-decisions frame → types survey) and from article #3 (Further reading); run each article's guard test file; sync each via `npx tsx scripts/update-insight-from-html.ts <slug> <html-path>`.
+9. **LAST — reciprocal backlinks** (spec §Post-deployment hooks): one article at a time, "single change, single test, single sync": edit article #1's HTML → run `probeStationArticle.test.ts` locally on main → commit → `update-insight-from-html.ts`; then repeat for article #3 with `cryoBuyersGuideArticle.test.ts`. Never batch the two edits into one commit; the per-article guard run protects existing KELVIN/brand constraints from being tripped by the new link sentence.
 
 ---
 
