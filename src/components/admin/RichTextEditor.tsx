@@ -29,6 +29,7 @@ import 'tinymce/plugins/autoresize';
 import 'tinymce/skins/ui/oxide/skin.min.css';
 
 import { getImageUploadUrl, uploadImageToS3, processImage } from '../../services/insightsImageService';
+import { RICH_TEXT_EDITOR_CONTENT_SETTINGS } from './richTextEditorContentSettings';
 
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -166,8 +167,7 @@ export function RichTextEditor({ value, onChange, placeholder, slug }: RichTextE
             placeholder: placeholder || '',
 
             document_base_url: window.location.origin + '/',
-            relative_urls: false,
-            convert_urls: false,
+            ...RICH_TEXT_EDITOR_CONTENT_SETTINGS,
 
             plugins: [
               'advlist', 'autolink', 'lists', 'link', 'image',
@@ -184,11 +184,6 @@ export function RichTextEditor({ value, onChange, placeholder, slug }: RichTextE
 
             block_formats: 'Paragraph=p; Heading 1=h1; Heading 2=h2; Heading 3=h3; Heading 4=h4',
 
-            entity_encoding: 'raw' as const,
-
-            valid_elements: '*[*]',
-            extended_valid_elements: 'th[*],td[*],tr[*],thead[*],tbody[*],table[*]',
-
             file_picker_types: 'image',
             file_picker_callback: handleImageUpload,
 
@@ -200,7 +195,6 @@ export function RichTextEditor({ value, onChange, placeholder, slug }: RichTextE
               'width': '100%',
             },
 
-            forced_root_block: 'p' as const,
             branding: false,
             promotion: false,
           }}
