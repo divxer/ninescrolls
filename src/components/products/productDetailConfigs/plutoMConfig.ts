@@ -9,7 +9,6 @@ const plutoMWithPumpImage = '/assets/images/redesign/products/pluto-m-with-pump.
 // - amplify/functions/calculate-tax/productCatalog.ts
 export const plutoMConfig: ProductDetailConfig = {
   slug: 'pluto-m',
-  evidenceProductSlug: 'plasma-cleaner',
   seo: {
     title: 'PLUTO-M Mid-Capacity RF Plasma Cleaner',
     description: 'Mid-capacity 200 W RF plasma cleaner (13.56 MHz) with ~8L stainless steel chamber, gas-shower electrode, recipe storage, and two-stage vacuum system for multi-sample batches.',

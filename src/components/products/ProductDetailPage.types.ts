@@ -67,10 +67,12 @@ export interface ProductDetailGallerySection {
 export interface ProductDetailConfig {
   slug: string;
   /**
-   * Product-line slug used to query published Evidence, when it differs from the
-   * per-SKU `slug`. E.g. the Pluto-T/F/M/30 pages all share the `plasma-cleaner`
-   * evidence line. Defaults to `slug` when omitted (lines where the page slug
-   * already equals the evidence product slug).
+   * Optional override: the product-line slug used to query published Evidence,
+   * for a page whose evidence lives under a slug other than its per-SKU `slug`.
+   * Defaults to `slug` when omitted. No config currently sets this — the Pluto
+   * SKU pages query per-model by their own `slug`, and the plasma-cleaner overview
+   * mounts `<ProductEvidence productSlug="plasma-cleaner">` directly. Kept as a
+   * general escape hatch for future lines where the two slugs diverge.
    */
   evidenceProductSlug?: string;
   seo: {
