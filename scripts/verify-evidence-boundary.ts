@@ -12,11 +12,15 @@
 import { Amplify } from 'aws-amplify';
 import { generateClient } from 'aws-amplify/data';
 import outputs from '../amplify_outputs.json';
-import type { Schema } from '../amplify/data/resource';
 import { EVIDENCE_STATUS } from '../amplify/lib/evidence/status';
+import { type EvidenceGraphqlClient } from './lib/evidenceSeedOperations';
+import { assertBaseEvidenceReadDenied, readPublishedEvidence } from './lib/evidencePublicRead';
 
 Amplify.configure(outputs);
-const client = generateClient<Schema>({ authMode: 'apiKey' });
+// Raw apiKey GraphQL (not the typed .queries/.models accessors) so a stale
+// amplify_outputs.json introspection can't make this crash — see
+// ./lib/evidencePublicRead. authMode is passed per request.
+const client = generateClient() as unknown as EvidenceGraphqlClient;
 
 const TEST_TITLE = process.env.EVIDENCE_TEST_TITLE;
 const EXPECT = process.env.EVIDENCE_EXPECT; // draft | published | archived
@@ -30,33 +34,14 @@ async function main() {
 
   // (a) base-model public read must be DENIED *by authorization* — not merely
   // "errored". A schema/resolver/service error must NOT be mistaken for a denial.
-  const baseRead = await client.models.Evidence.list();
-  if (!baseRead.errors || baseRead.errors.length === 0) {
-    throw new Error('SECURITY FAIL: base Evidence model is publicly readable via apiKey');
-  }
-  // AppSync surfaces authorization failures with errorType 'Unauthorized'
-  // (occasionally 'UnauthorizedException'). Fall back to a message match only if
-  // the deployed error shape lacks errorType — confirm against the sandbox's
-  // actual response and tighten if needed.
-  const isAuthDenial = (e: { errorType?: string; message?: string }) =>
-    e.errorType === 'Unauthorized' ||
-    e.errorType === 'UnauthorizedException' ||
-    /not\s*authorized|unauthorized/i.test(e.message ?? '');
-  if (!baseRead.errors.some(isAuthDenial)) {
-    throw new Error(`SECURITY FAIL: expected an authorization denial on the base model, got: ${JSON.stringify(baseRead.errors)}`);
-  }
-  console.log('OK: base model apiKey read denied (authorization):', baseRead.errors.find(isAuthDenial)?.message);
+  // Uses a raw `listEvidences` query under apiKey (see ./lib/evidencePublicRead).
+  const denialMessage = await assertBaseEvidenceReadDenied(client);
+  console.log('OK: base model apiKey read denied (authorization):', denialMessage);
 
   // (b) custom query must SUCCEED — a null/errored response is a failure, not [].
-  const res = await client.queries.listPublishedEvidence({ productSlug: PRODUCT });
-  if (res.errors?.length) {
-    throw new Error(`SECURITY FAIL: listPublishedEvidence errored: ${res.errors.map((e) => e.message).join(', ')}`);
-  }
-  const parsed = typeof res.data === 'string' ? JSON.parse(res.data) : res.data;
-  if (!Array.isArray(parsed)) {
-    throw new Error(`SECURITY FAIL: listPublishedEvidence returned a non-array payload: ${JSON.stringify(res.data)}`);
-  }
-  const items = parsed as { title?: string; status: string }[];
+  // readPublishedEvidence throws on errors and on a null/non-array payload.
+  const { records } = await readPublishedEvidence(client, PRODUCT);
+  const items = records as { title?: string; status: string }[];
 
   // every returned record must be published
   const leaked = items.filter((e) => e.status !== EVIDENCE_STATUS.PUBLISHED);
