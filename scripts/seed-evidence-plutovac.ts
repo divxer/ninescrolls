@@ -129,7 +129,18 @@ async function main() {
 
   let created = 0, skipped = 0;
   for (const [slug, title, doi, sourceUrl, instrument, journal, year, role, tier, priority, quote] of NEW) {
-    const launchEligible = tier === 'A' && role !== 'incidental';
+    // Preprints are never launch-eligible while held — otherwise the GLOBAL
+    // publish-launch-eligible-evidence.ts (which publishes ANY launchEligible
+    // draft, product-agnostic) would auto-publish a held preprint.
+    const isPreprint = /arxiv/i.test(journal);
+    // CATEGORY EXCEPTION (do not "fix" this back): for the plasma-cleaner line,
+    // tier-A peer-reviewed JOURNAL papers are launch-worthy even when
+    // capabilityRole==='incidental' (surface cleaning/activation/bonding-prep IS
+    // the tool's designed purpose). That promotion is applied at PUBLISH time by
+    // scripts/publish-plutovac-evidence.ts (stamps launchEligible=true +
+    // launchRationale). A future plutovac classifier must NOT re-derive these
+    // incidental records back to launchEligible=false with the generic formula.
+    const launchEligible = tier === 'A' && role !== 'incidental' && !isPreprint;
     const meta = {
       manufacturerAsNamed: MANUFACTURER,
       manufacturerLegalName: MANUFACTURER_LEGAL,

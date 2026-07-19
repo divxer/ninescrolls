@@ -32,7 +32,7 @@ export interface FalsePositiveCorrection {
 }
 
 const AUTH = { authMode: 'userPool' as const };
-const BY_SLUG = `query EvidenceBySlug($slug:String!){ listEvidenceBySlug(slug:$slug,limit:1){ items{ id slug type status meta summary products } } }`;
+const BY_SLUG = `query EvidenceBySlug($slug:String!){ listEvidenceBySlug(slug:$slug,limit:1){ items{ id slug type status meta summary products publishDate } } }`;
 const CREATE = `mutation CreateEvidence($input:CreateEvidenceInput!){ createEvidence(input:$input){ id slug } }`;
 const UPDATE = `mutation UpdateEvidence($input:UpdateEvidenceInput!){ updateEvidence(input:$input){ id slug status meta } }`;
 const LIST = `query ListEvidence($nextToken:String){ listEvidences(limit:200,nextToken:$nextToken){ items{ id slug type status meta products publishDate } nextToken } }`;
