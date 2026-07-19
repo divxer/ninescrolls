@@ -10,6 +10,7 @@ export interface EvidenceRecord {
   meta?: string | null;
   summary?: string | null;
   products?: string[] | null;
+  publishDate?: string | null;
 }
 
 export type Classification = [
@@ -34,7 +35,7 @@ const AUTH = { authMode: 'userPool' as const };
 const BY_SLUG = `query EvidenceBySlug($slug:String!){ listEvidenceBySlug(slug:$slug,limit:1){ items{ id slug type status meta summary products } } }`;
 const CREATE = `mutation CreateEvidence($input:CreateEvidenceInput!){ createEvidence(input:$input){ id slug } }`;
 const UPDATE = `mutation UpdateEvidence($input:UpdateEvidenceInput!){ updateEvidence(input:$input){ id slug status meta } }`;
-const LIST = `query ListEvidence($nextToken:String){ listEvidences(limit:200,nextToken:$nextToken){ items{ id slug type status meta } nextToken } }`;
+const LIST = `query ListEvidence($nextToken:String){ listEvidences(limit:200,nextToken:$nextToken){ items{ id slug type status meta products publishDate } nextToken } }`;
 
 // No-leak boundary: seeders create review-only drafts. Nothing here may create a
 // public record — publishing is a deliberate, separate Phase-2 step.
@@ -214,6 +215,63 @@ export async function correctFalsePositives(
     tally.archived++;
   }
   return tally;
+}
+
+export async function listRawEvidence(client: EvidenceGraphqlClient): Promise<EvidenceRecord[]> {
+  const items: EvidenceRecord[] = [];
+  let nextToken: string | null = null;
+  do {
+    const result = await checkedGraphql<ListResponse>(client, {
+      query: LIST,
+      variables: { nextToken },
+      ...AUTH,
+    }, 'list evidence');
+    const page = result.data.listEvidences;
+    if (!Array.isArray(page?.items)) {
+      throw new Error('list evidence failed: missing items array');
+    }
+    items.push(...page.items);
+    nextToken = page.nextToken ?? null;
+  } while (nextToken);
+  return items;
+}
+
+export async function publishLaunchEligible(
+  client: EvidenceGraphqlClient,
+  options: { apply: boolean; publishDate: string },
+): Promise<{ eligible: number; published: number; alreadyPublished: number; byProduct: Record<string, number> }> {
+  const items = await listRawEvidence(client);
+
+  const eligible = items.filter(
+    (item) => item.type === 'publication' && parseMeta(item).launchEligible === true,
+  );
+
+  const byProduct: Record<string, number> = {};
+  let published = 0;
+  let alreadyPublished = 0;
+  for (const record of eligible) {
+    for (const product of record.products ?? []) {
+      byProduct[product] = (byProduct[product] ?? 0) + 1;
+    }
+    if (record.status === 'published') {
+      alreadyPublished++;
+      continue;
+    }
+    if (!options.apply) continue;
+
+    const input: Record<string, unknown> = { id: record.id, status: 'published' };
+    if (!record.publishDate) input.publishDate = options.publishDate;
+    const result = await checkedGraphql<UpdateResponse>(client, {
+      query: UPDATE,
+      variables: { input },
+      ...AUTH,
+    }, `publish ${record.slug}`);
+    if (result.data.updateEvidence?.status !== 'published') {
+      throw new Error(`publish ${record.slug} failed: published postcondition not met`);
+    }
+    published++;
+  }
+  return { eligible: eligible.length, published, alreadyPublished, byProduct };
 }
 
 export async function classifyPublications(

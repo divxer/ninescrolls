@@ -6,6 +6,7 @@ import {
   classifyPublications,
   correctFalsePositives,
   createEvidenceIfMissing,
+  publishLaunchEligible,
   refineEvidence,
   requireApply,
   type EvidenceGraphqlClient,
@@ -360,5 +361,51 @@ describe('evidence seeder safety contracts', () => {
     expect(() => requireApply(['--apply', '--apply'], 'seed')).toThrow(/exactly one/i);
     expect(() => requireApply(['--apply', '--force'], 'seed')).toThrow(/unknown argument/i);
     expect(() => requireApply(['--apply'], 'seed')).not.toThrow();
+  });
+
+  it('publishes only launch-eligible drafts, stamps publishDate, and is convergent', async () => {
+    const seed = [
+      { id: 'a', slug: 'pub-a', type: 'publication', status: 'draft', products: ['icp-etcher'], meta: JSON.stringify({ launchEligible: true }) },
+      { id: 'b', slug: 'pub-b', type: 'publication', status: 'draft', products: ['rie-etcher'], meta: JSON.stringify({ launchEligible: false }) },
+      { id: 'c', slug: 'pub-c', type: 'publication', status: 'published', products: ['icp-etcher'], publishDate: '2026-01-01', meta: JSON.stringify({ launchEligible: true }) },
+    ];
+    const store = new Map(seed.map((r) => [r.id, { ...r }]));
+    let writes = 0;
+    const client: EvidenceGraphqlClient = {
+      graphql: vi.fn(async (request: any) => {
+        if (!request.variables.input) {
+          return { data: { listEvidences: { items: [...store.values()], nextToken: null } } };
+        }
+        writes++;
+        const cur = store.get(request.variables.input.id)!;
+        const next = { ...cur, ...request.variables.input };
+        store.set(cur.id, next);
+        return { data: { updateEvidence: { id: next.id, slug: next.slug, status: next.status } } };
+      }),
+    };
+
+    // publishDate is a full ISO 8601 datetime, matching the admin auto-stamp path.
+    const first = await publishLaunchEligible(client, { apply: true, publishDate: '2026-07-18T09:00:00.000Z' });
+    expect(first).toMatchObject({ eligible: 2, published: 1, alreadyPublished: 1 });
+    expect(store.get('a')!.status).toBe('published');
+    expect(store.get('a')!.publishDate).toBe('2026-07-18T09:00:00.000Z');
+    expect(store.get('c')!.publishDate).toBe('2026-01-01'); // preserved, not overwritten
+
+    const second = await publishLaunchEligible(client, { apply: true, publishDate: '2026-07-19T00:00:00.000Z' });
+    expect(second).toMatchObject({ eligible: 2, published: 0, alreadyPublished: 2 });
+    expect(writes).toBe(1);
+  });
+
+  it('dry-run reports eligible + byProduct and writes nothing', async () => {
+    const client: EvidenceGraphqlClient = {
+      graphql: vi.fn(async (request: any) => {
+        if (request.variables.input) throw new Error('dry-run must not write');
+        return { data: { listEvidences: { items: [
+          { id: 'a', slug: 'pub-a', type: 'publication', status: 'draft', products: ['icp-etcher'], meta: JSON.stringify({ launchEligible: true }) },
+        ], nextToken: null } } };
+      }),
+    };
+    const res = await publishLaunchEligible(client, { apply: false, publishDate: '2026-07-18T00:00:00.000Z' });
+    expect(res).toMatchObject({ eligible: 1, published: 0, byProduct: { 'icp-etcher': 1 } });
   });
 });
