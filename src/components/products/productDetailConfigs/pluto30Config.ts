@@ -10,6 +10,7 @@ const pluto30DimensionsImage = '/assets/images/redesign/products/pluto-30-dimens
 
 export const pluto30Config: ProductDetailConfig = {
   slug: 'pluto-30',
+  evidenceProductSlug: 'plasma-cleaner',
   seo: {
     title: 'PLUTO-30 Batch RF Plasma System',
     description:
