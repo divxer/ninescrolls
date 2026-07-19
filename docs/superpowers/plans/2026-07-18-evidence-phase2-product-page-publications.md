@@ -287,6 +287,9 @@ describe('journalBadge', () => {
     expect(journalBadge('Some Obscure Journal')).toBeNull();
     expect(journalBadge(undefined)).toBeNull();
   });
+  it('tolerates case/whitespace drift in the journal name', () => {
+    expect(journalBadge('  light: science & applications ')).toBe('LSA');
+  });
 });
 
 describe('productPlatformLabel', () => {
@@ -311,7 +314,7 @@ Expected: FAIL — `journalBadge`/`productPlatformLabel` not exported.
 
 // Curated short badges for well-known journals. Unmapped journals show their
 // full name (no badge). Never fabricate an abbreviation — add entries explicitly.
-const JOURNAL_BADGE: Record<string, string> = {
+const JOURNAL_BADGE_RAW: Record<string, string> = {
   'Light: Science & Applications': 'LSA',
   'Laser & Photonics Reviews': 'LPR',
   'Nature Communications': 'Nat. Commun.',
@@ -323,9 +326,15 @@ const JOURNAL_BADGE: Record<string, string> = {
   'ACS Applied Nano Materials': 'ACS ANM',
   'ACS Applied Materials & Interfaces': 'ACS AMI',
 };
+// Normalize keys once so lookups tolerate case/whitespace drift in stored
+// journal names (defensive — the seeded values are exact today).
+const norm = (s: string) => s.toLowerCase().trim();
+const JOURNAL_BADGE = new Map(
+  Object.entries(JOURNAL_BADGE_RAW).map(([name, abbr]) => [norm(name), abbr]),
+);
 export function journalBadge(journal?: string | null): string | null {
   if (!journal) return null;
-  return JOURNAL_BADGE[journal] ?? null;
+  return JOURNAL_BADGE.get(norm(journal)) ?? null;
 }
 
 // Represented-platform wording per product line. NEVER names the OEM. Falls back
@@ -606,13 +615,14 @@ const LIST = `query ListEvidence($nextToken:String){ listEvidences(limit:200,nex
       }),
     };
 
-    const first = await publishLaunchEligible(client, { apply: true, publishDate: '2026-07-18' });
+    // publishDate is a full ISO 8601 datetime, matching the admin auto-stamp path.
+    const first = await publishLaunchEligible(client, { apply: true, publishDate: '2026-07-18T09:00:00.000Z' });
     expect(first).toMatchObject({ eligible: 2, published: 1, alreadyPublished: 1 });
     expect(store.get('a')!.status).toBe('published');
-    expect(store.get('a')!.publishDate).toBe('2026-07-18');
+    expect(store.get('a')!.publishDate).toBe('2026-07-18T09:00:00.000Z');
     expect(store.get('c')!.publishDate).toBe('2026-01-01'); // preserved, not overwritten
 
-    const second = await publishLaunchEligible(client, { apply: true, publishDate: '2026-07-19' });
+    const second = await publishLaunchEligible(client, { apply: true, publishDate: '2026-07-19T00:00:00.000Z' });
     expect(second).toMatchObject({ eligible: 2, published: 0, alreadyPublished: 2 });
     expect(writes).toBe(1);
   });
@@ -636,13 +646,10 @@ const LIST = `query ListEvidence($nextToken:String){ listEvidences(limit:200,nex
 Run: `npx vitest run scripts/evidenceSeedSafety.test.ts --exclude '**/.claude/**'`
 Expected: FAIL — `publishLaunchEligible` is not exported.
 
-- [ ] **Step 4: Implement `publishLaunchEligible`** — append to `scripts/lib/evidenceSeedOperations.ts`:
+- [ ] **Step 4: Implement `listRawEvidence` + `publishLaunchEligible`** — append to `scripts/lib/evidenceSeedOperations.ts`. `listRawEvidence` is the single paginated raw-list helper (also reused by the OEM scan in Task 6):
 
 ```ts
-export async function publishLaunchEligible(
-  client: EvidenceGraphqlClient,
-  options: { apply: boolean; publishDate: string },
-): Promise<{ eligible: number; published: number; alreadyPublished: number; byProduct: Record<string, number> }> {
+export async function listRawEvidence(client: EvidenceGraphqlClient): Promise<EvidenceRecord[]> {
   const items: EvidenceRecord[] = [];
   let nextToken: string | null = null;
   do {
@@ -650,14 +657,22 @@ export async function publishLaunchEligible(
       query: LIST,
       variables: { nextToken },
       ...AUTH,
-    }, 'list evidence for publish');
+    }, 'list evidence');
     const page = result.data.listEvidences;
     if (!Array.isArray(page?.items)) {
-      throw new Error('list evidence for publish failed: missing items array');
+      throw new Error('list evidence failed: missing items array');
     }
     items.push(...page.items);
     nextToken = page.nextToken ?? null;
   } while (nextToken);
+  return items;
+}
+
+export async function publishLaunchEligible(
+  client: EvidenceGraphqlClient,
+  options: { apply: boolean; publishDate: string },
+): Promise<{ eligible: number; published: number; alreadyPublished: number; byProduct: Record<string, number> }> {
+  const items = await listRawEvidence(client);
 
   const eligible = items.filter(
     (item) => item.type === 'publication' && parseMeta(item).launchEligible === true,
@@ -735,7 +750,9 @@ function parseArgs(argv: string[]): { apply: boolean } {
 async function main() {
   const { apply } = parseArgs(process.argv.slice(2));
   await authenticate();
-  const publishDate = new Date().toISOString().slice(0, 10);
+  // Full ISO 8601 datetime — identical format to the admin auto-stamp
+  // (evidenceAdminService withPublishDate uses new Date().toISOString()).
+  const publishDate = new Date().toISOString();
   const res = await publishLaunchEligible(client, { apply, publishDate });
   console.log(
     `${apply ? 'APPLIED' : 'DRY-RUN'} — launchEligible=${res.eligible} published=${res.published} alreadyPublished=${res.alreadyPublished}`,
@@ -774,44 +791,71 @@ git commit -m "feat(evidence): publish-launch-eligible operation + dry-run/apply
 
 ```ts
 // scripts/verify-evidence-no-oem.ts
-// Live acceptance: fetch the anonymous (apiKey) listPublishedEvidence payload for
-// each evidence-bearing product line and FAIL if any banned OEM name/model token
-// (or an OEM-identifying slug) appears anywhere in it. Run AFTER deploying the
-// whitelist projection and AFTER publishing.
-// Usage: npx tsx scripts/verify-evidence-no-oem.ts
+// Live acceptance: FAIL if any OEM token appears in the anonymous (apiKey)
+// listPublishedEvidence payload. Two blacklists combined:
+//   (1) static — scripts/lib/bannedOem.ts (known brand names + model strings);
+//   (2) dynamic — harvested at runtime from the AUTHENTICATED records' own
+//       sensitive meta (manufacturerAsNamed / manufacturerLegalName /
+//       instrumentAsNamed) and slugs, so even an uncatalogued model can't slip.
+// Run AFTER deploying the whitelist projection (and again AFTER publishing).
+// Usage: set -a; source .env; set +a; npx tsx scripts/verify-evidence-no-oem.ts
 import { Amplify } from 'aws-amplify';
 import { generateClient } from 'aws-amplify/data';
-import outputs from '../amplify_outputs.json';
 import type { Schema } from '../amplify/data/resource';
+import outputs from '../amplify_outputs.json';
+import { authenticate } from './lib/auth';
+import { listRawEvidence, type EvidenceGraphqlClient } from './lib/evidenceSeedOperations';
 import { findBannedTokens } from './lib/bannedOem';
 
 Amplify.configure(outputs);
-const client = generateClient<Schema>({ authMode: 'apiKey' });
 
 const PRODUCTS = ['icp-etcher', 'rie-etcher', 'pecvd', 'sputter', 'ibe-ribe', 'striper'];
+const SENSITIVE_META_KEYS = ['manufacturerAsNamed', 'manufacturerLegalName', 'instrumentAsNamed'];
+
+async function harvestSensitive(): Promise<string[]> {
+  await authenticate();
+  const authedRaw = generateClient() as unknown as EvidenceGraphqlClient;
+  const values = new Set<string>();
+  for (const rec of await listRawEvidence(authedRaw)) {
+    if (rec.slug) values.add(rec.slug);
+    let meta: Record<string, unknown> = {};
+    try { meta = rec.meta ? JSON.parse(rec.meta) : {}; } catch { meta = {}; }
+    for (const key of SENSITIVE_META_KEYS) {
+      const v = meta[key];
+      if (typeof v === 'string' && v.trim().length >= 3) values.add(v);
+    }
+  }
+  return [...values];
+}
 
 async function main() {
+  const dynamicTokens = await harvestSensitive();
+  console.log(`Harvested ${dynamicTokens.length} sensitive internal strings to scan for.`);
+  const anon = generateClient<Schema>({ authMode: 'apiKey' });
+
   let failed = false;
   for (const productSlug of PRODUCTS) {
-    const res = await client.queries.listPublishedEvidence({ productSlug });
+    const res = await anon.queries.listPublishedEvidence({ productSlug });
     if (res.errors?.length) {
       throw new Error(`listPublishedEvidence(${productSlug}) errored: ${res.errors.map((e) => e.message).join(', ')}`);
     }
     const payload = typeof res.data === 'string' ? res.data : JSON.stringify(res.data ?? []);
-    const hits = [...new Set(findBannedTokens(payload))];
-    const count = Array.isArray(JSON.parse(payload)) ? JSON.parse(payload).length : 0;
+    const lower = payload.toLowerCase();
+    const dynamicHits = dynamicTokens.filter((t) => lower.includes(t.toLowerCase()));
+    const hits = [...new Set([...findBannedTokens(payload), ...dynamicHits])];
+    const count = Array.isArray(JSON.parse(payload)) ? (JSON.parse(payload) as unknown[]).length : 0;
     if (hits.length) {
       failed = true;
       console.error(`LEAK on ${productSlug}: ${hits.join(', ')}`);
     } else {
-      console.log(`OK ${productSlug}: no banned tokens (${count} record(s))`);
+      console.log(`OK ${productSlug}: clean (${count} record(s))`);
     }
   }
   if (failed) {
-    console.error('\nSECURITY FAIL: banned OEM tokens present in a public payload.');
+    console.error('\nSECURITY FAIL: OEM tokens present in a public payload.');
     process.exit(1);
   }
-  console.log('\nOK: no OEM tokens in any public product payload.');
+  console.log('\nOK: no static or harvested OEM tokens in any public product payload.');
 }
 main().catch((e) => { console.error(e); process.exit(1); });
 ```
@@ -894,14 +938,21 @@ gh pr create --base main --title "feat(evidence): Phase 2 — product-page publi
 ```
 Merging triggers the Amplify pipeline, which deploys the updated `evidence-api` Lambda to prod. **Wait for the deploy to finish before Step 4.**
 
-- [ ] **Step 4: Confirm the projection is live and OEM-free BEFORE publishing**
+- [ ] **Step 4: Guard — confirm nothing else depends on the live published count**
 
-With prod still holding only drafts, the public payload is empty per product — confirm the projection deployed cleanly and errors-free:
+Publishing 35 records raises the anonymous published count from 0→35. Confirm no page renders a number derived from that count (which would visibly change). Verified during planning: the ONLY consumer of the public evidence read is `ProductDetailPage.tsx:277` (`ProductEvidence`); `HomePage.tsx` "Research Validation" is static cards + Google Scholar figures, not the live API. Re-confirm nothing new crept in:
+
+Run: `grep -rn "fetchPublishedEvidence\|listPublishedEvidence\|countEvidenceByType" src | grep -vE "\.test\.|evidenceService\.ts|config/evidence\.ts|ProductEvidence\.tsx"`
+Expected: only `ProductDetailPage.tsx` lines. If anything else appears, STOP and assess before `--apply`.
+
+- [ ] **Step 5: Confirm the projection is live and OEM-free BEFORE publishing**
+
+With prod still holding only drafts, the public payload is empty per product — confirm the projection deployed cleanly and errors-free (the harvest still runs against authenticated records):
 
 Run: `set -a; source .env; set +a; npx tsx scripts/verify-evidence-no-oem.ts`
-Expected: `OK …: no banned tokens (0 record(s))` for each product line; final `OK: no OEM tokens …`.
+Expected: `Harvested N sensitive internal strings…`; `OK …: clean (0 record(s))` for each product line; final `OK: no static or harvested OEM tokens …`.
 
-- [ ] **Step 5: Dry-run the publish, review the counts, then apply**
+- [ ] **Step 6: Dry-run the publish, review the counts, then apply**
 
 ```bash
 set -a; source .env; set +a
@@ -910,7 +961,7 @@ npx tsx scripts/publish-launch-eligible-evidence.ts --apply    # publish
 ```
 Expected dry-run: `launchEligible=35 published=0 …` with a per-product breakdown. Expected apply: `published=35 alreadyPublished=0` (re-running `--apply` a second time → `published=0 alreadyPublished=35`).
 
-- [ ] **Step 6: Re-verify the boundary + OEM scan against the now-published set**
+- [ ] **Step 7: Re-verify the boundary + OEM scan against the now-published set**
 
 ```bash
 set -a; source .env; set +a
@@ -919,11 +970,11 @@ EVIDENCE_TEST_TITLE="<a known published title>" EVIDENCE_EXPECT=published EVIDEN
 ```
 Expected: no-oem scan passes with non-zero record counts; boundary script confirms base-model apiKey read is still denied and the known title appears exactly once.
 
-- [ ] **Step 7: Browser-verify the ICP Etcher product page**
+- [ ] **Step 8: Browser-verify the ICP Etcher product page**
 
 Use the preview browser: start the dev server, navigate to `/products/icp-etcher`, and confirm the "Peer-reviewed research" section renders the publication list (titles, journal badges, "View source ↗" links), the intro reads "…the ICP etching platform we represent · N papers", and — via the network tab / `read_network_requests` — the `listPublishedEvidence` response contains **no** `Tailong`/model token and **no** `slug`/`meta`. Screenshot for the record.
 
-- [ ] **Step 8: Done — stage 2b (per-record `meta.publicSummary`) is a separate follow-on plan.**
+- [ ] **Step 9: Done — stage 2b (per-record `meta.publicSummary`) is a separate follow-on plan.**
 
 ---
 
