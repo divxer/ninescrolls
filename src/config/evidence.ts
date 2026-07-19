@@ -73,6 +73,7 @@ const JOURNAL_BADGE_RAW: Record<string, string> = {
   'Optics Express': 'Opt. Express',
   'IEEE Photonics Technology Letters': 'IEEE PTL',
   'Journal of Lightwave Technology': 'J. Lightwave Technol.',
+  'Journal of Infrared and Millimeter Waves': 'J. Infrared Millim. Waves',
   'Materials Research Express': 'Mater. Res. Express',
   'Nanoscale Advances': 'Nanoscale Adv.',
   'Scientific Reports': 'Sci. Rep.',
@@ -99,6 +100,9 @@ const PLATFORM_LABEL: Record<string, string> = {
   'sputter': 'the magnetron sputtering platform we represent',
   'ibe-ribe': 'the ion-beam etching platform we represent',
   'striper': 'the plasma-strip platform we represent',
+  // MEB-600 is NineScrolls's own product model (not an OEM platform), so it is
+  // named directly rather than using the "…we represent" discretion wording.
+  'e-beam-evaporator': 'the MEB-600 e-beam evaporation platform',
 };
 export function productPlatformLabel(slug: string): string {
   return PLATFORM_LABEL[slug] ?? 'the platform we represent';

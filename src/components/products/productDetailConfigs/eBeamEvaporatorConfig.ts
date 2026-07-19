@@ -150,27 +150,6 @@ export const eBeamEvaporatorConfig: ProductDetailConfig = {
       'Quantum device thin films',
     ],
   },
-  research: {
-    eyebrow: 'Research Validation',
-    title: 'Verified in peer-reviewed evaporation research.',
-    cards: [
-      {
-        eyebrow: 'ACS Applied Materials & Interfaces',
-        title: 'Dimension-Confined Growth of a Crack-Free PbS Microplate Array',
-        meta: 'Wan et al., 2024. Infrared image sensing work using MEB-600 evaporation for PbS/MgO process layers.',
-      },
-      {
-        eyebrow: 'Journal of Infrared and Millimeter Waves',
-        title: 'Coronene Enhanced CMOS Image Sensor',
-        meta: 'Luo et al., 2023. UV down-conversion film work involving thermal evaporation on CMOS image sensor surfaces.',
-      },
-      {
-        eyebrow: 'Basic Sciences Journal of Textile Universities',
-        title: 'Ge/ZnS Photonic Crystal Infrared-Wave Transmitting Properties',
-        meta: 'Su et al., 2025. Photonic crystal fabrication using Ge/ZnS evaporation for infrared optical stacks.',
-      },
-    ],
-  },
   resources: {
     eyebrow: 'Related Resources',
     title: 'Help engineers choose the right PVD and pattern-transfer path.',

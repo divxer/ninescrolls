@@ -21,12 +21,6 @@ export interface ProductDetailTextCard {
   copy: string;
 }
 
-export interface ProductDetailResearchCard {
-  eyebrow: string;
-  title: string;
-  meta: string;
-}
-
 export interface ProductDetailResource {
   title: string;
   href: string;
@@ -129,11 +123,6 @@ export interface ProductDetailConfig {
     items: string[];
   };
   gallery?: ProductDetailGallerySection;
-  research?: {
-    eyebrow: string;
-    title: string;
-    cards: ProductDetailResearchCard[];
-  };
   resources?: {
     eyebrow: string;
     title: string;

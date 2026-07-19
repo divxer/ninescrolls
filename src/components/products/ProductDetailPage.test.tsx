@@ -121,8 +121,8 @@ describe('ProductDetailPage template', () => {
     ).toEqual(icpEtcherConfig.faq.map(item => item.answer));
   });
 
-  it('allows product configs to omit research and resource sections', () => {
-    const { research: _research, resources: _resources, ...baseConfig } = icpEtcherConfig;
+  it('allows product configs to omit the resource section', () => {
+    const { resources: _resources, ...baseConfig } = icpEtcherConfig;
     const configWithoutOptionalSections: ProductDetailConfig = {
       ...baseConfig,
       slug: 'minimal-platform',
@@ -146,7 +146,6 @@ describe('ProductDetailPage template', () => {
     );
 
     expect(screen.getByRole('heading', { level: 1, name: 'Minimal Platform' })).toBeInTheDocument();
-    expect(screen.queryByText('Research Validation')).not.toBeInTheDocument();
     expect(screen.queryByText('Related Resources')).not.toBeInTheDocument();
     expect(screen.queryByTestId('product-commerce-panel')).not.toBeInTheDocument();
     expect(screen.queryByText('Product Views')).not.toBeInTheDocument();

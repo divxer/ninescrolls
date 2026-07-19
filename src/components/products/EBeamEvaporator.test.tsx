@@ -65,13 +65,12 @@ describe('EBeamEvaporator redesigned product page', () => {
     expect(screen.getByRole('link', { name: 'Compare Sputtering' })).toHaveAttribute('href', '/products/sputter');
   });
 
-  it('uses verified E-Beam research evidence and real resource slugs', () => {
+  it('uses real resource slugs', () => {
+    // Research evidence is no longer a static config block — it renders from the
+    // dynamic ProductEvidence module (published Evidence records), covered with a
+    // mocked service in ProductDetailPage.test.tsx. Here the fetch returns nothing,
+    // so this page test only asserts the resource links.
     renderPage();
-
-    expect(screen.getByText('ACS Applied Materials & Interfaces')).toBeInTheDocument();
-    expect(screen.getByText('Dimension-Confined Growth of a Crack-Free PbS Microplate Array')).toBeInTheDocument();
-    expect(screen.getByText('Journal of Infrared and Millimeter Waves')).toBeInTheDocument();
-    expect(screen.getByText('Coronene Enhanced CMOS Image Sensor')).toBeInTheDocument();
 
     expect(screen.getByRole('link', { name: /E-Beam vs Thermal vs Sputter/i })).toHaveAttribute(
       'href',
