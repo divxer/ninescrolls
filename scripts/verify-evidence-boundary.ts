@@ -7,7 +7,7 @@
 //      draft/archived — independent of any other published Evidence, and immune
 //      to a broken resolver that always returns [].
 // Usage:
-//   EVIDENCE_TEST_SLUG=boundary-test-2026-07-04 EVIDENCE_EXPECT=draft \
+//   EVIDENCE_TEST_TITLE="Boundary Test 2026-07-04" EVIDENCE_EXPECT=draft \
 //   npx tsx scripts/verify-evidence-boundary.ts
 import { Amplify } from 'aws-amplify';
 import { generateClient } from 'aws-amplify/data';
@@ -18,14 +18,14 @@ import { EVIDENCE_STATUS } from '../amplify/lib/evidence/status';
 Amplify.configure(outputs);
 const client = generateClient<Schema>({ authMode: 'apiKey' });
 
-const TEST_SLUG = process.env.EVIDENCE_TEST_SLUG;
+const TEST_TITLE = process.env.EVIDENCE_TEST_TITLE;
 const EXPECT = process.env.EVIDENCE_EXPECT; // draft | published | archived
 const PRODUCT = process.env.EVIDENCE_TEST_PRODUCT ?? 'ald';
 const VALID_EXPECT = new Set(Object.values(EVIDENCE_STATUS));
 
 async function main() {
-  if (!TEST_SLUG || !EXPECT || !VALID_EXPECT.has(EXPECT as never)) {
-    throw new Error('Set EVIDENCE_TEST_SLUG and EVIDENCE_EXPECT (draft|published|archived).');
+  if (!TEST_TITLE || !EXPECT || !VALID_EXPECT.has(EXPECT as never)) {
+    throw new Error('Set EVIDENCE_TEST_TITLE and EVIDENCE_EXPECT (draft|published|archived).');
   }
 
   // (a) base-model public read must be DENIED *by authorization* — not merely
@@ -56,19 +56,19 @@ async function main() {
   if (!Array.isArray(parsed)) {
     throw new Error(`SECURITY FAIL: listPublishedEvidence returned a non-array payload: ${JSON.stringify(res.data)}`);
   }
-  const items = parsed as { slug: string; status: string }[];
+  const items = parsed as { title?: string; status: string }[];
 
   // every returned record must be published
   const leaked = items.filter((e) => e.status !== EVIDENCE_STATUS.PUBLISHED);
   if (leaked.length) throw new Error(`SECURITY FAIL: ${leaked.length} non-published record(s) returned`);
 
-  // (c) seed-identity lifecycle — independent of other published data
-  const mine = items.filter((e) => e.slug === TEST_SLUG);
+  // (c) seed-identity lifecycle — matched by title (slug is not in the public payload)
+  const mine = items.filter((e) => e.title === TEST_TITLE);
   if (EXPECT === EVIDENCE_STATUS.PUBLISHED) {
-    if (mine.length !== 1) throw new Error(`FAIL: expected seed "${TEST_SLUG}" exactly once while published, saw ${mine.length}`);
+    if (mine.length !== 1) throw new Error(`FAIL: expected seed "${TEST_TITLE}" exactly once while published, saw ${mine.length}`);
   } else {
-    if (mine.length !== 0) throw new Error(`FAIL: seed "${TEST_SLUG}" must be absent while ${EXPECT}, saw ${mine.length}`);
+    if (mine.length !== 0) throw new Error(`FAIL: seed "${TEST_TITLE}" must be absent while ${EXPECT}, saw ${mine.length}`);
   }
-  console.log(`OK: phase=${EXPECT}, seed "${TEST_SLUG}" occurrences=${mine.length}, all ${items.length} returned record(s) published.`);
+  console.log(`OK: phase=${EXPECT}, seed "${TEST_TITLE}" occurrences=${mine.length}, all ${items.length} returned record(s) published.`);
 }
 main().catch((e) => { console.error(e); process.exit(1); });
