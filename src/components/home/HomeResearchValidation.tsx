@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { fetchPublishedEvidence, type PublishedEvidence } from '../../services/evidenceService';
+import { fetchPublishedEvidence, fetchEvidenceStats, type PublishedEvidence } from '../../services/evidenceService';
 import { selectShowcasePublications } from '../../config/evidence';
 
 /**
@@ -16,18 +16,25 @@ import { selectShowcasePublications } from '../../config/evidence';
  */
 export function HomeResearchValidation() {
   const [pubs, setPubs] = useState<PublishedEvidence[] | null>(null);
+  const [verifiedCount, setVerifiedCount] = useState<number | null>(null);
 
   useEffect(() => {
     let active = true;
+    // Cards come from the published set; the headline count is the (larger)
+    // verified tier-A total, which includes held drafts. If the stats query
+    // isn't available, fall back to the published count.
     fetchPublishedEvidence().then((all) => {
       if (active) setPubs(all.filter((r) => r?.type === 'publication'));
+    });
+    fetchEvidenceStats().then((stats) => {
+      if (active && stats) setVerifiedCount(stats.verifiedPublications);
     });
     return () => { active = false; };
   }, []);
 
-  const count = pubs?.length ?? 0;
   const cards = pubs ? selectShowcasePublications(pubs, 4) : [];
-  const hasData = count > 0 && cards.length > 0;
+  const count = verifiedCount ?? pubs?.length ?? 0;
+  const hasData = cards.length > 0;
 
   return (
     <section id="research" className="scroll-mt-24 border-y border-slate-200 bg-white px-6 py-24 md:px-10 lg:px-16">
