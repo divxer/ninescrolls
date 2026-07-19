@@ -8,10 +8,21 @@ import matrix from '../../data/probeStations/typeMatrixContent.json';
 // GUARD_FAMILIES pattern in cryoBuyersGuideArticle.test.ts.
 // ---------------------------------------------------------------------------
 const UNIT = String.raw`(?:nm|µm|um|mm|cm|K|°C|GHz|MHz|kHz|Hz|dB|dBm|torr|Torr|mbar|Pa|pA|nA|µA|uA|mA|A|mV|kV|V|mW|kW|W|Ω|ohm)`;
+// Terminator: NOT `\b` -- `\b` never fires directly after a non-word
+// character like Ω (Ohm), so "5 Ω" / "5Ω" silently escaped the old regex. A
+// lookahead that forbids the next char being a letter/digit (Unicode-aware,
+// hence the `u` flag) closes that gap without needing a word character to
+// anchor on.
+const UNIT_TERMINATOR = String.raw`(?![\p{L}\p{N}])`;
 const GUARD_FAMILIES = {
-  // Any digit attached to a physical unit — the article teaches WHAT to
-  // review, never HOW MUCH. (\d then optional space/decimal then unit, word-bounded.)
-  noUnitNumbers: [new RegExp(String.raw`\d+(?:\.\d+)?\s?${UNIT}\b`)],
+  // Any digit attached to a physical unit -- the article teaches WHAT to
+  // review, never HOW MUCH. (\d then optional space/decimal then unit, not
+  // immediately followed by another letter/digit.) Case-insensitive so
+  // "5 mhz" / "5 ghz" / "5 db" can't dodge the guard by casing -- this also
+  // means bare lowercase unit letters ("5 k", "3 a", "2 v", "9 w") now
+  // match, which is intentional (see the mutation meta-test's negative
+  // controls for the digit-free wording that must still pass).
+  noUnitNumbers: [new RegExp(String.raw`\d+(?:\.\d+)?\s?${UNIT}${UNIT_TERMINATOR}`, 'iu')],
   // Currency symbols, codes, price words with digits, and relative-cost runs.
   noCurrency: [
     /[$€£¥]/,
@@ -19,10 +30,21 @@ const GUARD_FAMILIES = {
     /\$+\s*[\u2013-]\s*\$+/,
     /\bprice[sd]?\s+(?:from|at|around)\s+\d/i,
   ],
-  // No vendor/brand names in matrix cells or type profiles (brand mentions
-  // belong only in "Where NineScrolls Fits" + registry-safe contexts).
-  noBrandInMatrix: [/semishare/i, /ninescrolls/i, /formfactor|lake\s*shore|micromanipulator|mpi\b|accretech/i],
+  // Competitor / third-party probe-station brand names -- banned
+  // EVERYWHERE: both matrix cells and the article body outside references.
+  // A competitor mention doesn't belong in either place.
+  noCompetitorBrands: [/formfactor|lake\s*shore|micromanipulator|mpi\b|accretech/i],
+  // NineScrolls' OWN brand names (SEMISHARE, NineScrolls) -- banned in
+  // matrix cells ONLY (the comparison table stays vendor-neutral).
+  // Deliberately NOT applied to the body: the interlink href
+  // `/wafer-probe-stations/semishare`, the related-products JSON, and the
+  // "Where NineScrolls Fits" section all legitimately mention both names
+  // outside the matrix.
+  noOwnBrandInMatrix: [/semishare/i, /ninescrolls/i],
 } as const;
+// NOTE for Task 5 (mutation meta-test, not yet written): brand-mutation rows
+// must reference `noCompetitorBrands` / `noOwnBrandInMatrix` by their new
+// names, not the retired single `noBrandInMatrix` key.
 
 const allCells: string[] = (matrix.cells as string[][]).flat();
 
@@ -57,11 +79,24 @@ const html = () => readFileSync(ARTICLE_PATH, 'utf8');
 // block only. The article MUST wrap references in these exact markers.
 const REF_OPEN = '<!-- guard-exempt:references -->';
 const REF_CLOSE = '<!-- /guard-exempt:references -->';
-const outsideReferences = (doc: string) => {
+// Single source for locating the references block. Both `outsideReferences`
+// (strips it for body-guard checks) and the proximity sentinel (scans inside
+// it) MUST go through this helper -- previously they duplicated the same
+// indexOf/indexOf pair, and outsideReferences's own copy silently no-op'd
+// when the markers were missing or reordered (doc.slice(-1, -1) === '', so
+// every guard check against an empty string vacuously passed). Routing both
+// call sites through one helper with hard assertions means a missing/
+// reordered marker now fails LOUDLY instead of silently disabling every
+// downstream guard.
+const referencesSpan = (doc: string) => {
   const start = doc.indexOf(REF_OPEN);
   const end = doc.indexOf(REF_CLOSE);
   expect(start, 'references exemption markers present').toBeGreaterThan(-1);
-  expect(end).toBeGreaterThan(start);
+  expect(end, 'references markers ordered').toBeGreaterThan(start);
+  return { start, end };
+};
+const outsideReferences = (doc: string) => {
+  const { start, end } = referencesSpan(doc);
   return doc.slice(0, start) + doc.slice(end + REF_CLOSE.length);
 };
 
@@ -71,8 +106,22 @@ describe('types article - structure and metadata', () => {
     expect(doc).toMatch(/<meta name="article:slug" content="types-of-wafer-probe-stations">/);
     const title = doc.match(/<title>([^<]+)<\/title>/)?.[1] ?? '';
     expect(title).toContain('Types of Wafer Probe Stations');
-    expect(title.length).toBeLessThanOrEqual(70); // page <title>; SEO title ≤60 asserted on article:title meta
+    // The page <title> carries the "| NineScrolls" brand suffix, so it gets
+    // more slack than the locked headline below.
+    expect(title.length).toBeLessThanOrEqual(70);
     expect(doc).toMatch(/article:type" content="TechArticle"/);
+
+    // The DB-facing title comes from <h1> (parseArticleHtml falls back to
+    // <title> only when no <h1> exists) -- so the locked headline copy is
+    // what actually needs pinning down here, not the <title> tag. This
+    // exact string is 62 characters; an earlier draft of the plan claimed
+    // "58 chars, assert <=60", which was simply wrong for this locked
+    // string -- an exact-equality check already fully constrains the
+    // headline, so there is no separate (and here impossible) length bound.
+    const h1 = doc.match(/<h1[^>]*>([^<]+)<\/h1>/)?.[1] ?? '';
+    expect(h1, 'h1 headline (source of the DB title via parseArticleHtml)').toBe(
+      'Types of Wafer Probe Stations: A Measurement-Environment Guide',
+    );
   });
 
   it('contains the six type-profile sections in locked order', () => {
@@ -91,17 +140,16 @@ describe('types article - structure and metadata', () => {
     expect(doc).toMatch(/<div class="table-scroll"|overflow-x:\s*auto/); // responsive defense
   });
 
-  it('keeps unit-numbers, currency, and price symbols out of the body', () => {
+  it('keeps unit-numbers, currency, price symbols, and competitor brands out of the body', () => {
     const body = outsideReferences(html());
-    for (const family of [GUARD_FAMILIES.noUnitNumbers, GUARD_FAMILIES.noCurrency]) {
+    for (const family of [GUARD_FAMILIES.noUnitNumbers, GUARD_FAMILIES.noCurrency, GUARD_FAMILIES.noCompetitorBrands]) {
       for (const pattern of family) expect(body).not.toMatch(pattern);
     }
   });
 
   it('sentinel: no brand within 3 sentences of any exempted number', () => {
     const doc = html();
-    const start = doc.indexOf(REF_OPEN);
-    const end = doc.indexOf(REF_CLOSE);
+    const { start, end } = referencesSpan(doc);
     const refs = doc.slice(start, end);
     // Split the references block into sentence-ish units; any window of 7
     // consecutive units (≈3 sentences each side) containing a digit must not
@@ -130,7 +178,19 @@ describe('types article - structure and metadata', () => {
 
   it('keeps the figure figcaption disclaimer adjacent to the matrix figure', () => {
     const doc = html();
-    expect(doc).toMatch(/<figcaption[^>]*>[^<]*illustrative comparison/i);
+    // Scoped to the figure's own <picture> block (identified by the
+    // type-matrix-lg fallback source) rather than matching a figcaption
+    // ANYWHERE in the document -- mirrors cryoBuyersGuideArticle.test.ts's
+    // adjacency pattern. [\s\S]{0,200}? (not [^<]*) tolerates nested tags
+    // (e.g. a <strong>) inside the caption without breaking the match.
+    const pictureBlocks = doc.match(/<picture>[\s\S]*?<\/picture>/g) ?? [];
+    const matrixBlock = pictureBlocks.find((b) => b.includes('type-matrix-lg'));
+    expect(matrixBlock, 'matrix <picture> block (identified by type-matrix-lg)').toBeTruthy();
+    const blockEnd = doc.indexOf(matrixBlock!) + matrixBlock!.length;
+    const afterBlock = doc.slice(blockEnd, blockEnd + 800);
+    expect(afterBlock, 'figcaption with illustrative-comparison disclaimer adjacent to the matrix figure').toMatch(
+      /<figcaption[^>]*>[\s\S]{0,200}?illustrative comparison/i,
+    );
   });
 
   it('inherits kelvin discipline: no kelvin numbers anywhere in this survey article', () => {
