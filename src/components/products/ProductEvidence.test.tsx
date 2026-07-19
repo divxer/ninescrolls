@@ -21,14 +21,19 @@ describe('ProductEvidence', () => {
     fetchPublishedEvidence.mockResolvedValueOnce([
       { id: '1', type: 'publication', title: 'Metalens paper', journal: 'Laser & Photonics Reviews', year: 2024, sourceUrl: 'https://doi.org/10.1/lpr', publicSummary: 'Metalens patterned by etching.' },
       { id: '2', type: 'publication', title: 'Flow viz paper', journal: 'Light: Science & Applications', year: 2025, sourceUrl: 'https://doi.org/10.1/lsa' },
+      { id: '3', type: 'publication', title: 'Sapphire paper', journal: 'PhotoniX', year: 2022, sourceUrl: 'https://doi.org/10.1/px' },
     ]);
     render(<ProductEvidence productSlug="icp-etcher" />);
     expect(await screen.findByText('Peer-reviewed research')).toBeInTheDocument();
-    expect(screen.getByText(/the ICP etching platform we represent · 2 papers/)).toBeInTheDocument();
+    expect(screen.getByText(/the ICP etching platform we represent · 3 papers/)).toBeInTheDocument();
     expect(screen.getByText('Metalens paper')).toBeInTheDocument();
+    // Mapped journals show the curated abbreviation…
     expect(screen.getByText('LPR 2024')).toBeInTheDocument();
     expect(screen.getByText('Metalens patterned by etching.')).toBeInTheDocument();
     expect(screen.getByText('LSA 2025')).toBeInTheDocument();
+    // …and an unmapped journal still gets the SAME pill, showing its full name +
+    // year (space-separated, not "· year") — consistent styling, no plain text.
+    expect(screen.getByText('PhotoniX 2022')).toBeInTheDocument();
     const links = screen.getAllByRole('link', { name: /view source/i });
     expect(links[0]).toHaveAttribute('href', 'https://doi.org/10.1/lpr');
   });

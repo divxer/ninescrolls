@@ -41,14 +41,17 @@ export function ProductEvidence({ productSlug }: ProductEvidenceProps) {
   return (
     <section data-testid="product-evidence" className="border-y border-slate-200 bg-white px-6 py-20 md:px-10 lg:px-16">
       <div className="mx-auto max-w-screen-2xl">
-        <p className="text-sm font-semibold uppercase tracking-wide text-sky-700">Research validation</p>
-        <h2 className="mt-1 font-headline text-4xl font-semibold tracking-normal text-slate-950">Peer-reviewed research</h2>
-        <p className="mt-3 text-lg text-slate-600">
+        <p className="text-sm font-bold uppercase tracking-[0.22em] text-sky-600">Research validation</p>
+        <h2 className="mt-4 font-headline text-4xl font-semibold tracking-normal text-slate-950">Peer-reviewed research</h2>
+        <p className="mt-5 text-base leading-8 text-slate-600">
           Published work using {productPlatformLabel(productSlug)} · {records.length} {records.length === 1 ? 'paper' : 'papers'}
         </p>
         <ul className="mt-8 flex flex-col divide-y divide-slate-200">
           {shown.map((rec) => {
-            const badge = journalBadge(rec.journal);
+            // Every entry gets the same badge pill: a curated abbreviation when
+            // known, otherwise the full journal name — consistent styling, no
+            // mix of pills and plain text.
+            const label = journalBadge(rec.journal) ?? rec.journal;
             return (
               <li key={rec.id} className="flex flex-col gap-2 py-4 sm:flex-row sm:items-baseline sm:justify-between sm:gap-6">
                 <div className="min-w-0">
@@ -56,15 +59,13 @@ export function ProductEvidence({ productSlug }: ProductEvidenceProps) {
                   {rec.publicSummary ? (
                     <p className="mt-1 text-sm text-slate-600">{rec.publicSummary}</p>
                   ) : null}
-                  <p className="mt-1 text-sm text-slate-500">
-                    {badge ? (
-                      <span className="rounded-full bg-sky-50 px-2 py-0.5 text-xs font-semibold text-sky-700">
-                        {badge}{rec.year ? ` ${rec.year}` : ''}
+                  {label ? (
+                    <p className="mt-1">
+                      <span className="inline-block rounded-full bg-sky-50 px-2 py-0.5 text-xs font-semibold text-sky-700">
+                        {label}{rec.year ? ` ${rec.year}` : ''}
                       </span>
-                    ) : (
-                      <>{rec.journal}{rec.journal && rec.year ? ' · ' : ''}{rec.year}</>
-                    )}
-                  </p>
+                    </p>
+                  ) : null}
                 </div>
                 {rec.sourceUrl ? (
                   <a

@@ -28,7 +28,6 @@ describe('ICPEtcher redesigned product page', () => {
       'Core Process Windows',
       'Technical Specifications',
       'Applications',
-      'Research Validation',
       'Related Resources',
       'Frequently Asked Questions',
       'Build an ICP-RIE process window with NineScrolls',

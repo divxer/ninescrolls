@@ -64,8 +64,19 @@ const JOURNAL_BADGE_RAW: Record<string, string> = {
   'Advanced Materials': 'Adv. Mater.',
   'Advanced Functional Materials': 'Adv. Funct. Mater.',
   'Advanced Optical Materials': 'Adv. Opt. Mater.',
+  'Advanced Electronic Materials': 'Adv. Electron. Mater.',
+  'Advanced Photonics Research': 'Adv. Photonics Res.',
   'ACS Applied Nano Materials': 'ACS ANM',
   'ACS Applied Materials & Interfaces': 'ACS AMI',
+  'Applied Surface Science': 'Appl. Surf. Sci.',
+  'Applied Optics': 'Appl. Opt.',
+  'Optics Express': 'Opt. Express',
+  'IEEE Photonics Technology Letters': 'IEEE PTL',
+  'Journal of Lightwave Technology': 'J. Lightwave Technol.',
+  'Materials Research Express': 'Mater. Res. Express',
+  'Nanoscale Advances': 'Nanoscale Adv.',
+  'Scientific Reports': 'Sci. Rep.',
+  '2026 International Conference (IEEE)': 'IEEE Conf.',
 };
 // Normalize keys once so lookups tolerate case/whitespace drift in stored
 // journal names (defensive — the seeded values are exact today).
