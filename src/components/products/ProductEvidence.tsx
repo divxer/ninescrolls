@@ -48,7 +48,10 @@ export function ProductEvidence({ productSlug }: ProductEvidenceProps) {
         </p>
         <ul className="mt-8 flex flex-col divide-y divide-slate-200">
           {shown.map((rec) => {
-            const badge = journalBadge(rec.journal);
+            // Every entry gets the same badge pill: a curated abbreviation when
+            // known, otherwise the full journal name — consistent styling, no
+            // mix of pills and plain text.
+            const label = journalBadge(rec.journal) ?? rec.journal;
             return (
               <li key={rec.id} className="flex flex-col gap-2 py-4 sm:flex-row sm:items-baseline sm:justify-between sm:gap-6">
                 <div className="min-w-0">
@@ -56,15 +59,13 @@ export function ProductEvidence({ productSlug }: ProductEvidenceProps) {
                   {rec.publicSummary ? (
                     <p className="mt-1 text-sm text-slate-600">{rec.publicSummary}</p>
                   ) : null}
-                  <p className="mt-1 text-sm text-slate-500">
-                    {badge ? (
-                      <span className="rounded-full bg-sky-50 px-2 py-0.5 text-xs font-semibold text-sky-700">
-                        {badge}{rec.year ? ` ${rec.year}` : ''}
+                  {label ? (
+                    <p className="mt-1">
+                      <span className="inline-block rounded-full bg-sky-50 px-2 py-0.5 text-xs font-semibold text-sky-700">
+                        {label}{rec.year ? ` ${rec.year}` : ''}
                       </span>
-                    ) : (
-                      <>{rec.journal}{rec.journal && rec.year ? ' · ' : ''}{rec.year}</>
-                    )}
-                  </p>
+                    </p>
+                  ) : null}
                 </div>
                 {rec.sourceUrl ? (
                   <a
