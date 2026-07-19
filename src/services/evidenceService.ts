@@ -16,8 +16,12 @@ export interface PublishedEvidence {
   publicSummary?: string | null;
 }
 
-/** Public read of published Evidence for a product. Never throws. */
-export async function fetchPublishedEvidence(productSlug: string): Promise<PublishedEvidence[]> {
+/**
+ * Public read of published Evidence. Pass a `productSlug` to scope to one product
+ * line; omit it to read every published record (used by the homepage aggregate).
+ * Never throws.
+ */
+export async function fetchPublishedEvidence(productSlug?: string): Promise<PublishedEvidence[]> {
   try {
     const { data, errors } = await getAmplifyDataClient().queries.listPublishedEvidence(
       { productSlug },

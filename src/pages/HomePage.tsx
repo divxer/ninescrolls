@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { SEO } from '../components/common/SEO';
 import { OptimizedImage } from '../components/common/OptimizedImage';
+import { HomeResearchValidation } from '../components/home/HomeResearchValidation';
 
 type ProcessCapability = {
   id: string;
@@ -168,41 +169,6 @@ const products: Product[] = [
     alt: 'NineScrolls ion beam etching system',
     position: 'Directional ion beam processing for precise material removal.',
     uses: ['Failure analysis', 'Device trimming', 'Low-damage etching'],
-  },
-];
-
-// Research Validation cards — real peer-reviewed papers whose methods used the
-// corresponding process platforms NineScrolls represents. Attributed as
-// represented-platform validation, NOT NineScrolls installed-base citations.
-// Customer-facing copy names the process type only (never the vendor/model).
-// Interim static list (mirrors eBeamEvaporatorConfig research.cards); durable
-// home is the Evidence Framework. Citation counts are Google Scholar figures
-// verified live 2026-07-08 (Scholar count; live and will drift — refresh the
-// "as of" date on any update). DOIs verified the same day.
-const researchCards = [
-  {
-    journal: 'Nature Communications',
-    title: 'Near-ideal van der Waals rectifiers based on all-two-dimensional Schottky junctions',
-    meta: 'Zhang et al., 2021 · 245 citations (as of Jul 2026) · fabricated using a corresponding RIE process platform.',
-    doi: '10.1038/s41467-021-21861-6',
-  },
-  {
-    journal: 'Light: Science & Applications',
-    title: 'On-chip nonlocal metasurface for color router',
-    meta: 'Shi et al., 2026 · Nature Portfolio · fabricated using a corresponding RIE process platform.',
-    doi: '10.1038/s41377-025-02146-9',
-  },
-  {
-    journal: 'Advanced Materials',
-    title: 'Diffraction-free omnidirectional antireflection binary metasurface',
-    meta: 'Yuan et al., 2026 · fabricated using a corresponding ICP process platform.',
-    doi: '10.1002/adma.202519943',
-  },
-  {
-    journal: 'Materials Today',
-    title: 'Solar-blind deep-UV photodetector based on β-Ga₂O₃/AlN/p-Si',
-    meta: 'Gao et al., 2026 · 9 citations (as of Jul 2026) · fabricated using a corresponding PECVD process platform.',
-    doi: '10.1016/j.mattod.2026.103220',
   },
 ];
 
@@ -576,32 +542,7 @@ export function HomePage() {
           </div>
         </section>
 
-        <section id="research" className="scroll-mt-24 border-y border-slate-200 bg-white px-6 py-24 md:px-10 lg:px-16">
-          <div className="mx-auto max-w-screen-2xl">
-            <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr]">
-              <div>
-                <p className="text-sm font-bold uppercase tracking-[0.22em] text-sky-600">Research Validation</p>
-                <h2 className="mt-4 font-headline text-4xl font-semibold leading-tight tracking-normal text-slate-950 md:text-5xl">
-                  Peer-reviewed validation for the platforms we represent.
-                </h2>
-                <p className="mt-6 text-base leading-8 text-slate-600">
-                  Research using corresponding plasma, deposition, and vacuum process platforms has appeared in Nature Portfolio journals, Advanced Materials, and Materials Today.
-                </p>
-                <p className="mt-8 font-mono text-5xl font-semibold tracking-normal text-slate-950">245</p>
-                <p className="mt-2 text-sm font-semibold leading-6 text-slate-500">citations — most-cited among the studies we reference, on a corresponding RIE platform (as of Jul 2026)</p>
-              </div>
-              <div className="grid gap-4 md:grid-cols-2">
-                {researchCards.map(card => (
-                  <article key={card.title} className="rounded-2xl border border-slate-200 bg-[#FAFAFA] p-6">
-                    <p className="font-serif text-2xl font-semibold text-slate-950">{card.journal}</p>
-                    <p className="mt-4 text-base font-semibold leading-7 text-slate-900">{card.title}</p>
-                    <p className="mt-4 text-sm leading-6 text-slate-500">{card.meta}</p>
-                  </article>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
+        <HomeResearchValidation />
 
         <section id="resources" className="scroll-mt-24 px-6 py-24 md:px-10 lg:px-16">
           <div className="mx-auto max-w-screen-2xl">

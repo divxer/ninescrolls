@@ -71,29 +71,29 @@ describe('HomePage redesign', () => {
     expect(screen.getByRole('link', { name: /View All Products/i })).toHaveAttribute('href', '/products');
   });
 
-  it('reframes research validation as represented-platform validation without misattribution', () => {
+  it('renders Research Validation as evergreen represented-platform framing (cards are Evidence-driven, not hardcoded)', () => {
     renderHomePage();
 
     const pageText = document.body.textContent ?? '';
 
-    // New represented-platform framing is present.
+    // Evergreen framing always renders (heading + intro), independent of the
+    // runtime Evidence fetch.
     expect(pageText).toContain('Peer-reviewed validation for the platforms we represent.');
     expect(pageText).toContain('Nature Portfolio');
 
-    // Real, verified papers render (journal + title).
-    expect(pageText).toContain('Nature Communications');
-    expect(pageText).toContain('Near-ideal van der Waals rectifiers based on all-two-dimensional Schottky junctions');
-    expect(pageText).toContain('Light: Science & Applications');
-    expect(pageText).toContain('Advanced Materials');
-    expect(pageText).toContain('Materials Today');
+    // The old hardcoded, drift-prone content is GONE — cards + the count are now
+    // fetched from published Evidence at runtime (HomeResearchValidation), not
+    // baked into the page. No frozen citation number can go stale here.
+    expect(pageText).not.toContain('Near-ideal van der Waals rectifiers based on all-two-dimensional Schottky junctions');
+    expect(pageText).not.toContain('245');
+    expect(pageText).not.toMatch(/citations \(as of/i);
 
     // Mis-attribution and unverifiable aggregate are gone.
     expect(pageText).not.toContain('Our equipment has been cited');
     expect(pageText).not.toMatch(/NineScrolls[^.]*\bcited\b/i);
     expect(pageText).not.toContain('500+');
 
-    // Flagship *Nature* is never claimed as a journal, but Nature Portfolio
-    // titles (Nature Communications / Light: Science & Applications) are allowed.
+    // Flagship *Nature* is never claimed as a bare journal name.
     expect(screen.queryByText('Nature', { exact: true })).not.toBeInTheDocument();
   });
 

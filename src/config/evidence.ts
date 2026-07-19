@@ -115,3 +115,52 @@ const PLATFORM_LABEL: Record<string, string> = {
 export function productPlatformLabel(slug: string): string {
   return PLATFORM_LABEL[slug] ?? 'the platform we represent';
 }
+
+// --- Homepage "Research Validation" showcase selection ---
+
+// Prestige order for the homepage showcase. Publications in these journals float
+// to the top; one card per journal (for variety), highest-prestige first.
+// Extend as new marquee journals appear in the published set.
+const MARQUEE_JOURNAL_ORDER = [
+  'Nature',
+  'Science',
+  'Nature Communications',
+  'Science Advances',
+  'Light: Science & Applications',
+  'Advanced Materials',
+  'Materials Today',
+  'Physical Review E',
+  'Advanced Functional Materials',
+  'Lab on a Chip',
+  'Small',
+  'Nano Letters',
+].map(norm);
+
+interface ShowcaseInput {
+  title?: string | null;
+  journal?: string | null;
+  year?: number | null;
+}
+
+/**
+ * Pick the homepage showcase publications: dedupe to one card per journal (the
+ * newest in that journal), then order by journal prestige (marquee first, then
+ * unranked by recency), and take `limit`. Deterministic — no citation counts,
+ * no OEM data. Pure so it can be unit-tested.
+ */
+export function selectShowcasePublications<T extends ShowcaseInput>(pubs: T[], limit = 4): T[] {
+  const rank = (journal?: string | null) => {
+    const i = MARQUEE_JOURNAL_ORDER.indexOf(norm(journal ?? ''));
+    return i === -1 ? Number.MAX_SAFE_INTEGER : i;
+  };
+  const newestPerJournal = new Map<string, T>();
+  for (const p of pubs) {
+    if (!p.journal || !p.title) continue; // need both to render a card
+    const key = norm(p.journal);
+    const cur = newestPerJournal.get(key);
+    if (!cur || (p.year ?? 0) > (cur.year ?? 0)) newestPerJournal.set(key, p);
+  }
+  return [...newestPerJournal.values()]
+    .sort((a, b) => rank(a.journal) - rank(b.journal) || (b.year ?? 0) - (a.year ?? 0))
+    .slice(0, limit);
+}
