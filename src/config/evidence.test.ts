@@ -76,6 +76,15 @@ describe('selectShowcasePublications', () => {
     expect(picks.map((x) => x.title)).toEqual(['new', 'sciadv']);
   });
 
+  it('drops bare "Nature"/"Science" records — never misattributes a flagship journal', () => {
+    const picks = selectShowcasePublications([
+      { journal: 'Nature', title: 'bare-nature', year: 2026 },
+      { journal: 'science', title: 'bare-science', year: 2026 }, // case-insensitive
+      { journal: 'Nature Communications', title: 'natcomm', year: 2023 },
+    ]);
+    expect(picks.map((x) => x.title)).toEqual(['natcomm']);
+  });
+
   it('respects the limit and skips entries missing journal or title', () => {
     const picks = selectShowcasePublications(
       [

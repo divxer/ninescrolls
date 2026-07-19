@@ -64,10 +64,13 @@ export function HomeResearchValidation() {
                 <p className="mt-8 font-headline text-2xl font-semibold leading-snug text-slate-950 md:text-3xl">
                   Published across Nature Portfolio, Science Advances, and {journalPhrase}.
                 </p>
-                {/* The count is a supporting fact, deliberately small. */}
-                <p className="mt-3 text-sm font-semibold leading-6 text-slate-500">
-                  {count} verified studies across the platforms we represent · and growing
-                </p>
+                {/* The count is a supporting fact, deliberately small. Guard >0
+                    so a degenerate "0 verified studies" can never render. */}
+                {count > 0 ? (
+                  <p className="mt-3 text-sm font-semibold leading-6 text-slate-500">
+                    {count} verified studies across the platforms we represent · and growing
+                  </p>
+                ) : null}
               </>
             ) : null}
           </div>

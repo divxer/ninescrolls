@@ -121,9 +121,11 @@ export function productPlatformLabel(slug: string): string {
 // Prestige order for the homepage showcase. Publications in these journals float
 // to the top; one card per journal (for variety), highest-prestige first.
 // Extend as new marquee journals appear in the published set.
+// NOTE: intentionally NO bare 'Nature'/'Science' — those flagship names are NOT
+// journals we hold (we have Nature Communications / Science Advances), and a
+// record carrying a bare "Nature" journal would be a misattribution. See
+// BARE_FLAGSHIP below, which drops such a record outright.
 const MARQUEE_JOURNAL_ORDER = [
-  'Nature',
-  'Science',
   'Nature Communications',
   'Science Advances',
   'Light: Science & Applications',
@@ -135,6 +137,11 @@ const MARQUEE_JOURNAL_ORDER = [
   'Small',
   'Nano Letters',
 ].map(norm);
+
+// Bare flagship names we must NEVER render as a journal card (claiming a paper
+// is in "Nature"/"Science" itself when it's really Nature Communications etc.).
+// A record whose journal is exactly one of these is a data error → dropped.
+const BARE_FLAGSHIP = new Set(['nature', 'science']);
 
 interface ShowcaseInput {
   title?: string | null;
@@ -157,6 +164,7 @@ export function selectShowcasePublications<T extends ShowcaseInput>(pubs: T[], l
   for (const p of pubs) {
     if (!p.journal || !p.title) continue; // need both to render a card
     const key = norm(p.journal);
+    if (BARE_FLAGSHIP.has(key)) continue; // never surface a bare "Nature"/"Science" card
     const cur = newestPerJournal.get(key);
     if (!cur || (p.year ?? 0) > (cur.year ?? 0)) newestPerJournal.set(key, p);
   }
