@@ -73,7 +73,7 @@ function editorRoundtrip(content: string): string {
     schema,
   );
   // Mirror RichTextEditor's onEditorChange nbsp replacement.
-  return serializer.serialize(node).replace(/ /g, ' ');
+  return serializer.serialize(node).replace(/\u00A0/g, ' ');
 }
 
 const count = (s: string, re: RegExp) => (s.match(re) ?? []).length;
