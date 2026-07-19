@@ -2,7 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { HelmetProvider } from 'react-helmet-async';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
-import { productLines, SEMISHARE_PUBLICATIONS } from '../../data/probeStations/semishare';
+import { productLines } from '../../data/probeStations/semishare';
 import { SemishareBrandPage } from './SemishareBrandPage';
 
 function renderPage() {
@@ -51,18 +51,17 @@ describe('SemishareBrandPage', () => {
     expect(screen.getByRole('link', { name: /Request a quote/i })).toHaveAttribute('href', '/request-quote?products=semishare-probe-station');
   });
 
-  it('renders the peer-reviewed research section with every publication title linked to its DOI', () => {
+  it('sources peer-reviewed research from the Evidence framework (dynamic), not a hardcoded list', () => {
     renderPage();
+    // The former static SEMISHARE_PUBLICATIONS block is gone — publications now
+    // come from <ProductEvidence productSlug="probe-station">, which fetches
+    // published records at runtime. In this unit test there is no API, so the
+    // module renders nothing (returns null on an empty set) rather than any
+    // hardcoded DOI links.
     expect(
-      screen.getByRole('heading', { level: 2, name: /Used in peer-reviewed research/i })
-    ).toBeInTheDocument();
-    expect(SEMISHARE_PUBLICATIONS.length).toBeGreaterThanOrEqual(3);
-    for (const pub of SEMISHARE_PUBLICATIONS) {
-      const link = screen.getByRole('link', { name: pub.title });
-      expect(link).toHaveAttribute('href', `https://doi.org/${pub.doi}`);
-      expect(link).toHaveAttribute('target', '_blank');
-      expect(link.getAttribute('rel')).toContain('noopener');
-    }
+      screen.queryByRole('heading', { name: /Used in peer-reviewed research/i })
+    ).not.toBeInTheDocument();
+    expect(document.querySelector('[data-testid="product-evidence"]')).toBeNull();
   });
 
   it('emits Organization JSON-LD with the gated-OFF description and FAQPage matching visible FAQ', async () => {

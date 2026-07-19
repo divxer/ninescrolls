@@ -76,97 +76,12 @@ export const FORBIDDEN_ATTESTATION_PATTERNS: readonly RegExp[] = [
 ];
 
 /**
- * Peer-reviewed publications that use SEMISHARE probe stations.
- *
- * Field names align with the approved (unbuilt) Evidence Framework `type:
- * publication` model — `docs/superpowers/specs/2026-07-04-evidence-framework-design.md`
- * (`meta:{journal, year, doi, authors}`). We do NOT implement that framework here;
- * this is a small static list, the same interim pattern the redesign spec
- * (`2026-07-09-research-validation-claim-reframe-design.md`) sanctions.
- *
- * VERIFICATION DISCIPLINE (fabrication is the worst outcome):
- *   - Every entry was LIVE-VERIFIED to actually USE SEMISHARE equipment — the
- *     SEMISHARE mention was seen in the paper's methods (open-access full text)
- *     or in a Google Scholar snippet quoting the methods, recorded per-entry in
- *     `verification`.
- *   - Every `doi` was confirmed to resolve via https://doi.org/<doi> to the
- *     publisher page (accessed 2026-07-12).
- *   - NO citation counts and NO aggregate counts anywhere (standing project rule
- *     — counts go stale). Do not add a numeric field other than `year`.
- *   - Journal names are accurate: no upgrading (Nature Communications ≠ "Nature").
+ * Peer-reviewed publications that use SEMISHARE probe stations now live in the
+ * Evidence Framework (type:publication, products:['probe-station']), rendered on
+ * the brand page via <ProductEvidence productSlug="probe-station">. The former
+ * static SEMISHARE_PUBLICATIONS list was migrated to that single source of truth
+ * (scripts/seed-evidence-semishare.ts) and removed here — same move as e-beam.
  */
-export interface SemisharePublication {
-  title: string;
-  /** "First Author et al." */
-  authors: string;
-  /** Journal / conference, accurately named — no upgrading. */
-  venue: string;
-  year: number;
-  /** Bare DOI like "10.1038/..." (no URL prefix). */
-  doi: string;
-  /** One-phrase application area, e.g. "2D material transport". */
-  application: string;
-  /** Where the SEMISHARE usage was confirmed + access date. */
-  verification: string;
-}
-
-export const SEMISHARE_PUBLICATIONS: readonly SemisharePublication[] = [
-  {
-    title:
-      'Stable mid-infrared polarization imaging based on quasi-2D tellurium at room temperature',
-    authors: 'Tong et al.',
-    venue: 'Nature Communications',
-    year: 2020,
-    doi: '10.1038/s41467-020-16125-8',
-    application: '2D tellurium mid-infrared polarization imaging',
-    verification:
-      'Open-access Methods (PMC7210936), "Electronic and optoelectronic measurements": "The unpolarized current data are measured by using a probe station system (SEMISHARE SE-6)". DOI resolves to nature.com. Accessed 2026-07-12.',
-  },
-  {
-    title:
-      'Sub-2-nm-droplet-driven growth of amorphous metal chalcogenides approaching the single-layer limit',
-    authors: 'Shi et al.',
-    venue: 'Nature Materials',
-    year: 2025,
-    doi: '10.1038/s41563-025-02273-z',
-    application: 'Low-temperature transport of amorphous 2D chalcogenide films',
-    verification:
-      'Google Scholar snippet quoting the Methods: "The electrical characterizations of the devices were performed in a SEMISHARE CG-O-4 cryogenic probe station". DOI resolves to nature.com. Accessed 2026-07-12.',
-  },
-  {
-    title:
-      'Methodology for Improving Temperature Sensing Performance and Thermal Stability of 4H-SiC JBS Diodes',
-    authors: 'Huang et al.',
-    venue: 'Small',
-    year: 2026,
-    doi: '10.1002/smll.202509679',
-    application: 'Wide-bandgap 4H-SiC power / temperature-sensing diodes',
-    verification:
-      'Google Scholar snippet quoting the Methods: "a high-precision KEYSIGHT B1505 semiconductor parameter analyzer and a SEMISHARE X8 semi-automatic probe station". DOI resolves to Wiley Online Library. Accessed 2026-07-12.',
-  },
-  {
-    title:
-      'Freestanding Relaxor Ferroelectric Single-Crystalline Thin Films Enable Flexible Piezoelectric Energy Harvester With Giant Power Density',
-    authors: 'Ren et al.',
-    venue: 'Advanced Functional Materials',
-    year: 2026,
-    doi: '10.1002/adfm.202600016',
-    application: 'Freestanding ferroelectric piezoelectric energy harvesters',
-    verification:
-      'Google Scholar snippet quoting the Methods: "ferroelectric and dielectric properties measurements were performed using a Semishare high-precision probe station (Semishare E4)". DOI resolves to Wiley Online Library. Accessed 2026-07-12.',
-  },
-  {
-    title:
-      'Infrared Photodetector Based on van der Waals MoS2/MoTe2 Hetero-Bilayer Modulated by Photogating',
-    authors: 'Sheng et al.',
-    venue: 'Advanced Electronic Materials',
-    year: 2024,
-    doi: '10.1002/aelm.202400190',
-    application: '2D van der Waals infrared photodetectors',
-    verification:
-      'Google Scholar snippet quoting the Methods (device fabrication with a Semishare probe station): "transferred onto the 1L MoS2 by using a commercial probe station (Semishare, E-4)". DOI resolves to Wiley Online Library. Accessed 2026-07-12.',
-  },
-];
 
 /**
  * Product lines. `specs` starts EMPTY and is filled ONLY from live captures of

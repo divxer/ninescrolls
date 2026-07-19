@@ -111,6 +111,10 @@ const PLATFORM_LABEL: Record<string, string> = {
   'pluto-f': 'the plasma cleaner platform we represent',
   'pluto-m': 'the plasma cleaner platform we represent',
   'pluto-30': 'the plasma cleaner platform we represent',
+  // SEMISHARE is a publicly-named partner brand (attestation gate OFF → no
+  // "partner" claim in the wording; the brand name itself is fine and is used
+  // throughout the SEMISHARE brand page).
+  'probe-station': 'SEMISHARE wafer probe stations',
 };
 export function productPlatformLabel(slug: string): string {
   return PLATFORM_LABEL[slug] ?? 'the platform we represent';
