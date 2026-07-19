@@ -10,6 +10,7 @@ const plutoFWithPumpImage = '/assets/images/redesign/products/pluto-f-with-pump.
 // - amplify/functions/calculate-tax/productCatalog.ts
 export const plutoFConfig: ProductDetailConfig = {
   slug: 'pluto-f',
+  evidenceProductSlug: 'plasma-cleaner',
   seo: {
     title: 'PLUTO-F Flagship RF Plasma Cleaner',
     description: 'Flagship 500 W RF plasma cleaner (13.56 MHz) with ~14.5L aluminum alloy chamber, advanced recipe management, and 2 gas lines for high-power cleaning and large batches.',

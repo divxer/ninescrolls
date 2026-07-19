@@ -3,6 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import { useScrollToTop } from '../hooks/useScrollToTop';
 import { SEO } from '../components/common/SEO';
 import { Breadcrumbs } from '../components/common/Breadcrumbs';
+import { ProductEvidence } from '../components/products/ProductEvidence';
 
 interface CleanerCard {
   name: string;
@@ -406,6 +407,10 @@ export function PlasmaCleanerOverviewPage() {
           </div>
         </div>
       </section>
+
+      {/* Published peer-reviewed research across the plasma-cleaner line
+          (Pluto-T/F/M). Renders nothing until records are published. */}
+      <ProductEvidence productSlug="plasma-cleaner" />
     </>
   );
 }

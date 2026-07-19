@@ -274,7 +274,7 @@ export function ProductDetailPage({ config }: ProductDetailPageProps) {
           </div>
         </section>
 
-        <ProductEvidence productSlug={config.slug} />
+        <ProductEvidence productSlug={config.evidenceProductSlug ?? config.slug} />
 
         {config.gallery && (
           <section className="px-6 py-20 md:px-10 lg:px-16">

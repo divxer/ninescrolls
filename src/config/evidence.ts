@@ -77,6 +77,7 @@ const JOURNAL_BADGE_RAW: Record<string, string> = {
   'Materials Research Express': 'Mater. Res. Express',
   'Nanoscale Advances': 'Nanoscale Adv.',
   'Scientific Reports': 'Sci. Rep.',
+  'Biomedical Optics Express': 'Biomed. Opt. Express',
 };
 // Normalize keys once so lookups tolerate case/whitespace drift in stored
 // journal names (defensive — the seeded values are exact today).
@@ -103,6 +104,7 @@ const PLATFORM_LABEL: Record<string, string> = {
   // MEB-600 is NineScrolls's own product model (not an OEM platform), so it is
   // named directly rather than using the "…we represent" discretion wording.
   'e-beam-evaporator': 'the MEB-600 e-beam evaporation platform',
+  'plasma-cleaner': 'the plasma cleaner platform we represent',
 };
 export function productPlatformLabel(slug: string): string {
   return PLATFORM_LABEL[slug] ?? 'the platform we represent';

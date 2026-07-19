@@ -66,6 +66,13 @@ export interface ProductDetailGallerySection {
 
 export interface ProductDetailConfig {
   slug: string;
+  /**
+   * Product-line slug used to query published Evidence, when it differs from the
+   * per-SKU `slug`. E.g. the Pluto-T/F/M/30 pages all share the `plasma-cleaner`
+   * evidence line. Defaults to `slug` when omitted (lines where the page slug
+   * already equals the evidence product slug).
+   */
+  evidenceProductSlug?: string;
   seo: {
     title: string;
     description: string;

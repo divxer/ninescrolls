@@ -10,6 +10,7 @@ const plutoTWithPumpImage = '/assets/images/redesign/products/pluto-t-with-pump.
 // - amplify/functions/calculate-tax/productCatalog.ts
 export const plutoTConfig: ProductDetailConfig = {
   slug: 'pluto-t',
+  evidenceProductSlug: 'plasma-cleaner',
   seo: {
     title: 'PLUTO-T Compact RF Plasma Cleaner',
     description: 'Compact 200 W RF plasma cleaner (13.56 MHz) with ~4.3L stainless steel chamber, touchscreen control, and 1-2 gas lines for single-sample cleaning and surface activation.',
