@@ -408,4 +408,22 @@ describe('evidence seeder safety contracts', () => {
     const res = await publishLaunchEligible(client, { apply: false, publishDate: '2026-07-18T00:00:00.000Z' });
     expect(res).toMatchObject({ eligible: 1, published: 0, byProduct: { 'icp-etcher': 1 } });
   });
+
+  it('never publishes an archived record even when launchEligible', async () => {
+    const store = new Map([['d', { id: 'd', slug: 'pub-d', type: 'publication', status: 'archived', products: ['icp-etcher'], meta: JSON.stringify({ launchEligible: true, removedReason: 'false positive' }) }]]);
+    let writes = 0;
+    const client: EvidenceGraphqlClient = {
+      graphql: vi.fn(async (request: any) => {
+        if (!request.variables.input) {
+          return { data: { listEvidences: { items: [...store.values()], nextToken: null } } };
+        }
+        writes++;
+        return { data: { updateEvidence: { id: request.variables.input.id, status: request.variables.input.status } } };
+      }),
+    };
+    const res = await publishLaunchEligible(client, { apply: true, publishDate: '2026-07-18T00:00:00.000Z' });
+    expect(res).toMatchObject({ eligible: 0, published: 0, alreadyPublished: 0 });
+    expect(writes).toBe(0);
+    expect(store.get('d')!.status).toBe('archived');
+  });
 });

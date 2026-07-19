@@ -242,10 +242,17 @@ export async function publishLaunchEligible(
 ): Promise<{ eligible: number; published: number; alreadyPublished: number; byProduct: Record<string, number> }> {
   const items = await listRawEvidence(client);
 
+  // Exclude archived records: correctFalsePositives archives false positives via
+  // status:'archived' without clearing meta.launchEligible, so an archived record
+  // must never be resurrected to published here (mirrors classifyPublications).
   const eligible = items.filter(
-    (item) => item.type === 'publication' && parseMeta(item).launchEligible === true,
+    (item) => item.type === 'publication'
+      && item.status !== 'archived'
+      && parseMeta(item).launchEligible === true,
   );
 
+  // byProduct counts ALL eligible records (draft + already-published), not just
+  // the about-to-be-published delta.
   const byProduct: Record<string, number> = {};
   let published = 0;
   let alreadyPublished = 0;
