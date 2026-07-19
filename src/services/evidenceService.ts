@@ -1,23 +1,19 @@
 import { getAmplifyDataClient } from './amplifyClient';
 
+// Mirrors the Lambda whitelist projection (handler.ts projectPublicEvidence).
+// No `slug`, no raw `meta` — those never cross the public boundary.
 export interface PublishedEvidence {
   id: string;
-  slug: string;
-  title: string;
   type: string;
-  summary?: string | null;
-  products: string[];
-  process?: string | null;
-  materials?: (string | null)[] | null;
-  keywords?: (string | null)[] | null;
-  metrics?: unknown;
-  articleSlug?: string | null;
-  pdfUrl?: string | null;
-  images?: (string | null)[] | null;
+  status?: string | null;
+  title?: string | null;
   sourceUrl?: string | null;
-  meta?: unknown;
   publishDate?: string | null;
-  status: string;
+  products?: string[] | null;
+  journal?: string | null;
+  year?: number | null;
+  doi?: string | null;
+  publicSummary?: string | null;
 }
 
 /** Public read of published Evidence for a product. Never throws. */

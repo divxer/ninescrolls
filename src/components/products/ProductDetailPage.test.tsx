@@ -19,7 +19,9 @@ vi.mock('../../hooks/useProductPage', () => ({
 }));
 
 vi.mock('../../services/evidenceService', () => ({
-  fetchPublishedEvidence: vi.fn().mockResolvedValue([{ id: '1', type: 'application_note' }]),
+  fetchPublishedEvidence: vi.fn().mockResolvedValue([
+    { id: '1', type: 'publication', title: 'Fixture paper', journal: 'Fixture Journal', year: 2024 },
+  ]),
 }));
 
 function renderTemplate() {
@@ -314,7 +316,7 @@ describe('ProductDetailPage template', () => {
       </HelmetProvider>
     );
 
-    const evidence = await findByText('Evidence');
+    const evidence = await findByText('Peer-reviewed research');
     const evidenceSection = getByTestId('product-evidence');
     const applications = getByTestId('product-applications');
     const gallery = getByText('Gallery Fixture');
