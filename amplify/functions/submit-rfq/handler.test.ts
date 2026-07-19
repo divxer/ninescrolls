@@ -11,6 +11,10 @@ import { RFQ_FIELD_LIMITS } from '../../lib/rfq/limits';
 import {
     RFQ_EQUIPMENT_CATEGORY_VALUES,
     RFQ_ATTACHMENT_MIME_TYPES,
+    RFQ_ROLE_VALUES,
+    RFQ_BUDGET_RANGE_VALUES,
+    RFQ_TIMELINE_VALUES,
+    RFQ_FUNDING_STATUS_VALUES,
     MAX_RFQ_ATTACHMENTS,
     MAX_RFQ_ATTACHMENT_SIZE,
 } from '../../lib/rfq/contract';
@@ -29,6 +33,7 @@ const TEMP_KEY_C = `temp/rfq/${'c'.repeat(16)}/notes.docx`;
 const mockPut = vi.fn().mockResolvedValue({});
 const mockQuery = vi.fn().mockResolvedValue({ Items: [] });
 const mockUpdate = vi.fn().mockResolvedValue({});
+const mockDelete = vi.fn().mockResolvedValue({});
 
 vi.mock('@aws-sdk/client-dynamodb', () => ({
     DynamoDBClient: vi.fn().mockImplementation(() => ({})),
@@ -39,9 +44,10 @@ vi.mock('@aws-sdk/lib-dynamodb', () => ({
         from: vi.fn().mockReturnValue({
             send: vi.fn().mockImplementation((cmd: unknown) => {
                 const cmdName = (cmd as { constructor: { name: string } }).constructor.name;
-                if (cmdName === 'PutCommand') return mockPut();
+                if (cmdName === 'PutCommand') return mockPut(cmd);
                 if (cmdName === 'QueryCommand') return mockQuery();
                 if (cmdName === 'UpdateCommand') return mockUpdate();
+                if (cmdName === 'DeleteCommand') return mockDelete(cmd);
                 return Promise.resolve({});
             }),
         }),
@@ -59,6 +65,11 @@ vi.mock('@aws-sdk/lib-dynamodb', () => ({
     UpdateCommand: vi.fn().mockImplementation((params) => {
         const instance = { ...params };
         Object.defineProperty(instance, 'constructor', { value: { name: 'UpdateCommand' } });
+        return instance;
+    }),
+    DeleteCommand: vi.fn().mockImplementation((params) => {
+        const instance = { ...params };
+        Object.defineProperty(instance, 'constructor', { value: { name: 'DeleteCommand' } });
         return instance;
     }),
 }));
@@ -1079,6 +1090,48 @@ describe('submit-rfq handler', () => {
             errSpy.mockRestore();
         });
     });
+
+    describe('capturePartial (Step-1 abandoned lead)', () => {
+        it('captures Step-1 fields as a partial RFQ row (200)', async () => {
+            const event = makeEvent({
+                action: 'capturePartial', visitorId: 'v-abandon-1',
+                name: 'Half Filled', email: 'Half@Lab.EDU', institution: 'Some Lab',
+                equipmentCategory: 'RIE', applicationDescription: 'Just started describing the application.',
+            });
+            const result = await handler(event, {} as never, (() => {}) as never);
+
+            expect((result as { statusCode: number }).statusCode).toBe(200);
+            expect(JSON.parse((result as { body: string }).body).success).toBe(true);
+            const item = mockPut.mock.calls.map((c) => c[0]?.Item).find((i) => i?.status === 'partial');
+            expect(item).toBeTruthy();
+            expect(item.PK).toBe('RFQ#PARTIAL#v-abandon-1');
+            expect(item.SK).toBe('META');
+            expect(item.GSI1PK).toBe('RFQ_STATUS#partial');
+            expect(item.rfqId).toBe('PARTIAL#v-abandon-1');
+            expect(item.name).toBe('Half Filled');
+            expect(item.email).toBe('half@lab.edu'); // normalized
+            expect(item.equipmentCategory).toBe('RIE');
+        });
+
+        it('rejects a malformed visitorId without writing (400)', async () => {
+            const event = makeEvent({ action: 'capturePartial', visitorId: 'bad id!!', name: 'X' });
+            const result = await handler(event, {} as never, (() => {}) as never);
+            expect((result as { statusCode: number }).statusCode).toBe(400);
+            expect(mockPut).not.toHaveBeenCalled();
+        });
+
+        it('supersedes the partial row on full submission (delete keyed by visitorId)', async () => {
+            const result = await handler(makeEvent({ ...VALID_RFQ, visitorId: 'v-converts' }), {} as never, (() => {}) as never);
+            expect((result as { statusCode: number }).statusCode).toBe(200);
+            const key = mockDelete.mock.calls.map((c) => c[0]?.Key).find((k) => k?.PK === 'RFQ#PARTIAL#v-converts');
+            expect(key).toEqual({ PK: 'RFQ#PARTIAL#v-converts', SK: 'META' });
+        });
+
+        it('does not attempt a partial delete when the submission has no visitorId', async () => {
+            await handler(makeEvent(VALID_RFQ), {} as never, (() => {}) as never);
+            expect(mockDelete).not.toHaveBeenCalled();
+        });
+    });
 });
 
 // ---------------------------------------------------------------------------
@@ -1207,5 +1260,54 @@ describe('submit-rfq getUploadUrl action', () => {
             );
             expect((result as { statusCode: number }).statusCode).toBe(200);
         }
+    });
+});
+
+// The formal RFQ handler derives its role/budget/timeline/funding enums and text
+// normalization from the shared canonical contract (amplify/lib/rfq/contract).
+// These guard that every canonical value is accepted and normalization is applied.
+describe('canonical contract (formal RFQ schema)', () => {
+    const base = {
+        name: 'Dr. Jane Smith',
+        email: 'jane@stanford.edu',
+        institution: 'Stanford University',
+        equipmentCategory: 'ICP',
+        applicationDescription: 'We need an ICP etching system for silicon etching research.',
+        turnstileToken: 'token',
+    };
+
+    it('accepts every canonical role/budget/timeline/funding value', () => {
+        for (const role of RFQ_ROLE_VALUES) {
+            expect(rfqSchema.safeParse({ ...base, role }).success, role).toBe(true);
+        }
+        for (const budgetRange of RFQ_BUDGET_RANGE_VALUES) {
+            expect(rfqSchema.safeParse({ ...base, budgetRange }).success, budgetRange).toBe(true);
+        }
+        for (const timeline of RFQ_TIMELINE_VALUES) {
+            expect(rfqSchema.safeParse({ ...base, timeline }).success, timeline).toBe(true);
+        }
+        for (const fundingStatus of RFQ_FUNDING_STATUS_VALUES) {
+            expect(rfqSchema.safeParse({ ...base, fundingStatus }).success, fundingStatus).toBe(true);
+        }
+    });
+
+    it('normalizes name and email (trim edges, lowercase email, preserve inner spacing)', () => {
+        const formal = rfqSchema.parse({
+            ...base,
+            name: '  Jane   Smith  ',
+            email: '  JANE@Stanford.EDU ',
+        });
+        expect(formal.email).toBe('jane@stanford.edu');
+        expect(formal.name).toBe('Jane   Smith'); // trimmed edges, inner spacing preserved
+    });
+
+    it('leaves opaque/security values untouched (no trim/case change)', () => {
+        const parsed = rfqSchema.parse({
+            ...base,
+            turnstileToken: '  Tok-EN_with.Spaces  ',
+            visitorId: '  Visitor-ID-123  ',
+        });
+        expect(parsed.turnstileToken).toBe('  Tok-EN_with.Spaces  ');
+        expect(parsed.visitorId).toBe('  Visitor-ID-123  ');
     });
 });

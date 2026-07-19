@@ -1,6 +1,6 @@
 import type { APIGatewayProxyHandlerV2 } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, PutCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, PutCommand, UpdateCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
 import { S3Client, CopyObjectCommand, DeleteObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { z } from 'zod';
@@ -9,8 +9,14 @@ import { RFQ_FIELD_LIMITS as L } from '../../lib/rfq/limits';
 import {
     RFQ_EQUIPMENT_CATEGORY_VALUES,
     RFQ_ATTACHMENT_MIME_TYPES,
+    RFQ_ROLE_VALUES,
+    RFQ_BUDGET_RANGE_VALUES,
+    RFQ_TIMELINE_VALUES,
+    RFQ_FUNDING_STATUS_VALUES,
     MAX_RFQ_ATTACHMENTS,
     MAX_RFQ_ATTACHMENT_SIZE,
+    normalizeRfqText,
+    normalizeRfqEmail,
     type RfqEquipmentCategory,
 } from '../../lib/rfq/contract';
 import { invokeOrganizationApi } from '../../lib/organization/invoke-org-api';
@@ -48,36 +54,9 @@ const ALLOWED_ORIGINS = [
 // a category or file type one side accepts and the other rejects can't ship.
 // Guarded by the parity tests in handler.test.ts + rfqEquipmentOptions.test.ts.
 
-const ROLES = [
-    'PI', 'Research Scientist', 'Postdoc', 'Researcher', 'Graduate Student', 'Engineer',
-    'Procurement', 'Lab Manager', 'Business Development', 'Other',
-] as const;
-
-const BUDGET_RANGES = [
-    'Under $10k',
-    '$10k - $30k',
-    '$30k - $80k',
-    '$80k - $150k',
-    'Over $150k',
-    'Not yet defined',
-] as const;
-
-const TIMELINES = [
-    'immediate',
-    'within-3-months',
-    'within-6-months',
-    '6-plus-months',
-    'budgetary-planning',
-] as const;
-
-const FUNDING_STATUSES = [
-    'funded',
-    'budget-under-review',
-    'grant-pending',
-    'exploring',
-    'prefer-not-to-say',
-] as const;
-
+// role / budget / timeline / funding enums now come from the shared contract
+// (RFQ_ROLE_VALUES etc.) so the formal schema and the draft schema cannot drift.
+// referralSource stays local — it is not a draft field.
 const REFERRAL_SOURCES = [
     'web-search',
     'google-ads',
@@ -112,24 +91,30 @@ export function isValidTempAttachmentKey(key: string): boolean {
 // ---------------------------------------------------------------------------
 // Length caps derive from the shared source of truth (amplify/lib/rfq/limits)
 // so client (maxLength + validateField) and server can never drift.
+// Normalize (trim + NFC) human-entered prose/address text before length
+// validation, using the same canonical helper the draft schema uses. Applied
+// ONLY to human text — never to opaque/security values (turnstileToken,
+// attachmentKeys, visitorId) or field-specific canonicalizers (referralSource).
+const nText = (schema: z.ZodString) => z.string().transform(normalizeRfqText).pipe(schema);
+
 export const rfqSchema = z.object({
-    name: z.string().min(L.name.min).max(L.name.max),
-    email: z.string().email().max(L.email.max),
-    phone: z.string().max(L.phone.max).optional(),
-    institution: z.string().min(L.institution.min).max(L.institution.max),
-    department: z.string().max(L.department.max).optional(),
-    role: z.enum(ROLES).optional(),
+    name: nText(z.string().min(L.name.min).max(L.name.max)),
+    email: z.string().transform(normalizeRfqEmail).pipe(z.string().max(L.email.max).email()),
+    phone: nText(z.string().max(L.phone.max)).optional(),
+    institution: nText(z.string().min(L.institution.min).max(L.institution.max)),
+    department: nText(z.string().max(L.department.max)).optional(),
+    role: z.enum(RFQ_ROLE_VALUES).optional(),
     equipmentCategory: z.enum(RFQ_EQUIPMENT_CATEGORY_VALUES),
-    specificModel: z.string().max(L.specificModel.max).optional(),
-    applicationDescription: z.string().min(L.applicationDescription.min).max(L.applicationDescription.max),
-    keySpecifications: z.string().max(L.keySpecifications.max).optional(),
+    specificModel: nText(z.string().max(L.specificModel.max)).optional(),
+    applicationDescription: nText(z.string().min(L.applicationDescription.min).max(L.applicationDescription.max)),
+    keySpecifications: nText(z.string().max(L.keySpecifications.max)).optional(),
     quantity: z.number().int().positive().default(1),
-    budgetRange: z.enum(BUDGET_RANGES).optional(),
-    timeline: z.enum(TIMELINES).optional(),
-    fundingStatus: z.enum(FUNDING_STATUSES).optional(),
+    budgetRange: z.enum(RFQ_BUDGET_RANGE_VALUES).optional(),
+    timeline: z.enum(RFQ_TIMELINE_VALUES).optional(),
+    fundingStatus: z.enum(RFQ_FUNDING_STATUS_VALUES).optional(),
     referralSource: z.enum(REFERRAL_SOURCES).optional(),
-    existingEquipment: z.string().max(L.existingEquipment.max).optional(),
-    additionalComments: z.string().max(L.additionalComments.max).optional(),
+    existingEquipment: nText(z.string().max(L.existingEquipment.max)).optional(),
+    additionalComments: nText(z.string().max(L.additionalComments.max)).optional(),
     turnstileToken: z.string().min(1),
     // Browser visitor identity for the VISITOR# bridge (2C-analytics)
     visitorId: z.string().max(L.visitorId.max).optional(),
@@ -142,11 +127,11 @@ export const rfqSchema = z.object({
         .optional(),
     // Budgetary quote with shipping address for tax calculation
     needsBudgetaryQuote: z.boolean().optional(),
-    shippingAddress: z.string().max(L.shippingAddress.max).optional(),
-    shippingCity: z.string().max(L.shippingCity.max).optional(),
-    shippingState: z.string().max(L.shippingState.max).optional(),
-    shippingZipCode: z.string().max(L.shippingZipCode.max).optional(),
-    shippingCountry: z.string().max(L.shippingCountry.max).optional(),
+    shippingAddress: nText(z.string().max(L.shippingAddress.max)).optional(),
+    shippingCity: nText(z.string().max(L.shippingCity.max)).optional(),
+    shippingState: nText(z.string().max(L.shippingState.max)).optional(),
+    shippingZipCode: nText(z.string().max(L.shippingZipCode.max)).optional(),
+    shippingCountry: nText(z.string().max(L.shippingCountry.max)).optional(),
     // Article attribution — silently dropped if invalid (never blocks submission)
     referrerSource: z
         .string()
@@ -304,6 +289,74 @@ async function handleGetUploadUrl(
             expiresAt: new Date(Date.now() + PRESIGNED_URL_EXPIRY * 1000).toISOString(),
         }),
     };
+}
+
+// ---------------------------------------------------------------------------
+// capturePartial — persist Step-1 fields for an abandoned RFQ
+//
+// Fired when the customer advances from Step 1 to Step 2. Keyed by visitorId so
+// repeated captures overwrite one row and a later full submission can supersede
+// it (see the delete in the submit path). Fields are lenient (Step-1 validation
+// already passed client-side; this is best-effort visibility, not the RFQ of
+// record) — capped + normalized, no min-length, no CAPTCHA, no side effects.
+// ---------------------------------------------------------------------------
+const VISITOR_ID_RE = /^[A-Za-z0-9_-]{1,100}$/;
+
+/** Deterministic key for a visitor's partial row, so re-capture overwrites + submit can delete it. */
+export function partialRfqId(visitorId: string): string {
+    return `PARTIAL#${visitorId}`;
+}
+
+export const capturePartialSchema = z.object({
+    action: z.literal('capturePartial'),
+    visitorId: z.string().regex(VISITOR_ID_RE),
+    name: nText(z.string().max(L.name.max)).optional(),
+    email: z.string().transform(normalizeRfqEmail).pipe(z.string().max(L.email.max)).optional(),
+    institution: nText(z.string().max(L.institution.max)).optional(),
+    equipmentCategory: z.enum(RFQ_EQUIPMENT_CATEGORY_VALUES).optional(),
+    applicationDescription: nText(z.string().max(L.applicationDescription.max)).optional(),
+});
+
+async function handleCapturePartial(rawBody: unknown, corsHeaders: Record<string, string>) {
+    const parsed = capturePartialSchema.safeParse(rawBody);
+    if (!parsed.success) {
+        return {
+            statusCode: 400,
+            headers: corsHeaders,
+            body: JSON.stringify({ success: false, error: 'Invalid partial capture' }),
+        };
+    }
+    const { visitorId, name, email, institution, equipmentCategory, applicationDescription } = parsed.data;
+    const now = new Date().toISOString();
+    const rfqId = partialRfqId(visitorId);
+    const item: Record<string, unknown> = {
+        PK: `RFQ#${rfqId}`,
+        SK: 'META',
+        // Same GSI1 status-partition convention the admin listRfqs resolver queries.
+        GSI1PK: 'RFQ_STATUS#partial',
+        GSI1SK: `${now}#${rfqId}`,
+        rfqId,
+        status: 'partial',
+        submittedAt: now, // capture time — drives the admin list ordering + display
+        updatedAt: now,
+        visitorId,
+        // Bound growth: abandoned partials that never convert are cleaned up by the
+        // table's TTL (attribute name 'TTL', epoch seconds). Converted ones are deleted
+        // sooner by the submit path. 90 days = generous follow-up window for sales.
+        TTL: Math.floor(Date.parse(now) / 1000) + 90 * 24 * 60 * 60,
+    };
+    if (name) item.name = name;
+    if (email) item.email = email;
+    if (institution) item.institution = institution;
+    if (equipmentCategory) item.equipmentCategory = equipmentCategory;
+    if (applicationDescription) item.applicationDescription = applicationDescription;
+
+    // Unconditional Put = upsert: the same visitor advancing to Step 2 again just
+    // refreshes their single partial row rather than piling up duplicates.
+    await docClient.send(new PutCommand({ TableName: TABLE_NAME(), Item: item }));
+    console.log(`Partial RFQ captured for visitor ${visitorId}`);
+
+    return { statusCode: 200, headers: corsHeaders, body: JSON.stringify({ success: true }) };
 }
 
 // ---------------------------------------------------------------------------
@@ -659,6 +712,13 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
             return await handleGetUploadUrl(rawBody, corsHeaders);
         }
 
+        // Step-1 partial capture shares this Lambda but skips the full RFQ path:
+        // no CAPTCHA (mid-form), no side effects, just one upsert so an abandoned
+        // Step 1 is still visible in the admin RFQ list.
+        if ((rawBody as { action?: unknown } | null)?.action === 'capturePartial') {
+            return await handleCapturePartial(rawBody, corsHeaders);
+        }
+
         // 1. Validate Turnstile CAPTCHA
         const isPrivateIP = (addr: string): boolean => {
             const parts = addr.split('.').map(Number);
@@ -784,6 +844,20 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
             Item: item,
         }));
         console.log(`RFQ_SUBMISSION created: ${rfqId}`);
+
+        // Supersede this visitor's Step-1 partial row, if any — the full RFQ now
+        // exists, so the admin should see one record, not a partial + a submission.
+        // Best-effort: a stray partial (TTL-less but low-value) never blocks the lead.
+        if (data.visitorId) {
+            try {
+                await docClient.send(new DeleteCommand({
+                    TableName: TABLE_NAME(),
+                    Key: { PK: `RFQ#${partialRfqId(data.visitorId)}`, SK: 'META' },
+                }));
+            } catch (err) {
+                console.warn('Failed to delete superseded partial RFQ (non-fatal):', err);
+            }
+        }
 
         // 6. Upsert customer Organization + backfill matchedOrgId/GSI2PK
         let matchedOrgId: string | null = null;

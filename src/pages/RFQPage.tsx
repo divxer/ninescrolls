@@ -6,6 +6,7 @@ import { behaviorAnalytics } from '../services/behaviorAnalytics';
 import { getVisitorId } from '../services/analyticsStorageService';
 import { describeSubmitError, type SubmitErrorBody } from './rfqSubmitError';
 import { uploadRfqAttachments, RFQ_API_URL } from '../services/rfqAttachmentService';
+import { capturePartialRfq } from '../services/rfqPartialCapture';
 import { parseRfqUrlParams } from './rfqUrlParams';
 import { ConversionCard, ConversionHero, TrustSignalList } from '../components/conversion';
 // Shared source of truth for field length caps — the server's rfqSchema
@@ -501,6 +502,15 @@ export function RFQPage() {
     }
     setFieldErrors(errors);
     if (Object.keys(errors).length === 0) {
+      // Persist the (now-valid) Step-1 fields so an abandoned RFQ still shows in
+      // admin. Fire-and-forget — never blocks the step transition.
+      capturePartialRfq({
+        name: formData.name,
+        email: formData.email,
+        institution: formData.institution,
+        equipmentCategory: formData.equipmentCategory,
+        applicationDescription: formData.applicationDescription,
+      });
       setCurrentStep(2);
       // Scroll to step indicator instead of page top -- user already saw the hero
       requestAnimationFrame(() => {
