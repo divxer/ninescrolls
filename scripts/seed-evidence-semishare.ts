@@ -118,7 +118,7 @@ const NEW: Row[] = [
   ['pub-semishare-oxide-transistor-graded-afm-2026', 'Graded post-processing-assisted heterojunction interface for high-performance oxide transistors', '10.1002/adfm.74701', 'Advanced Functional Materials', 2026, 'Optem 70XL'],
 
   // J. Preprints
-  ['pub-semishare-gainsno-fet-print-rs-2022', 'Liquid Ga-In-Sn alloy printing of GaInSnO ultra-thin semiconductor films and field-effect transistors', 'https://doi.org/10.21203/rs.3.rs-2030888/v1', 'Research Square preprint', 2022, 'X3'],
+  ['pub-semishare-gainsno-fet-print-rs-2022', 'Liquid Ga-In-Sn alloy printing of GaInSnO ultra-thin semiconductor films and field-effect transistors', '10.21203/rs.3.rs-2030888/v1', 'Research Square preprint', 2022, 'X3'],
   ['pub-semishare-res2se-alloy-films-ssrn-2025', 'Growth of centimeter-scale 2D ReS2xSe2(1-x) alloy films and their optoelectronic devices', 'https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5369687', 'SSRN preprint', 2025, 'SM-4'],
   ['pub-semishare-cr2o3-mistcvd-jallcom-2026', 'Acceptor-doped mist-CVD Cr2O3 films on sapphire and β-Ga2O3', '10.1016/j.jallcom.2026.187824', 'Journal of Alloys and Compounds', 2026, 'SX-8'],
 
