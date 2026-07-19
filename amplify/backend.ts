@@ -9,7 +9,6 @@ import { serverTrack } from './functions/server-track/resource';
 import { classifyOrg } from './functions/classify-org/resource';
 import { generateArticleMeta } from './functions/generate-article-meta/resource';
 import { submitRfq } from './functions/submit-rfq/resource';
-import { rfqDraftApi } from './functions/rfq-draft-api/resource';
 import { convertRfqToOrder } from './functions/convert-rfq-to-order/resource';
 import { updateOrderStatus } from './functions/update-order-status/resource';
 import { documentUpload } from './functions/document-upload/resource';
@@ -87,7 +86,6 @@ const backend = defineBackend({
     classifyOrg,
     generateArticleMeta,
     submitRfq,
-    rfqDraftApi,
     convertRfqToOrder,
     updateOrderStatus,
     documentUpload,
@@ -472,19 +470,6 @@ const rfqUploadUrlResource = rfqResource.addResource('upload-url');
 rfqUploadUrlResource.addMethod('POST', submitRfqIntegration);
 rfqUploadUrlResource.addMethod('OPTIONS', submitRfqIntegration);
 
-// Create /api/rfq/draft (POST create) and /api/rfq/draft/{rfqId} (GET/PATCH) for
-// the public secure-drafts API — a separate Lambda from submit-rfq, gated by the
-// three-credential model (see rfq-draft-api/handler.ts). CAPTCHA is not required
-// to save a draft; formal submission still is.
-const rfqDraftIntegration = new LambdaIntegration(backend.rfqDraftApi.resources.lambda, { proxy: true });
-const rfqDraftResource = rfqResource.addResource('draft');
-rfqDraftResource.addMethod('POST', rfqDraftIntegration);
-rfqDraftResource.addMethod('OPTIONS', rfqDraftIntegration);
-const rfqDraftItemResource = rfqDraftResource.addResource('{rfqId}');
-rfqDraftItemResource.addMethod('GET', rfqDraftIntegration);
-rfqDraftItemResource.addMethod('PATCH', rfqDraftIntegration);
-rfqDraftItemResource.addMethod('OPTIONS', rfqDraftIntegration);
-
 // Create /api/rfq/convert resource for converting RFQ to Order
 const rfqConvertResource = rfqResource.addResource('convert');
 const convertRfqIntegration = new LambdaIntegration(backend.convertRfqToOrder.resources.lambda, {
@@ -639,11 +624,6 @@ backend.submitRfq.addEnvironment('INTELLIGENCE_TABLE', intelligenceTable.tableNa
 
 orderDocumentsBucket.grantReadWrite(backend.submitRfq.resources.lambda);
 backend.submitRfq.addEnvironment('DOCUMENTS_BUCKET', orderDocumentsBucket.bucketName);
-
-// Grant rfq-draft-api Lambda access to the Intelligence table (drafts live at
-// PK=RFQ#<id>, SK=META alongside formal RFQs). No S3 — drafts carry no attachments.
-intelligenceTable.grantReadWriteData(backend.rfqDraftApi.resources.lambda);
-backend.rfqDraftApi.addEnvironment('INTELLIGENCE_TABLE', intelligenceTable.tableName);
 
 // Grant convert-rfq-to-order Lambda access
 intelligenceTable.grantReadWriteData(backend.convertRfqToOrder.resources.lambda);
