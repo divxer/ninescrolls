@@ -17,7 +17,7 @@ import { findBannedTokens } from './lib/bannedOem';
 
 Amplify.configure(outputs);
 
-const PRODUCTS = ['icp-etcher', 'rie-etcher', 'pecvd', 'sputter', 'ibe-ribe', 'striper', 'e-beam-evaporator'];
+const PRODUCTS = ['icp-etcher', 'rie-etcher', 'pecvd', 'sputter', 'ibe-ribe', 'striper', 'plasma-cleaner', 'e-beam-evaporator'];
 const SENSITIVE_META_KEYS = ['manufacturerAsNamed', 'manufacturerLegalName', 'instrumentAsNamed', 'instrumentRefinedFrom', 'instrumentRefinedVia'];
 
 async function harvestSensitive(): Promise<string[]> {
