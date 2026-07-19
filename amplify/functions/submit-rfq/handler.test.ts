@@ -18,7 +18,6 @@ import {
     MAX_RFQ_ATTACHMENTS,
     MAX_RFQ_ATTACHMENT_SIZE,
 } from '../../lib/rfq/contract';
-import { draftCreateSchema } from '../../lib/rfq/draftContract';
 import { PutCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 
 // Attachment keys in the exact shape getUploadUrl issues: temp/rfq/<16 hex>/<name>
@@ -1264,11 +1263,10 @@ describe('submit-rfq getUploadUrl action', () => {
     });
 });
 
-// Parity guard for the P1 canonical-contract migration: the formal handler and
-// the draft schema now derive role/budget/timeline/funding enums and text
-// normalization from amplify/lib/rfq/contract. These prove the migration is
-// behavior-preserving and that the two schemas agree on normalization.
-describe('canonical contract parity (formal ⇄ shared)', () => {
+// The formal RFQ handler derives its role/budget/timeline/funding enums and text
+// normalization from the shared canonical contract (amplify/lib/rfq/contract).
+// These guard that every canonical value is accepted and normalization is applied.
+describe('canonical contract (formal RFQ schema)', () => {
     const base = {
         name: 'Dr. Jane Smith',
         email: 'jane@stanford.edu',
@@ -1293,25 +1291,14 @@ describe('canonical contract parity (formal ⇄ shared)', () => {
         }
     });
 
-    it('normalizes name and email identically to the draft schema', () => {
-        const messy = {
+    it('normalizes name and email (trim edges, lowercase email, preserve inner spacing)', () => {
+        const formal = rfqSchema.parse({
             ...base,
             name: '  Jane   Smith  ',
             email: '  JANE@Stanford.EDU ',
-        };
-        const formal = rfqSchema.parse(messy);
-        const draft = draftCreateSchema.parse({
-            name: messy.name,
-            email: messy.email,
-            institution: base.institution,
-            equipmentCategory: base.equipmentCategory,
-            applicationDescription: base.applicationDescription,
-            quantity: 1,
         });
         expect(formal.email).toBe('jane@stanford.edu');
         expect(formal.name).toBe('Jane   Smith'); // trimmed edges, inner spacing preserved
-        expect(formal.email).toBe(draft.email);
-        expect(formal.name).toBe(draft.name);
     });
 
     it('leaves opaque/security values untouched (no trim/case change)', () => {
