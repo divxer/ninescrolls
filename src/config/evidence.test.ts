@@ -6,6 +6,7 @@ import {
   hasPayload,
   journalBadge,
   productPlatformLabel,
+  selectShowcasePublications,
 } from './evidence';
 import { EVIDENCE_STATUS as SHARED_STATUS } from '../../amplify/lib/evidence/status';
 
@@ -51,5 +52,50 @@ describe('productPlatformLabel', () => {
   it('is represented-platform framed and never names an OEM', () => {
     expect(productPlatformLabel('icp-etcher')).toBe('the ICP etching platform we represent');
     expect(productPlatformLabel('unknown-slug')).toBe('the platform we represent');
+  });
+});
+
+describe('selectShowcasePublications', () => {
+  const p = (journal: string, title: string, year?: number) => ({ journal, title, year });
+
+  it('orders by journal prestige (marquee first), then unranked by recency', () => {
+    const picks = selectShowcasePublications([
+      p('Some Obscure Journal', 'obscure', 2026),
+      p('Nature Communications', 'natcomm', 2023),
+      p('Lab on a Chip', 'labchip', 2026),
+    ]);
+    expect(picks.map((x) => x.title)).toEqual(['natcomm', 'labchip', 'obscure']);
+  });
+
+  it('dedupes to one card per journal, keeping the newest year', () => {
+    const picks = selectShowcasePublications([
+      p('Nature Communications', 'old', 2021),
+      p('Nature Communications', 'new', 2026),
+      p('Science Advances', 'sciadv', 2023),
+    ]);
+    expect(picks.map((x) => x.title)).toEqual(['new', 'sciadv']);
+  });
+
+  it('drops bare "Nature"/"Science" records — never misattributes a flagship journal', () => {
+    const picks = selectShowcasePublications([
+      { journal: 'Nature', title: 'bare-nature', year: 2026 },
+      { journal: 'science', title: 'bare-science', year: 2026 }, // case-insensitive
+      { journal: 'Nature Communications', title: 'natcomm', year: 2023 },
+    ]);
+    expect(picks.map((x) => x.title)).toEqual(['natcomm']);
+  });
+
+  it('respects the limit and skips entries missing journal or title', () => {
+    const picks = selectShowcasePublications(
+      [
+        p('Nature Communications', 'a', 2026),
+        p('Science Advances', 'b', 2025),
+        p('Light: Science & Applications', 'c', 2024),
+        { journal: 'Advanced Materials', title: null, year: 2026 } as any, // dropped: no title
+        { journal: null, title: 'no-journal', year: 2026 } as any, // dropped: no journal
+      ],
+      2,
+    );
+    expect(picks.map((x) => x.title)).toEqual(['a', 'b']);
   });
 });

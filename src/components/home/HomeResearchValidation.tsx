@@ -1,0 +1,104 @@
+import { useEffect, useState } from 'react';
+import { fetchPublishedEvidence, fetchEvidenceStats, type PublishedEvidence } from '../../services/evidenceService';
+import { selectShowcasePublications } from '../../config/evidence';
+
+/**
+ * Homepage "Research Validation" — dynamic, Evidence-driven. Replaces the old
+ * hardcoded card list + frozen "245 citations" number (which drifted and needed
+ * manual refresh). Shows the live count of published peer-reviewed publications
+ * (non-drifting) and a curated marquee showcase.
+ *
+ * No citation counts (the Evidence framework deliberately doesn't store them) and
+ * no OEM data (the public projection strips slug/meta; only journal/title/year/
+ * doi/sourceUrl cross the boundary). Evergreen heading/intro always render; the
+ * stat + cards appear once data loads, so a transient fetch failure degrades to
+ * the intro rather than a broken empty grid.
+ */
+export function HomeResearchValidation() {
+  const [pubs, setPubs] = useState<PublishedEvidence[] | null>(null);
+  const [verifiedCount, setVerifiedCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    // Cards come from the published set; the headline count is the (larger)
+    // verified tier-A total, which includes held drafts. If the stats query
+    // isn't available, fall back to the published count.
+    fetchPublishedEvidence().then((all) => {
+      if (active) setPubs(all.filter((r) => r?.type === 'publication'));
+    });
+    fetchEvidenceStats().then((stats) => {
+      if (active && stats) setVerifiedCount(stats.verifiedPublications);
+    });
+    return () => { active = false; };
+  }, []);
+
+  const cards = pubs ? selectShowcasePublications(pubs, 4) : [];
+  const count = verifiedCount ?? pubs?.length ?? 0;
+  const hasData = cards.length > 0;
+
+  // Quality is the hero (journal prestige), not the raw count — the count is a
+  // supporting fact. Journal breadth is floored to a round "N+" and only shown
+  // when it's substantial; otherwise a generic phrase.
+  const journalCount = pubs ? new Set(pubs.map((p) => p.journal).filter(Boolean)).size : 0;
+  const journalFloor = Math.floor(journalCount / 5) * 5;
+  const journalPhrase = journalFloor >= 10
+    ? `${journalFloor}+ peer-reviewed journals`
+    : 'other leading peer-reviewed journals';
+
+  return (
+    <section id="research" className="scroll-mt-24 border-y border-slate-200 bg-white px-6 py-24 md:px-10 lg:px-16">
+      <div className="mx-auto max-w-screen-2xl">
+        <div className={hasData ? 'grid gap-10 lg:grid-cols-[0.8fr_1.2fr]' : ''}>
+          <div>
+            <p className="text-sm font-bold uppercase tracking-[0.22em] text-sky-600">Research Validation</p>
+            <h2 className="mt-4 font-headline text-4xl font-semibold leading-tight tracking-normal text-slate-950 md:text-5xl">
+              Peer-reviewed validation for the platforms we represent.
+            </h2>
+            <p className="mt-6 text-base leading-8 text-slate-600">
+              Independent labs at universities and research institutes have used the plasma, deposition,
+              and vacuum process platforms we represent in their published work.
+            </p>
+            {hasData ? (
+              <>
+                {/* Hero = quality (journal prestige), not a raw count. */}
+                <p className="mt-8 font-headline text-2xl font-semibold leading-snug text-slate-950 md:text-3xl">
+                  Published across Nature Portfolio, Science Advances, and {journalPhrase}.
+                </p>
+                {/* The count is a supporting fact, deliberately small. Guard >0
+                    so a degenerate "0 verified studies" can never render. */}
+                {count > 0 ? (
+                  <p className="mt-3 text-sm font-semibold leading-6 text-slate-500">
+                    {count} verified studies across the platforms we represent · and growing
+                  </p>
+                ) : null}
+              </>
+            ) : null}
+          </div>
+          {hasData ? (
+            <div className="grid gap-4 md:grid-cols-2">
+              {cards.map((card) => (
+                <article key={card.id} className="flex flex-col rounded-2xl border border-slate-200 bg-[#FAFAFA] p-6">
+                  <p className="font-serif text-2xl font-semibold text-slate-950">{card.journal}</p>
+                  <p className="mt-4 text-base font-semibold leading-7 text-slate-900">{card.title}</p>
+                  <p className="mt-4 text-sm leading-6 text-slate-500">
+                    {card.year ? `${card.year} · ` : ''}Peer-reviewed research using a process platform we represent.
+                  </p>
+                  {card.sourceUrl ? (
+                    <a
+                      href={card.sourceUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-4 text-sm font-semibold text-sky-700 hover:underline"
+                    >
+                      View source ↗
+                    </a>
+                  ) : null}
+                </article>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </section>
+  );
+}

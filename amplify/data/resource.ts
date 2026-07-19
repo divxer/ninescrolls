@@ -1115,6 +1115,16 @@ const schema = a.schema({
     .handler(a.handler.function(evidenceApi))
     .authorization((allow) => [allow.publicApiKey()]),
 
+  // Aggregate COUNT of verbatim-verified (tier-A) publications — the homepage
+  // "scale" number. Reads drafts internally to count them but returns ONLY an
+  // integer ({ verifiedPublications }), so no record/OEM data crosses the public
+  // boundary. Same Lambda as listPublishedEvidence, routed by info.fieldName.
+  getEvidenceStats: a
+    .query()
+    .returns(a.json())
+    .handler(a.handler.function(evidenceApi))
+    .authorization((allow) => [allow.publicApiKey()]),
+
   // =========================================================================
   // Insights Image Upload — queries & mutations
   // =========================================================================

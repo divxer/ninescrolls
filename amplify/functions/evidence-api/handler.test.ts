@@ -18,7 +18,7 @@ vi.mock('@aws-sdk/lib-dynamodb', () => ({
   ScanCommand: vi.fn().mockImplementation((p) => ({ ...p, constructor: { name: 'ScanCommand' } })),
 }));
 
-import { handler } from './handler';
+import { handler, countVerifiedPublications } from './handler';
 
 const invoke = (args: Record<string, unknown> = {}) =>
   handler({ arguments: args } as never) as Promise<unknown[]>;
@@ -102,5 +102,45 @@ describe('evidence-api listPublishedEvidence', () => {
     const [rec] = (await invoke()) as Record<string, unknown>[];
     expect(rec).not.toHaveProperty('publicSummary');
     expect(rec.journal).toBe('J');
+  });
+});
+
+describe('countVerifiedPublications', () => {
+  it('counts active (non-archived) tier-A publications only', () => {
+    const items = [
+      { type: 'publication', status: 'published', meta: JSON.stringify({ verificationTier: 'A' }) }, // yes
+      { type: 'publication', status: 'draft', meta: JSON.stringify({ verificationTier: 'A' }) },      // yes (held tier-A counts)
+      { type: 'publication', status: 'draft', meta: JSON.stringify({ verificationTier: 'B' }) },       // no (tier-B)
+      { type: 'publication', status: 'archived', meta: JSON.stringify({ verificationTier: 'A' }) },    // no (archived)
+      { type: 'application_note', status: 'published', meta: JSON.stringify({ verificationTier: 'A' }) }, // no (not a publication)
+    ];
+    expect(countVerifiedPublications(items)).toBe(2);
+  });
+});
+
+describe('evidence-api getEvidenceStats', () => {
+  const invokeStats = () =>
+    handler({ info: { fieldName: 'getEvidenceStats' } } as never) as Promise<Record<string, unknown>>;
+
+  it('scans active publications and returns ONLY the verified count (no records/OEM)', async () => {
+    mockScan.mockResolvedValueOnce({
+      Items: [
+        { type: 'publication', status: 'published', title: 'secret title',
+          meta: JSON.stringify({ verificationTier: 'A', manufacturerAsNamed: 'Tailong Electronics' }) },
+        { type: 'publication', status: 'draft', meta: JSON.stringify({ verificationTier: 'A' }) },
+        { type: 'publication', status: 'draft', meta: JSON.stringify({ verificationTier: 'B' }) },
+      ],
+      LastEvaluatedKey: undefined,
+    });
+    const res = await invokeStats();
+
+    const sent = mockSend.mock.calls[0][0];
+    expect(sent.FilterExpression).toBe('#type = :publication AND #status <> :archived');
+    expect(sent.ExpressionAttributeNames).toEqual({ '#status': 'status', '#type': 'type' });
+    expect(sent.ExpressionAttributeValues).toEqual({ ':publication': 'publication', ':archived': 'archived' });
+
+    expect(res).toEqual({ verifiedPublications: 2 });
+    // A count only — no titles/OEM cross the boundary.
+    expect(JSON.stringify(res)).not.toMatch(/tailong|secret/i);
   });
 });
