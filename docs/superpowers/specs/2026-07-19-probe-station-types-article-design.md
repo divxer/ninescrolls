@@ -96,7 +96,7 @@ Outbound (in-article):
 ## SEO and metadata (locked)
 
 - Slug: `types-of-wafer-probe-stations`
-- Title direction: "Types of Wafer Probe Stations: A Measurement-Environment Guide" (≤60-char check at implementation)
+- Title (locked): "Types of Wafer Probe Stations: Measurement-Environment Guide" (60 chars, locked 2026-07-19 after length audit — the earlier "...A Measurement-Environment Guide" direction was 62 chars, contradicting its own ≤60 target; dropping the article "A" resolves it exactly)
 - Schema: TechArticle; category Metrology & Testing; author NineScrolls Engineering
 - Standalone-HTML flow: `scripts/articles/types-of-wafer-probe-stations.html` with `article:*` meta tags (incl. slug override) + `data-related-products` JSON
 - Publish chain identical to #3: `create-insight` draft → cover + figure upload (`--name cover` / `--name type-matrix --no-update-cover`) → fail-fast curl verification of all CDN keys → admin review/publish → llms.txt + llms-full.txt entries (74→75) + `check-llms-sync` → GSC Request Indexing.

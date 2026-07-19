@@ -113,15 +113,19 @@ describe('types article - structure and metadata', () => {
 
     // The DB-facing title comes from <h1> (parseArticleHtml falls back to
     // <title> only when no <h1> exists) -- so the locked headline copy is
-    // what actually needs pinning down here, not the <title> tag. This
-    // exact string is 62 characters; an earlier draft of the plan claimed
-    // "58 chars, assert <=60", which was simply wrong for this locked
-    // string -- an exact-equality check already fully constrains the
-    // headline, so there is no separate (and here impossible) length bound.
+    // what actually needs pinning down here, not the <title> tag. The
+    // original locked string ("...A Measurement-Environment Guide") was 62
+    // characters, which silently contradicted the plan's own "58 chars,
+    // assert <=60" claim -- an exact-equality check alone can never fail
+    // that kind of contradiction, since it just pins whatever string is
+    // given. Resolution (2026-07-19): drop the article "A"; the string
+    // below is audited at exactly 60 characters, so both the equality
+    // check AND the length bound below are simultaneously satisfiable.
     const h1 = doc.match(/<h1[^>]*>([^<]+)<\/h1>/)?.[1] ?? '';
     expect(h1, 'h1 headline (source of the DB title via parseArticleHtml)').toBe(
-      'Types of Wafer Probe Stations: A Measurement-Environment Guide',
+      'Types of Wafer Probe Stations: Measurement-Environment Guide',
     );
+    expect(h1.length, 'h1 headline length (SEO title constraint)').toBeLessThanOrEqual(60);
   });
 
   it('contains the six type-profile sections in locked order', () => {
