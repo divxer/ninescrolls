@@ -104,11 +104,24 @@ select what to publish — **being "verified" alone is NOT enough to auto-publis
 |---|---|---|
 | `verificationTier` | `A` / `B` | `A` = verbatim instrument quote captured; `B` = DOI+catalog, awaiting full-text re-quote |
 | `capabilityRole` | `primary` / `substantial` / `incidental` | how central the Tailong tool is to the paper's result |
-| `launchEligible` | boolean | **hard gate** = `tier A` AND `capabilityRole != incidental` |
-| `publishPriority` | `wave1` / `wave2` / `wave3` | `wave1` = 6 hero papers (rie/icp/pecvd/sputter); `wave2` = rest of launch-eligible; `wave3` = held (B-tier re-quote, incidental, snippet-tier) |
+| `launchEligible` | boolean | **hard gate** = `tier A` AND `capabilityRole != incidental` AND **not** a conference proceedings |
+| `venueType` | `conference` (or absent ⇒ journal) | stamped on records in the classifier's `PROCEEDINGS` set; self-describes the venue axis (internal-only, never in the public projection) |
+| `publishPriority` | `wave1` / `wave2` / `wave3` | `wave1` = 6 hero papers (rie/icp/pecvd/sputter); `wave2` = rest of launch-eligible; `wave3` = held (B-tier re-quote, incidental, snippet-tier, conference proceedings) |
 
-Current reproducible split (49 active records): wave1 **6** · wave2 **29** ·
-wave3 **14**; tier A **42** / B **7**; launchEligible **35**.
+**Conference proceedings (policy, 2026-07-18):** the product-page "Peer-reviewed
+research" list is for journal-grade evidence, so conference/proceedings papers are
+**excluded from launch-eligibility by default**, regardless of tier/role — a
+discerning academic/industry reader weighs proceedings far below journal articles,
+and mixing them in would dilute the framework's high credibility bar. Any
+proceedings record MUST be listed in the classifier's `PROCEEDINGS` set (forces
+`launchEligible: false`, `wave3`, `venueType: 'conference'`). Promoting a strong,
+on-topic proceedings paper is a deliberate case-by-case exception (remove it from
+that set). Today one such record exists: `pub-tailong-sputter-tio2-cuox-robots-raits-2026`
+(IEEE RAITS 2026 — a robotics/intelligent-transportation venue, off-topic for a
+sputter thin-film capability showcase).
+
+Current reproducible split (49 active records): wave1 **6** · wave2 **28** ·
+wave3 **15**; tier A **42** / B **7**; launchEligible **34**.
 `ibe-ribe`, `striper`, `ald` have **no** launch-eligible record →
 their product pages show no Evidence module at launch (by design — "no strong evidence,
 don't show" beats forcing coverage with an incidental-use paper). "One record per product

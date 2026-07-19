@@ -124,3 +124,39 @@ Stages 1–4 are the immediately-shippable unit ("tonight"). Stage 5 iterates.
 - **`platform` label** per product line must be pre-agreed represented-platform wording (e.g. "the ICP etching platform we represent"); sourced from product config, reused across the page.
 - **Homepage reframe coupling:** confirm the homepage "Research Validation" section does not read live evidence counts before publishing, else publishing could change that copy unexpectedly.
 - **`publishDate` semantics** on the raw-GraphQL publish path must match the admin path (ISO date string).
+
+## Policy addendum — conference proceedings (decided 2026-07-19)
+
+**Decision:** conference / proceedings papers are **excluded from the product-page
+"Peer-reviewed research" list by default** — they are not launch-eligible regardless
+of `verificationTier`/`capabilityRole`.
+
+**Rationale:** the section reads as journal-grade evidence to the academic / industry
+audience the site targets, and a discerning reader weighs conference proceedings far
+below journal articles. Mixing them in dilutes the framework's high credibility bar
+("no strong evidence → don't show"). The trigger case — `pub-tailong-sputter-tio2-cuox-robots-raits-2026`
+(IEEE RAITS 2026, "International Conference on Robotics, Automation and Intelligent
+Transportation Systems") — is also an off-topic venue for a sputter thin-film
+capability showcase, compounding the mismatch. It was the only proceedings record in
+the set; the sputter page retains its ACS AMI journal paper, so the module still
+renders. Considered and rejected: (a) *keep, visually distinguished* — not worth
+bespoke UI for one record; (b) *keep, treat as equal* — understates the journal-vs-
+proceedings gap for this audience.
+
+**Enforcement (the launch gate gains a venue axis):**
+- `launchEligible = tier === 'A' && role !== 'incidental' && !isProceedings`
+  (`scripts/lib/evidenceSeedOperations.ts` → `classifyPublications`).
+- The classifier (`scripts/classify-evidence-publish-priority.ts`) carries an explicit
+  `PROCEEDINGS` slug set (mirrors `WAVE1`). **Any** conference/proceedings record MUST
+  be listed there; it forces `launchEligible: false`, `publishPriority: 'wave3'`, and
+  stamps `meta.venueType: 'conference'` (internal-only; the public projection already
+  omits raw `meta`).
+- One-off enforcement + unpublish: `scripts/exclude-evidence-proceedings.ts`
+  (`excludeProceedingsFromLaunch`) cleans `meta.journal` to a proper short name,
+  tags the venue, forces the launch fields off, and flips `status → draft`. Idempotent,
+  dry-run by default. The `journalBadge` map (`src/config/evidence.ts`) is now
+  journal-only (the vague `IEEE Conf.` entry was removed).
+
+**Case-by-case exception:** a strong, on-topic proceedings paper in a reputable venue
+may be promoted deliberately — remove its slug from `PROCEEDINGS` and let the normal
+tier/role gate apply. The default remains exclusion.
