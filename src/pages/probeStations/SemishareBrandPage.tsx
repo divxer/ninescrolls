@@ -9,8 +9,8 @@ import {
   getBrandPageSeoTitle,
   getPartnerJsonLdDescription,
   productLines,
-  SEMISHARE_PUBLICATIONS,
 } from '../../data/probeStations/semishare';
+import { ProductEvidence } from '../../components/products/ProductEvidence';
 import { useScrollToTop } from '../../hooks/useScrollToTop';
 
 const faqs = [
@@ -143,36 +143,10 @@ export function SemishareBrandPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-5xl px-6 pb-10">
-        <h2 className="text-2xl font-bold">Used in peer-reviewed research</h2>
-        <p className="mt-3 max-w-3xl text-slate-600">
-          SEMISHARE probe stations appear in the methods of peer-reviewed studies across device
-          physics, photonics, wide-bandgap power devices, and materials research.
-        </p>
-        <div className="mt-6 grid gap-5 md:grid-cols-2">
-          {SEMISHARE_PUBLICATIONS.map((pub) => (
-            <article key={pub.doi} className="rounded-xl border border-slate-200 p-6">
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-sky-600">
-                {pub.venue} · {pub.year}
-              </p>
-              <h3 className="mt-2 text-base font-semibold leading-snug">
-                <a
-                  href={`https://doi.org/${pub.doi}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-slate-900 underline decoration-slate-300 underline-offset-2 hover:decoration-sky-500"
-                >
-                  {pub.title}
-                </a>
-              </h3>
-              <p className="mt-2 text-sm text-slate-600">{pub.authors}</p>
-              <span className="mt-3 inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
-                {pub.application}
-              </span>
-            </article>
-          ))}
-        </div>
-      </section>
+      {/* Dynamic, Evidence-framework-driven peer-reviewed research (published
+          probe-station publication records). Supersedes the former static
+          SEMISHARE_PUBLICATIONS list. Renders nothing until records publish. */}
+      <ProductEvidence productSlug="probe-station" />
 
       <section className="mx-auto max-w-5xl px-6 pb-10">
         <h2 className="text-2xl font-bold">Frequently asked questions</h2>

@@ -3,7 +3,6 @@ import {
   ATTESTATION_CONFIRMED,
   FORBIDDEN_ATTESTATION_PATTERNS,
   PARTNER_BADGE_ASSETS,
-  SEMISHARE_PUBLICATIONS,
   getBrandPageSeoTitle,
   getPartnerBannerText,
   getPartnerJsonLdDescription,
@@ -90,50 +89,7 @@ describe('spec traceability (spec Constraint 3/7)', () => {
   });
 });
 
-describe('SEMISHARE_PUBLICATIONS (verified peer-reviewed usage)', () => {
-  it('has at least 3 verified entries', () => {
-    expect(SEMISHARE_PUBLICATIONS.length).toBeGreaterThanOrEqual(3);
-  });
-
-  it('every entry has non-empty title/authors/venue/application/verification', () => {
-    for (const pub of SEMISHARE_PUBLICATIONS) {
-      expect(pub.title.trim().length, pub.doi).toBeGreaterThan(0);
-      expect(pub.authors.trim().length, pub.doi).toBeGreaterThan(0);
-      expect(pub.venue.trim().length, pub.doi).toBeGreaterThan(0);
-      expect(pub.application.trim().length, pub.doi).toBeGreaterThan(0);
-      expect(pub.verification.trim().length, pub.doi).toBeGreaterThan(0);
-    }
-  });
-
-  it('every year is a plausible publication year (2015–2026)', () => {
-    for (const pub of SEMISHARE_PUBLICATIONS) {
-      expect(pub.year, pub.title).toBeGreaterThanOrEqual(2015);
-      expect(pub.year, pub.title).toBeLessThanOrEqual(2026);
-    }
-  });
-
-  it('every doi is a bare, well-formed DOI (no URL prefix)', () => {
-    for (const pub of SEMISHARE_PUBLICATIONS) {
-      expect(pub.doi, pub.title).toMatch(/^10\.\d{4,9}\/\S+$/);
-    }
-  });
-
-  it('does not upgrade a journal to flagship "Nature" (Nature Communications ≠ Nature)', () => {
-    for (const pub of SEMISHARE_PUBLICATIONS) {
-      if (pub.venue === 'Nature') {
-        // flagship Nature main journal carries the s41586 DOI prefix
-        expect(pub.doi.startsWith('10.1038/s41586'), pub.title).toBe(true);
-      }
-    }
-  });
-
-  it('carries no citation counts or count-like numeric fields (year is the only number)', () => {
-    for (const pub of SEMISHARE_PUBLICATIONS) {
-      expect(Object.keys(pub)).not.toContain('citations');
-      const numericKeys = Object.entries(pub)
-        .filter(([, value]) => typeof value === 'number')
-        .map(([key]) => key);
-      expect(numericKeys, pub.title).toEqual(['year']);
-    }
-  });
-});
+// SEMISHARE_PUBLICATIONS was migrated to the Evidence Framework
+// (scripts/seed-evidence-semishare.ts, products:['probe-station']) and removed
+// from this module; the brand page now renders <ProductEvidence>. See
+// SemishareBrandPage.test.tsx for the dynamic-module wiring assertion.
