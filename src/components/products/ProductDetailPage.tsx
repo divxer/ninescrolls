@@ -306,29 +306,6 @@ export function ProductDetailPage({ config }: ProductDetailPageProps) {
           </section>
         )}
 
-        {/* The redesigned detail template uses editorial evidence cards here; legacy AcademicCitations remain on older product pages. */}
-        {config.research && (
-          <section className="px-6 py-20 md:px-10 lg:px-16">
-            <div className="mx-auto max-w-screen-2xl">
-              <div className="max-w-3xl">
-                <p className="text-sm font-bold uppercase tracking-[0.22em] text-sky-600">{config.research.eyebrow}</p>
-                <h2 className="mt-4 font-headline text-4xl font-semibold tracking-normal text-slate-950">
-                  {config.research.title}
-                </h2>
-              </div>
-              <div className="mt-10 grid gap-4 md:grid-cols-3">
-                {config.research.cards.map(card => (
-                  <article key={card.title} className="rounded-2xl border border-slate-200 bg-white p-6">
-                    <p className="font-mono text-xs uppercase tracking-[0.18em] text-sky-600">{card.eyebrow}</p>
-                    <h3 className="mt-4 text-xl font-semibold tracking-normal text-slate-950">{card.title}</h3>
-                    <p className="mt-3 text-sm leading-7 text-slate-600">{card.meta}</p>
-                  </article>
-                ))}
-              </div>
-            </div>
-          </section>
-        )}
-
         {config.resources && (
           <section className="border-y border-slate-200 bg-white px-6 py-20 md:px-10 lg:px-16">
             <div className="mx-auto max-w-screen-2xl">

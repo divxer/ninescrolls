@@ -89,6 +89,13 @@ const CLASS: Record<string, ['A' | 'B', 'primary' | 'substantial' | 'incidental'
   'pub-tailong-neural-optrode-multi-micromachines-2025': ['A', 'incidental'],
   'pub-tailong-rie100m-polyimide-bonding-materials-2022': ['A', 'incidental'],
   'pub-tailong-rie-graphene-molecule-junction-natprotoc-2023': ['A', 'incidental'],
+  // --- e-beam / MEB-600 (3; seed-evidence-ebeam.ts) — NineScrolls's own model,
+  // migrated from the eBeamEvaporatorConfig static research block. P1/P2 have
+  // resolvable DOIs -> launch-eligible; P3 (Su 2025) has no resolvable source ->
+  // held at tier B (launchEligible=false) until a DOI/URL is supplied.
+  'pub-ebeam-pbs-microplate-acsami-2024': ['A', 'substantial'],
+  'pub-ebeam-coronene-cmos-jimw-2023': ['A', 'primary'],
+  'pub-ebeam-gezns-photonic-crystal-bsjtu-2025': ['B', 'primary'],
 };
 
 const WAVE1 = new Set([

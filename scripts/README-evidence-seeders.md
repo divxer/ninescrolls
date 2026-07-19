@@ -2,10 +2,16 @@
 
 Reproducible scripts that seed peer-reviewed `publication`-type `Evidence` records
 into DynamoDB as **`status: draft`** (hidden from the public `listPublishedEvidence`
-Lambda until explicitly published). Every record documents a paper that used
+Lambda until explicitly published). Most records document a paper that used
 **Tailong Electronics / Beijing Zhongke Tailong Electronic Technology** (北京中科泰龙 /
 芯微诺达 / Nano-Promiso) process equipment — NineScrolls is the authorized distributor
 of this platform, so each `meta.relationshipDisclosure` states that honestly.
+
+The one exception is the **e-beam / MEB-600 batch** (`seed-evidence-ebeam.ts`):
+MEB-600 is NineScrolls's **own** product model, not an OEM instrument string, so
+those records carry no `manufacturerAsNamed`/`instrumentAsNamed`/`relationshipDisclosure`
+keys (MEB-600 provenance lives in a non-sensitive `meta.platform` key + free-text
+`verification`), and MEB-600 is deliberately **not** a `bannedOem` token.
 
 ## Prerequisites
 
@@ -30,6 +36,7 @@ npx tsx scripts/seed-evidence-catalog.ts --apply          # 24 — vetted intern
 npx tsx scripts/correct-evidence-false-positives.ts --apply # archive 2 records from older runs
 npx tsx scripts/seed-evidence-scholar-verified.ts --apply # 12 new + 3 refinements
 npx tsx scripts/seed-evidence-fulltext.ts --apply         # 6 new + 1 refinement
+npx tsx scripts/seed-evidence-ebeam.ts --apply            # 3  — MEB-600 (own model): 2 DOI-verified + 1 held
 npx tsx scripts/classify-evidence-publish-priority.ts --apply # classify only explicit known slugs
 ```
 
@@ -48,6 +55,7 @@ it encounters a slug not in its explicit classification table.
 | `seed-evidence-catalog.ts` | 24 | Vetted internal catalog `泰龙电子产品Google_Scholar引用文献统计.md`; **DOIs Crossref-verified**; verbatim full-text re-quote recommended before publish |
 | `seed-evidence-scholar-verified.ts` | 12 (+3 refine) | Google Scholar re-verification: 11 verbatim visible snippets + 1 catalog/index lead explicitly held at tier B for re-quote; DOIs Crossref-verified |
 | `seed-evidence-fulltext.ts` | 6 (+1 refine) | 5 open-access/author-PDF full-text quotes + 1 search-index snippet explicitly held at tier B for PDF re-quote |
+| `seed-evidence-ebeam.ts` | 3 | MEB-600 (NineScrolls's own model) evaporation papers migrated from the `eBeamEvaporatorConfig` static block. P1 Wan 2024 (DOI Crossref-verified) + P2 Luo 2023 (DOI resolves via doi.org; CSTM registrar, not in Crossref) = tier A, launch-eligible; P3 Su 2025 has no resolvable DOI/URL → held at tier B (no `sourceUrl`) until a source is supplied |
 
 `meta` per record holds: `manufacturerAsNamed`, `instrumentAsNamed`, `journal`,
 `year`, `doi`, `relationshipDisclosure`, `verifiedAt`, `verification` (source and,
@@ -85,13 +93,13 @@ when captured, a verbatim quote). Tier B marks records still requiring re-quote.
 
 ## Reproducible result
 
-The clean sequence above creates **49 active Evidence records**, all
+The clean sequence above creates **52 active Evidence records**, all
 `status: draft`. On older backends, the correction step may additionally retain
 2 archived false-positive records. No-leak boundary holds: the anonymous
 `listPublishedEvidence` (apiKey) query returns 0 records. Reproducible publication
 coverage by product (active): `rie-etcher` 20 ·
-`icp-etcher` 22 · `pecvd` 7 · `sputter` 3 · `ibe-ribe` 1 · `striper` 1 (6 product
-lines; `ald` 0). Tailong models observed: ICP-100A/100/200,
+`icp-etcher` 22 · `pecvd` 7 · `sputter` 3 · `e-beam-evaporator` 3 · `ibe-ribe` 1 ·
+`striper` 1 (7 product lines; `ald` 0). Tailong models observed: ICP-100A/100/200,
 ICP-S-150, ICP-PECVD-150, ICP-I, RIE-100/150/150A/100M, STRIPER-100, PECVD-150LL,
 Sputter 100, HighThroughput100-6A.
 
@@ -107,8 +115,8 @@ select what to publish — **being "verified" alone is NOT enough to auto-publis
 | `launchEligible` | boolean | **hard gate** = `tier A` AND `capabilityRole != incidental` |
 | `publishPriority` | `wave1` / `wave2` / `wave3` | `wave1` = 6 hero papers (rie/icp/pecvd/sputter); `wave2` = rest of launch-eligible; `wave3` = held (B-tier re-quote, incidental, snippet-tier) |
 
-Current reproducible split (49 active records): wave1 **6** · wave2 **29** ·
-wave3 **14**; tier A **42** / B **7**; launchEligible **35**.
+Current reproducible split (52 active records): wave1 **6** · wave2 **31** ·
+wave3 **15**; tier A **44** / B **8**; launchEligible **37**.
 `ibe-ribe`, `striper`, `ald` have **no** launch-eligible record →
 their product pages show no Evidence module at launch (by design — "no strong evidence,
 don't show" beats forcing coverage with an incidental-use paper). "One record per product
