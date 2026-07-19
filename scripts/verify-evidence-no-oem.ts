@@ -9,10 +9,10 @@
 // Usage: set -a; source .env; set +a; npx tsx scripts/verify-evidence-no-oem.ts
 import { Amplify } from 'aws-amplify';
 import { generateClient } from 'aws-amplify/data';
-import type { Schema } from '../amplify/data/resource';
 import outputs from '../amplify_outputs.json';
 import { authenticate } from './lib/auth';
 import { listRawEvidence, type EvidenceGraphqlClient } from './lib/evidenceSeedOperations';
+import { readPublishedEvidence } from './lib/evidencePublicRead';
 import { findBannedTokens } from './lib/bannedOem';
 
 Amplify.configure(outputs);
@@ -46,7 +46,10 @@ async function harvestSensitive(): Promise<string[]> {
 async function main() {
   const dynamicTokens = await harvestSensitive();
   console.log(`Harvested ${dynamicTokens.length} sensitive internal strings to scan for.`);
-  const anon = generateClient<Schema>({ authMode: 'apiKey' });
+  // Raw apiKey GraphQL (not the typed .queries accessor) so a stale
+  // amplify_outputs.json introspection can't make this crash — see
+  // ./lib/evidencePublicRead.
+  const anon = generateClient() as unknown as EvidenceGraphqlClient;
 
   const targets: Array<{ label: string; productSlug?: string }> = [
     { label: 'ALL (every published record)' }, // product-agnostic — catches any slug, incl. future ones
@@ -55,21 +58,15 @@ async function main() {
 
   let failed = false;
   for (const { label, productSlug } of targets) {
-    const res = await anon.queries.listPublishedEvidence(productSlug ? { productSlug } : {});
-    if (res.errors?.length) {
-      throw new Error(`listPublishedEvidence(${label}) errored: ${res.errors.map((e) => e.message).join(', ')}`);
-    }
-    const payload = typeof res.data === 'string' ? res.data : JSON.stringify(res.data ?? []);
-    const lower = payload.toLowerCase();
+    const { raw, records } = await readPublishedEvidence(anon, productSlug);
+    const lower = raw.toLowerCase();
     const dynamicHits = dynamicTokens.filter((t) => lower.includes(t.toLowerCase()));
-    const hits = [...new Set([...findBannedTokens(payload), ...dynamicHits])];
-    const parsed = JSON.parse(payload);
-    const count = Array.isArray(parsed) ? (parsed as unknown[]).length : 0;
+    const hits = [...new Set([...findBannedTokens(raw), ...dynamicHits])];
     if (hits.length) {
       failed = true;
       console.error(`LEAK on ${label}: ${hits.join(', ')}`);
     } else {
-      console.log(`OK ${label}: clean (${count} record(s))`);
+      console.log(`OK ${label}: clean (${records.length} record(s))`);
     }
   }
   if (failed) {
