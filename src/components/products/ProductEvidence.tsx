@@ -21,6 +21,11 @@ export function ProductEvidence({ productSlug }: ProductEvidenceProps) {
 
   useEffect(() => {
     let active = true;
+    // Reset on productSlug change so a previous product's list/expansion can't
+    // linger while the new fetch is in flight (robust even if the route updates
+    // in place instead of remounting).
+    setRecords(null);
+    setExpanded(false);
     fetchPublishedEvidence(productSlug).then((all) => {
       // `r?.type` is defensive: tolerate a null/malformed array element rather
       // than throwing and blanking the whole page.
