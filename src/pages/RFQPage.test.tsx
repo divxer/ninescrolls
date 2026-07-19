@@ -602,3 +602,54 @@ describe('RFQPage attachments', () => {
     expect(await screen.findByText(/Invalid equipment category/i)).toBeInTheDocument();
   });
 });
+
+// UX / a11y quick wins (audit 2026-07-18): keyboard focus on validation,
+// visible time-cost + mobile step context, and "not submitted yet" reassurance.
+describe('RFQPage step 1 UX & accessibility', () => {
+  it('moves keyboard focus to the first invalid field when Continue is clicked with errors', async () => {
+    renderRfq('/request-quote');
+    fireEvent.click(screen.getByRole('button', { name: /Continue to Project Details/i }));
+    // Name is the first required field and is empty, so it must receive focus —
+    // scrollIntoView alone (the prior behavior) never moved keyboard/AT users.
+    await waitFor(() => {
+      expect(document.activeElement?.id).toBe('rfq-name');
+    });
+  });
+
+  it('focuses the first *empty required* field, skipping earlier valid ones', async () => {
+    renderRfq('/request-quote');
+    fireEvent.change(screen.getByLabelText(/Full Name/i), { target: { value: 'Ada Lovelace' } });
+    fireEvent.change(screen.getByLabelText(/^Email/i), { target: { value: 'ada@example.edu' } });
+    fireEvent.click(screen.getByRole('button', { name: /Continue to Project Details/i }));
+    // name + email now valid; institution is the next empty required field.
+    await waitFor(() => {
+      expect(document.activeElement?.id).toBe('rfq-institution');
+    });
+  });
+
+  it('shows an estimated completion time and step count', () => {
+    renderRfq('/request-quote');
+    expect(screen.getByText(/minutes/i)).toBeInTheDocument();
+    expect(screen.getByText(/2 steps/i)).toBeInTheDocument();
+  });
+
+  it('reassures the user that Continue does not submit yet', () => {
+    renderRfq('/request-quote');
+    expect(screen.getByText(/nothing is submitted yet/i)).toBeInTheDocument();
+  });
+
+  it('replaces the time estimate with a final-step hint on Step 2', async () => {
+    renderRfq('/request-quote?category=ICP');
+    fireEvent.change(screen.getByLabelText(/Full Name/i), { target: { value: 'Ada Lovelace' } });
+    fireEvent.change(screen.getByLabelText(/^Email/i), { target: { value: 'ada@example.edu' } });
+    fireEvent.change(screen.getByLabelText(/Institution/i), { target: { value: 'Example Lab' } });
+    fireEvent.change(screen.getByLabelText(/Application \/ Research Goal/i), {
+      target: { value: 'Deep silicon etching process development for MEMS sensors.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Continue to Project Details/i }));
+    await waitFor(() => expect(screen.getByLabelText(/Preferred Model/i)).toBeInTheDocument());
+    // On Step 2 the "about 3–5 minutes" estimate would overstate the remaining time.
+    expect(screen.queryByText(/3–5 minutes/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/final step/i)).toBeInTheDocument();
+  });
+});

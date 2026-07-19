@@ -159,6 +159,30 @@ const initialFormData: RFQFormData = {
 };
 
 // ---------------------------------------------------------------------------
+// Focus management for validation errors
+// ---------------------------------------------------------------------------
+// DOM order of the focusable fields. A failed validation moves keyboard and
+// screen-reader focus to the first invalid one — a visual scrollIntoView alone
+// (the prior behavior) left AT and keyboard users stranded at the button.
+const FIELD_FOCUS_ORDER = [
+  'name', 'email', 'phone', 'institution', 'department', 'equipmentCategory', 'applicationDescription',
+  'keySpecifications', 'specificModel', 'quantity',
+  'shippingAddress', 'shippingCity', 'shippingState', 'shippingZipCode',
+  'existingEquipment', 'additionalComments',
+];
+
+function focusFirstError(errors: FieldErrors) {
+  // Only fields mounted in the current step have an element; skip the rest.
+  const first = FIELD_FOCUS_ORDER.find((f) => errors[f] && document.getElementById(`rfq-${f}`));
+  if (!first) return;
+  requestAnimationFrame(() => {
+    const el = document.getElementById(`rfq-${first}`);
+    el?.focus({ preventScroll: true });
+    el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Category pre-fill from URL params
 // ---------------------------------------------------------------------------
 const PRODUCT_CATEGORY_MAP: Record<string, string> = {
@@ -497,15 +521,14 @@ export function RFQPage() {
         equipmentCategory: formData.equipmentCategory,
       });
     } else {
-      const firstError = formRef.current?.querySelector('[data-field-error]');
-      firstError?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      focusFirstError(errors);
     }
   };
 
   // ---------------------------------------------------------------------------
   // Validate & submit
   // ---------------------------------------------------------------------------
-  const validateAll = (): boolean => {
+  const validateAll = (): FieldErrors => {
     const errors: FieldErrors = {};
     const requiredFields: (keyof RFQFormData)[] = [
       'name', 'email', 'institution', 'equipmentCategory', 'applicationDescription', 'quantity',
@@ -535,15 +558,15 @@ export function RFQPage() {
       }
     }
     setFieldErrors(errors);
-    return Object.keys(errors).length === 0;
+    return errors;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (honeypot) { setIsSuccess(true); setReferenceNumber('RFQ-000000-XXXX'); return; }
-    if (!validateAll()) {
-      const firstError = formRef.current?.querySelector('[data-field-error]');
-      if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const errors = validateAll();
+    if (Object.keys(errors).length > 0) {
+      focusFirstError(errors);
       return;
     }
     if (turnstileSiteKey && !turnstileToken) { setSubmitError('Please complete the verification.'); return; }
@@ -745,7 +768,7 @@ export function RFQPage() {
         <div className="max-w-3xl mx-auto">
 
           {/* Step Indicator */}
-          <div className="flex items-center justify-center gap-4 mb-12" ref={stepsRef}>
+          <div className="flex items-center justify-center gap-4 mb-3" ref={stepsRef}>
             <div className={`flex items-center gap-2 ${currentStep >= 1 ? 'text-primary' : 'text-on-surface-variant/40'}`}>
               <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${currentStep >= 1 ? 'bg-primary text-white' : 'bg-outline-variant/20 text-on-surface-variant'}`}>1</span>
               <span className="text-sm font-bold hidden sm:inline">Your Information</span>
@@ -756,6 +779,16 @@ export function RFQPage() {
               <span className="text-sm font-bold hidden sm:inline">Project Details</span>
             </div>
           </div>
+
+          {/* Cost-to-complete hint. On mobile the step names above collapse to
+              bare numbers, so name the current step here too. */}
+          <p className="text-center text-xs text-on-surface-variant/70 mb-12">
+            <span className="sm:hidden font-semibold text-on-surface">
+              {currentStep === 1 ? 'Your Information' : 'Project Details'}
+              {' · '}
+            </span>
+            {currentStep === 1 ? 'About 3–5 minutes · 2 steps' : 'Final step'}
+          </p>
 
           <form onSubmit={handleSubmit} ref={formRef} noValidate>
 
@@ -858,7 +891,7 @@ export function RFQPage() {
                   </div>
                 </div>
 
-                <div className="flex justify-end">
+                <div className="flex flex-col items-end gap-2">
                   <button
                     type="button"
                     className="bg-primary text-white py-4 px-8 rounded-sm font-bold uppercase hover:bg-primary-container transition-colors flex items-center gap-2"
@@ -867,6 +900,9 @@ export function RFQPage() {
                     Continue to Project Details
                     <span className="material-symbols-outlined text-lg">arrow_forward</span>
                   </button>
+                  <p className="text-xs text-on-surface-variant/60">
+                    Nothing is submitted yet — you'll review everything on the next step.
+                  </p>
                 </div>
               </>
             )}
