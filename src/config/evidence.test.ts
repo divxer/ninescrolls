@@ -6,6 +6,8 @@ import {
   evidenceTypeLabel,
   hasPayload,
   countEvidenceByType,
+  journalBadge,
+  productPlatformLabel,
 } from './evidence';
 import { EVIDENCE_STATUS as SHARED_STATUS } from '../../amplify/lib/evidence/status';
 
@@ -58,5 +60,24 @@ describe('countEvidenceByType', () => {
   it('returns [] for no records and ignores unknown types', () => {
     expect(countEvidenceByType([])).toEqual([]);
     expect(countEvidenceByType([{ type: 'bogus' }])).toEqual([]);
+  });
+});
+
+describe('journalBadge', () => {
+  it('maps curated journals to short badges and returns null otherwise', () => {
+    expect(journalBadge('Light: Science & Applications')).toBe('LSA');
+    expect(journalBadge('Laser & Photonics Reviews')).toBe('LPR');
+    expect(journalBadge('Some Obscure Journal')).toBeNull();
+    expect(journalBadge(undefined)).toBeNull();
+  });
+  it('tolerates case/whitespace drift in the journal name', () => {
+    expect(journalBadge('  light: science & applications ')).toBe('LSA');
+  });
+});
+
+describe('productPlatformLabel', () => {
+  it('is represented-platform framed and never names an OEM', () => {
+    expect(productPlatformLabel('icp-etcher')).toBe('the ICP etching platform we represent');
+    expect(productPlatformLabel('unknown-slug')).toBe('the platform we represent');
   });
 });
