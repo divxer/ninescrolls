@@ -12,4 +12,24 @@ describe('findBannedTokens', () => {
   it('passes clean, attribution-safe text', () => {
     expect(findBannedTokens('Silicon-nanopillar metasurfaces dry-etched for flow imaging')).toEqual([]);
   });
+
+  it('flags the PLUTOVAC OEM brand but NOT the public PLUTO-T/F/M product names', () => {
+    // PLUTO-T/F/M are NineScrolls's own public SKU names (used as public Evidence
+    // product slugs). Only the OEM brand must stay banned. Guards against an
+    // accidental re-ban that would false-positive every per-model payload.
+    const hits = findBannedTokens('cleaned in a plasma cleaner (PLUTOVAC, PLUTO-T)');
+    expect(hits).toContain('PLUTOVAC');
+    expect(hits).not.toContain('PLUTO-T');
+  });
+
+  it('does not flag public plasma-cleaner SKU slugs', () => {
+    expect(findBannedTokens('pluto-t')).toEqual([]);
+    expect(findBannedTokens('pluto-f')).toEqual([]);
+    expect(findBannedTokens('pluto-m')).toEqual([]);
+  });
+
+  it('keeps the PLUTOVAC OEM brand + legal-name tokens banned', () => {
+    expect(findBannedTokens('Shanghai Peiyuan / 沛沅 (PLUTOVAC)'))
+      .toEqual(expect.arrayContaining(['PLUTOVAC', 'Peiyuan', '沛沅', 'Shanghai Peiyuan']));
+  });
 });
