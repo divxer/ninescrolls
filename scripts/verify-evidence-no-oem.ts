@@ -48,22 +48,28 @@ async function main() {
   console.log(`Harvested ${dynamicTokens.length} sensitive internal strings to scan for.`);
   const anon = generateClient<Schema>({ authMode: 'apiKey' });
 
+  const targets: Array<{ label: string; productSlug?: string }> = [
+    { label: 'ALL (every published record)' }, // product-agnostic — catches any slug, incl. future ones
+    ...PRODUCTS.map((slug) => ({ label: slug, productSlug: slug })),
+  ];
+
   let failed = false;
-  for (const productSlug of PRODUCTS) {
-    const res = await anon.queries.listPublishedEvidence({ productSlug });
+  for (const { label, productSlug } of targets) {
+    const res = await anon.queries.listPublishedEvidence(productSlug ? { productSlug } : {});
     if (res.errors?.length) {
-      throw new Error(`listPublishedEvidence(${productSlug}) errored: ${res.errors.map((e) => e.message).join(', ')}`);
+      throw new Error(`listPublishedEvidence(${label}) errored: ${res.errors.map((e) => e.message).join(', ')}`);
     }
     const payload = typeof res.data === 'string' ? res.data : JSON.stringify(res.data ?? []);
     const lower = payload.toLowerCase();
     const dynamicHits = dynamicTokens.filter((t) => lower.includes(t.toLowerCase()));
     const hits = [...new Set([...findBannedTokens(payload), ...dynamicHits])];
-    const count = Array.isArray(JSON.parse(payload)) ? (JSON.parse(payload) as unknown[]).length : 0;
+    const parsed = JSON.parse(payload);
+    const count = Array.isArray(parsed) ? (parsed as unknown[]).length : 0;
     if (hits.length) {
       failed = true;
-      console.error(`LEAK on ${productSlug}: ${hits.join(', ')}`);
+      console.error(`LEAK on ${label}: ${hits.join(', ')}`);
     } else {
-      console.log(`OK ${productSlug}: clean (${count} record(s))`);
+      console.log(`OK ${label}: clean (${count} record(s))`);
     }
   }
   if (failed) {
