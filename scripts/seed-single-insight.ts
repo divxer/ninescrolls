@@ -46,6 +46,16 @@ async function seedSingleInsight(slug: string) {
   console.log(`  relatedProducts: ${post.relatedProducts?.length || 0}`);
   console.log(`  content length: ${(post.content || '').length} chars\n`);
 
+  // Some articles source their body from scripts/articles/<slug>.html (synced via
+  // update-insight-from-html.ts) and carry no inline content here. Seed the metadata
+  // record, then sync the body separately — this create would otherwise store empty content.
+  if (!post.content || !post.content.trim()) {
+    console.warn(
+      `  Note: "${slug}" has no inline content in insightsPostsData.ts.\n` +
+      `  After creating, sync the body: run update-insight-from-html.ts ${slug} scripts/articles/${slug}.html\n`
+    );
+  }
+
   const { data, errors } = await client.models.InsightsPost.create({
     slug: post.slug,
     title: post.title,
