@@ -36,11 +36,14 @@ CELLS = [[str(cell) for cell in row] for row in CONTENT["cells"]]
 
 # 7-column grid: dimension-label column + six type columns.
 GRID_LEFT, GRID_RIGHT = 32, 1568
-LABEL_COL_W = 180
-TYPE_COL_W = (GRID_RIGHT - GRID_LEFT - LABEL_COL_W) // 6  # 226
+LABEL_COL_W = 200
+TYPE_SPAN = GRID_RIGHT - GRID_LEFT - LABEL_COL_W  # 1336 across six columns
 X_EDGES = [GRID_LEFT, GRID_LEFT + LABEL_COL_W] + [
-    GRID_LEFT + LABEL_COL_W + (i + 1) * TYPE_COL_W for i in range(6)
+    GRID_LEFT + LABEL_COL_W + round((i + 1) * TYPE_SPAN / 6) for i in range(6)
 ]
+assert X_EDGES[-1] == GRID_RIGHT
+# Fit against the narrowest type column so every column's text is guaranteed in.
+TYPE_COL_W = min(X_EDGES[i + 2] - X_EDGES[i + 1] for i in range(6))  # 222
 TYPE_HEADER_TOP, TYPE_HEADER_BOTTOM = 182, 238
 ROW_HEIGHT = 145
 GRID_BOTTOM = TYPE_HEADER_BOTTOM + len(DIMENSIONS) * ROW_HEIGHT  # 818
@@ -115,6 +118,24 @@ def draw_centered_lines(
     for line in lines:
         width = draw.textbbox((0, 0), line, font=font)[2]
         draw.text(((left + right - width) / 2, y), line, font=font, fill=fill)
+        y += spacing
+
+
+def draw_left_lines(
+    draw: ImageDraw.ImageDraw,
+    box: tuple[int, int, int, int],
+    lines: list[str],
+    font: ImageFont.FreeTypeFont,
+    fill: str,
+    spacing: int,
+) -> None:
+    """Vertically centered like draw_centered_lines, but ragged-right from box left."""
+    left, top, _right, bottom = box
+    line_heights = [draw.textbbox((0, 0), line, font=font)[3] for line in lines]
+    total = line_heights[0] + max(0, len(lines) - 1) * spacing
+    y = top + (bottom - top - total) / 2
+    for line in lines:
+        draw.text((left, y), line, font=font, fill=fill)
         y += spacing
 
 
@@ -239,7 +260,7 @@ def main() -> None:
                 draw, f"row-label[{row_label}]", row_label, font_files["semibold"], label_size, label_size,
                 label_box_w, label_box_h, 4, 1.3,
             )
-            draw_centered_lines(
+            draw_left_lines(
                 draw,
                 (GRID_LEFT + CELL_PAD_X, y + CELL_PAD_Y, X_EDGES[1] - CELL_PAD_X, y + ROW_HEIGHT - CELL_PAD_Y),
                 lines, font, MUTED, spacing,
