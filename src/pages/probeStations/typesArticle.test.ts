@@ -228,3 +228,57 @@ describe('types article - structure and metadata', () => {
     expect(body).not.toMatch(/installation\s+included/i);
   });
 });
+
+describe('guard families - mutation meta-test', () => {
+  const MUTATIONS: Array<{ text: string; family: keyof typeof GUARD_FAMILIES }> = [
+    { text: 'resolves features down to 5 nm', family: 'noUnitNumbers' },
+    { text: 'operates at 4 K in this configuration', family: 'noUnitNumbers' },
+    { text: 'sweeps up to 67 GHz', family: 'noUnitNumbers' },
+    { text: 'chamber reaches 1e-6 torr', family: 'noUnitNumbers' },
+    { text: 'withstands 3 kV chuck bias', family: 'noUnitNumbers' },
+    { text: 'systems start around $45,000', family: 'noCurrency' },
+    { text: 'budget tier: $$ – $$$$', family: 'noCurrency' },
+    { text: 'priced from 30000 USD', family: 'noCurrency' },
+    { text: 'a SEMISHARE cryogenic platform', family: 'noOwnBrandInMatrix' },
+    { text: 'comparable to FormFactor systems', family: 'noCompetitorBrands' },
+    // Hardening-work coverage (2026-07-19): each row below exercises a fix
+    // made after the plan was written -- case-folded multi-char units, the
+    // Ω lookahead terminator, a bare-number price phrasing, and a second
+    // competitor-brand alias.
+    { text: 'sweeps up to 67 ghz', family: 'noUnitNumbers' }, // case-fold multi-char
+    { text: 'a 50 Ω environment', family: 'noUnitNumbers' }, // Ω lookahead terminator
+    { text: 'stages priced from 30000 USD', family: 'noCurrency' },
+    { text: 'a Lake Shore alternative', family: 'noCompetitorBrands' },
+  ];
+  const NEGATIVE_CONTROLS = [
+    'multi-stage vibration isolation between cryocooler and stage',
+    'review leakage-current dynamics across the thermal gradient',
+    'dielectric breakdown thresholds of thermal isolation stacks',
+    'transient current capacity of vacuum feedthroughs',
+    'five decisions determine the platform', // bare digit-free wording
+    'Section 3 of the datasheet', // digits without units are allowed
+    // Added 2026-07-19: figure/step lettering and inline-citation forms now
+    // used in the article body -- these exercise the case-sensitive
+    // single-letter unit split (lowercase "a" must never read as amperes).
+    'Figure 4a shows the layout',
+    'step 3a of the checklist',
+    'the answer in [3] applies here',
+  ];
+
+  it('every mutation is caught by its family', () => {
+    for (const m of MUTATIONS) {
+      const caught = GUARD_FAMILIES[m.family].some((p) => p.test(m.text));
+      expect(caught, `"${m.text}" should trip ${m.family}`).toBe(true);
+    }
+  });
+
+  it('negative controls pass every family', () => {
+    for (const control of NEGATIVE_CONTROLS) {
+      for (const [name, family] of Object.entries(GUARD_FAMILIES)) {
+        for (const p of family) {
+          expect(p.test(control), `"${control}" wrongly tripped ${name}`).toBe(false);
+        }
+      }
+    }
+  });
+});
