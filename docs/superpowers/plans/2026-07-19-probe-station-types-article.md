@@ -260,12 +260,12 @@ git -C <worktree> commit -m "test(article): structure, guard, sentinel assertion
   <meta name="article:title" content="Types of Wafer Probe Stations: Measurement-Environment Guide">
   <meta name="article:category" content="Metrology & Testing">
   <meta name="article:author" content="NineScrolls Engineering">
-  <meta name="article:type" content="TechArticle">
+  <meta name="article:article-type" content="TechArticle">
   <meta name="article:publish-date" content="SET-AT-PUBLISH">
   <meta name="article:excerpt" content="A measurement-environment map of wafer probe station types — standard ambient, cryogenic, high-temperature, vacuum, RF and microwave, and silicon photonics — with the hardware signatures, datasheet review points, and cost drivers that separate them.">
   <script type="application/json" data-related-products>[{"name":"SEMISHARE Probe Stations","url":"/wafer-probe-stations/semishare"},{"name":"Wafer Probe Stations","url":"/wafer-probe-stations"}]</script>
   <!-- cover imageUrl is set by the publish-time upload (--name cover); initial value only -->
-  <meta name="article:image" content="/assets/images/insights/probe-station-types-cover.png">
+  <meta name="article:image-url" content="/assets/images/insights/probe-station-types-cover.png">
 </head>
 <body>
   <h1>Types of Wafer Probe Stations: Measurement-Environment Guide</h1>

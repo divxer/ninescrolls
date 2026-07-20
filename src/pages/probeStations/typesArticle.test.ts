@@ -125,7 +125,14 @@ describe('types article - structure and metadata', () => {
     // deliberate slack for the tag; the locked headline below is the tight
     // ≤60 SEO bound.
     expect(title.length).toBeLessThanOrEqual(70);
-    expect(doc).toMatch(/article:type" content="TechArticle"/);
+    // Meta keys must be the ones parseArticleHtml.ts actually reads
+    // (readMeta 'article-type' / 'image-url', i.e. article:article-type and
+    // article:image-url -- same keys as article #3). The plan's original
+    // scaffold said article:type / article:image, which the parser silently
+    // ignores: the TechArticle schema and cover would be dropped at
+    // create-insight time.
+    expect(doc).toMatch(/article:article-type" content="TechArticle"/);
+    expect(doc).toMatch(/article:image-url" content="\/assets\/images\/insights\/probe-station-types-cover\.png"/);
 
     // The DB-facing title comes from <h1> (parseArticleHtml falls back to
     // <title> only when no <h1> exists) -- so the locked headline copy is
