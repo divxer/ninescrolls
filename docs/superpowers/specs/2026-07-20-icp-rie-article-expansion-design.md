@@ -116,10 +116,28 @@ new dedicated sections carry the depth. **Add** the following ICP-RIE-specific s
 - Keep responsive `<picture>`/srcset intact if any images are added.
 - No fabricated specs; flag any unverified claim rather than guess.
 
+## Pre-sync checklist (Phase 4, before `update-insight-from-html.ts`)
+
+`update-insight-from-html.ts` does a **full `content` overwrite** and the repo file is
+already divergent from the live DynamoDB record (the live CTA paragraph exists only in DDB).
+Before syncing:
+
+1. **Diff live vs. file:** run `fetch-insight-content.ts` and diff against the working HTML
+   to confirm the only live-only content is the CTA paragraph (already verified once:
+   5-line delta = the CTA) and nothing else is silently dropped.
+2. **No surviving skeleton comments:** assert zero `<!-- SKELETON` / `<!-- NEW` / `<!-- Phase`
+   comments remain. Beyond being incomplete, `stripHtml` (`/<[^>]*>/g`) mis-parses the `->`
+   arrows in stub comments and would leak fragments into the computed `excerpt`/`readTime`.
+3. **Confirm the CTA is restored** inside the finished §15 commercial section.
+
 ## Success criteria
 
 - ~4,000–4,500 words, ICP-RIE-distinct.
-- Zero duplicated fundamentals with the RIE guide; ≥4 internal links to sibling articles.
+- Zero duplicated fundamentals with the RIE guide; ≥4 **live** internal links to sibling
+  articles in rendered output (skeleton has 1 of 5 live; Phases 2–4 close the rest — do not
+  count links that live only inside comment stubs).
+- §8 device-domain applications actively **trimmed** of the materials-physics prose that §9
+  now owns (delete, don't just add §9) — else the spec's redundancy warning is violated.
 - Explicit source-vs-bias interaction matrix present.
 - No invented numeric process values.
 - Clean commercial section anchored on the RIE→ICP-RIE inflection point.
