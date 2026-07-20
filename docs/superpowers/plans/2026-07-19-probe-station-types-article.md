@@ -255,7 +255,7 @@ git -C <worktree> commit -m "test(article): structure, guard, sentinel assertion
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Types of Wafer Probe Stations: Measurement-Environment Guide | NineScrolls</title>
+  <title>Types of Wafer Probe Stations: Measurement-Environment Guide</title>
   <meta name="article:slug" content="types-of-wafer-probe-stations">
   <meta name="article:title" content="Types of Wafer Probe Stations: Measurement-Environment Guide">
   <meta name="article:category" content="Metrology & Testing">
@@ -274,9 +274,9 @@ git -C <worktree> commit -m "test(article): structure, guard, sentinel assertion
 </html>
 ```
 
-`article:title` is 60 chars (audited) — the page `<title>` adds the brand suffix. Replace `SET-AT-PUBLISH` with the real date during the publish chain (the create-insight step rejects placeholder dates — set it in the same commit as the PR merge if publishing immediately; otherwise before running create-insight).
+`article:title` is 60 chars (audited) — the page `<title>` carries NO brand suffix (corrected 2026-07-19: article #3's `<title>` has none either; the production prerender appends " | NineScrolls" at render time, and a hand-written suffix would both duplicate it and push the tag past the test's 70-char bound). Replace `SET-AT-PUBLISH` with the real date during the publish chain (the create-insight step rejects placeholder dates — set it in the same commit as the PR merge if publishing immediately; otherwise before running create-insight).
 
-**h1 requirement (added 2026-07-19):** the body MUST open with `<h1>Types of Wafer Probe Stations: Measurement-Environment Guide</h1>` verbatim, matching `article:title` exactly. `parseArticleHtml` derives the canonical DB title from `<h1>` and falls back to `<title>` only when no `<h1>` exists — since this article's `<title>` carries the " | NineScrolls" brand suffix, an `<h1>` is required so the suffix doesn't leak into the DB title. Verified by grep (2026-07-19): `scripts/articles/cryogenic-probe-station-buyers-guide.html` (article #3) does NOT actually contain an `<h1>` — its `<title>` has no brand suffix, so it relies on the `<title>`-fallback path instead. This article cannot mirror that exact convention (its `<title>` does carry a suffix), so the `<h1>` requirement here is a new, correct convention for THIS article rather than a copy of #3's. `typesArticle.test.ts` asserts the `<h1>` content verbatim plus a ≤60-char length bound.
+**h1 requirement (added 2026-07-19, rationale updated with the no-suffix `<title>` correction):** the body MUST open with `<h1>Types of Wafer Probe Stations: Measurement-Environment Guide</h1>` verbatim, matching `article:title` exactly. `parseArticleHtml` derives the canonical DB title from `<h1>` and falls back to `<title>` only when no `<h1>` exists. Verified by grep (2026-07-19): `scripts/articles/cryogenic-probe-station-buyers-guide.html` (article #3) contains no `<h1>` and relies on the `<title>`-fallback path. With this article's `<title>` now suffix-free, the fallback would also produce the correct DB title — but this article keeps the explicit `<h1>` anyway: it makes the canonical title an explicit declaration instead of a fallback side effect, and it is immune to any future `<title>` drift (e.g. someone re-adding a suffix). `typesArticle.test.ts` asserts the `<h1>` content verbatim plus a ≤60-char length bound.
 
 - [ ] **Step 2: Write TL;DR + opening framework (~2 paragraphs + checklist `<ul>`).** Content requirements (author prose to satisfy the guard tests — no unit-numbers, no currency, no kelvin numbers): the environment axis defined; orthogonality sentence — "first fix the measurement environment, then fix the automation level" — with the automation link: `<a href="/insights/how-to-choose-wafer-probe-station-university-lab">automation level decision</a>`. TL;DR is a 6-bullet list, one per type, each bullet = the type's "Buyer's key question" cell text (verbatim from the JSON — reuse, don't paraphrase).
 

@@ -7,7 +7,19 @@ import matrix from '../../data/probeStations/typeMatrixContent.json';
 // (b) article-content assertions, (c) the mutation meta-test. Mirrors the
 // GUARD_FAMILIES pattern in cryoBuyersGuideArticle.test.ts.
 // ---------------------------------------------------------------------------
-const UNIT = String.raw`(?:nm|µm|um|mm|cm|K|°C|GHz|MHz|kHz|Hz|dB|dBm|torr|Torr|mbar|Pa|pA|nA|µA|uA|mA|A|mV|kV|V|mW|kW|W|Ω|ohm)`;
+// Unit alternation is split by casing ambiguity (case-scoping, 2026-07-19):
+// multi-character units are unambiguous as letter SEQUENCES, so they match
+// case-insensitively -- "5 ghz" / "5 mhz" / "5 db" can't dodge the guard by
+// casing. (Under the `i` flag `Pa` also covers pA, and the ampere multiples
+// nA/µA/uA/mA are listed explicitly.) Single-LETTER units (K, A, V, W, Ω,
+// plus °C) stay case-SENSITIVE: matching them insensitively turned ordinary
+// prose like "Figure 4a" / "step 3a" into false positives. The lowercase
+// escapees this reintroduces are either not real unit notations ("3 a",
+// "2 v", "9 w") or already covered elsewhere ("4 k" is caught by the
+// kelvin-discipline regex in the article-body test, which stays
+// case-insensitive).
+const UNIT_MULTI = String.raw`(?:GHz|MHz|kHz|Hz|dBm|dB|mbar|torr|Pa|nA|µA|uA|mA|mV|kV|mW|kW|ohm|nm|µm|um|mm|cm)`;
+const UNIT_SINGLE = String.raw`(?:K|A|V|W|Ω|°C)`;
 // Terminator: NOT `\b` -- `\b` never fires directly after a non-word
 // character like Ω (Ohm), so "5 Ω" / "5Ω" silently escaped the old regex. A
 // lookahead that forbids the next char being a letter/digit (Unicode-aware,
@@ -17,12 +29,13 @@ const UNIT_TERMINATOR = String.raw`(?![\p{L}\p{N}])`;
 const GUARD_FAMILIES = {
   // Any digit attached to a physical unit -- the article teaches WHAT to
   // review, never HOW MUCH. (\d then optional space/decimal then unit, not
-  // immediately followed by another letter/digit.) Case-insensitive so
-  // "5 mhz" / "5 ghz" / "5 db" can't dodge the guard by casing -- this also
-  // means bare lowercase unit letters ("5 k", "3 a", "2 v", "9 w") now
-  // match, which is intentional (see the mutation meta-test's negative
-  // controls for the digit-free wording that must still pass).
-  noUnitNumbers: [new RegExp(String.raw`\d+(?:\.\d+)?\s?${UNIT}${UNIT_TERMINATOR}`, 'iu')],
+  // immediately followed by another letter/digit.) Two entries: the
+  // case-insensitive multi-character set and the case-sensitive
+  // single-letter set -- see the case-scoping note above.
+  noUnitNumbers: [
+    new RegExp(String.raw`\d+(?:\.\d+)?\s?${UNIT_MULTI}${UNIT_TERMINATOR}`, 'iu'),
+    new RegExp(String.raw`\d+(?:\.\d+)?\s?${UNIT_SINGLE}${UNIT_TERMINATOR}`, 'u'),
+  ],
   // Currency symbols, codes, price words with digits, and relative-cost runs.
   noCurrency: [
     /[$€£¥]/,
@@ -106,8 +119,11 @@ describe('types article - structure and metadata', () => {
     expect(doc).toMatch(/<meta name="article:slug" content="types-of-wafer-probe-stations">/);
     const title = doc.match(/<title>([^<]+)<\/title>/)?.[1] ?? '';
     expect(title).toContain('Types of Wafer Probe Stations');
-    // The page <title> carries the "| NineScrolls" brand suffix, so it gets
-    // more slack than the locked headline below.
+    // Convention (matches article #3): the authored <title> carries NO brand
+    // suffix -- the production prerender appends " | NineScrolls" at render
+    // time, so a hand-written suffix would duplicate it. The ≤70 bound is
+    // deliberate slack for the tag; the locked headline below is the tight
+    // ≤60 SEO bound.
     expect(title.length).toBeLessThanOrEqual(70);
     expect(doc).toMatch(/article:type" content="TechArticle"/);
 
