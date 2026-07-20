@@ -49,5 +49,118 @@
       <p>A high-temperature station is built around a heated chuck sitting on a thermal-isolation stack. The engineering problem is not producing heat but containing it, so that the chuck surface runs hot while the positioners, the platen, and the optics above stay dimensionally stable. The visible hardware can look close to a standard ambient system; the difference is buried in the chuck construction and everything that isolates it.</p>
       <p>It serves elevated-temperature device behavior and reliability studies: parameter drift with temperature, accelerated stress work, and the wide-bandgap programs — SiC and GaN power devices — whose operating regime is hot by design. On a datasheet, the numbers worth interrogating are architectural rather than headline: chuck uniformity across the plate and its stability across a long soak, thermal gradient control between the chuck surface and the positioner tips, and the leakage-current dynamics of the chuck’s isolation construction as temperature rises. Ask for the dielectric breakdown thresholds of thermal isolation stacks at operating temperature, not only at room temperature — an isolation figure quoted cold says little about the same stack hot. Wide-bandgap work adds a boundary condition of its own: power-device bias adds voltage stress on top of the thermal load, and a thermal isolation stack’s dielectric breakdown margin at temperature is not the same number as its cold rating — thermal ratings and electrical ratings do not automatically compose, so have the vendor state how the stack behaves under both stresses at once.</p>
       <p>Cost concentrates in chuck uniformity engineering and in the thermal isolation of the positioners. Do not buy a dedicated high-temperature platform when the requirement is occasional, mild warming — a thermal-chuck option on an ambient platform covers that — and do not assume a heating-only system converts to below-ambient work later: heated and cooled chucks are different constructions, not settings on the same part.</p>
+
+      <h3>Vacuum</h3>
+      <p>A vacuum probe station encloses the chuck in a vacuum chamber, routes every signal through feedthrough wiring in the chamber wall, and lands probes with in-chamber probe arms driven from outside. The buyer’s question follows directly from the architecture — which signals must cross the chamber wall? Every crossing — electrical, mechanical, or optical — must be engineered, sealed, and rated; the chamber wall is where a vacuum configuration succeeds or fails.</p>
+      <p>It serves surface-sensitive devices, MEMS, and moisture-free measurement: released structures that stiction would destroy in humid air, films that oxidize between deposition and test, surfaces whose behavior shifts with adsorbed water. On a datasheet, review the chamber and pumping stack as one system — how the station reaches and holds its working pressure with the full wiring loom installed, how long a sample exchange takes from vent to measurement, and how feedthrough count and signal integrity hold up as channels are added; every extra line through the wall is a leak path and a noise path before it is a signal path. Power-device work adds a boundary question: switching transients push brief current surges through the chamber wall, so ask for the transient current capacity of vacuum feedthroughs, not only their steady-state rating.</p>
+      <p>Cost concentrates in the chamber and pumping stack and in feedthrough count and signal integrity. Do not choose vacuum when dry is all you need — a purged enclosure on an ambient platform keeps moisture off most samples without a pump-down cycle — and remember that the chamber taxes every load: if the workflow lives on fast sample turnaround, vacuum will set its pace.</p>
+
+      <h3>RF & microwave</h3>
+      <p>An RF and microwave probe station is defined less by an enclosure than by its signal path: high-frequency positioners holding precision probes, a calibration-substrate holder in the chuck area, and low-loss cabling from probe tip to instrument. The station is one half of a measurement system whose other half is the network analyzer, and the two are joined by a calibration that must be renewed constantly.</p>
+      <p>It serves on-wafer high-frequency parameter extraction — characterizing transistors, passives, and interconnects in their high-frequency behavior rather than at quasi-static bias. On a datasheet, the headline frequency figure matters less than the workflow behind it: the transition-loss behavior of the probe-to-pad interface, the stability of the cabling as positioners move, the condition and lifetime of the probes themselves, and above all the daily calibration workflow — where the calibration substrate sits, how long a full calibration takes, how often probe wear forces one, and how the operator verifies that yesterday’s calibration still holds. A station that makes calibration awkward produces data whose error grows quietly.</p>
+      <p>Cost concentrates in calibration substrates, low-loss interconnect, and the probe replacement cycle — RF probes are consumables, and their replacement rhythm belongs in the operating budget, not the surprise column. Do not choose an RF station for work that is genuinely quasi-static: the probes, the calibration overhead, and the operator discipline are wasted on measurements a general-purpose station handles. The reverse migration is no easier — adding high-frequency capability to an ambient platform later usually means new positioners, new cabling, and a calibration workflow designed from scratch.</p>
+
+      <h3>Silicon photonics</h3>
+      <p>A silicon photonics probe station adds an optical axis to the electrical one: fiber positioners with alignment optics hold single fibers or fiber arrays over grating couplers or against chip facets, alongside conventional electrical probes on the same die. The defining engineering problem is alignment — an optical coupling lives or dies on positioning tolerances far tighter than an electrical contact ever demands.</p>
+      <p>It serves wafer-level optical coupling and photonic-circuit test: insertion measurements across a die map, wavelength response of ring and interferometer structures, and the combined electro-optic tests that photonic transceivers require. On a datasheet, everything reduces to the buyer’s question — how repeatable is fiber-to-chip alignment? Review how the alignment search runs and locks, how coupling holds during a measurement and through chuck motion between devices, how the system re-finds alignment on the next device of a die map, and how electrical probing and optical coupling coexist without disturbing each other. The <a href="/applications/silicon-photonics-probing">silicon photonics probing application page</a> covers where wafer-level optical test earns its place in a photonics flow.</p>
+      <p>Cost concentrates in alignment automation and optical instrumentation integration — the difference between a manual alignment bench and an automated search-and-lock system is the difference between a demonstration and a test flow. Do not choose a photonic station for occasional coupling experiments; a bench setup couples one device at a time perfectly well. The station earns its cost when devices are counted in die maps rather than one-off samples.</p>
+
+      <h2>The master comparison matrix</h2>
+      <p>The same comparison, side by side. Read it column by column to place your measurement, then row by row to see what that placement costs and what to ask before quoting.</p>
+
+      <figure class="post-figure">
+        <picture>
+          <source srcset="https://cdn.ninescrolls.com/insights/types-of-wafer-probe-stations/type-matrix-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcset="https://cdn.ninescrolls.com/insights/types-of-wafer-probe-stations/type-matrix-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcset="https://cdn.ninescrolls.com/insights/types-of-wafer-probe-stations/type-matrix-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcset="https://cdn.ninescrolls.com/insights/types-of-wafer-probe-stations/type-matrix-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="https://cdn.ninescrolls.com/insights/types-of-wafer-probe-stations/type-matrix-lg.png" alt="Six wafer probe station types compared across environment hardware, best-fit applications, cost drivers, and the buyer’s key question: standard ambient, cryogenic, high-temperature, vacuum, RF and microwave, and silicon photonics" loading="lazy" decoding="async" style="width:100%;border-radius:8px;margin:16px 0" />
+        </picture>
+        <figcaption>An illustrative comparison. Configuration determines actual capability; verify each dimension against the quoted system.</figcaption>
+      </figure>
+
+      <div class="table-scroll" style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col"></th>
+              <th scope="col" style="min-width:150px">Standard ambient</th>
+              <th scope="col" style="min-width:150px">Cryogenic</th>
+              <th scope="col" style="min-width:150px">High-temperature</th>
+              <th scope="col" style="min-width:150px">Vacuum</th>
+              <th scope="col" style="min-width:150px">RF & microwave</th>
+              <th scope="col" style="min-width:150px">Silicon photonics</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">Environment hardware signature</th>
+              <td style="min-width:150px">Open platen, micropositioners, isolation table</td>
+              <td style="min-width:150px">Sealed chamber; cryocooler or cryogen cooling; multi-stage vibration isolation</td>
+              <td style="min-width:150px">Heated chuck with thermal-isolation stack</td>
+              <td style="min-width:150px">Vacuum chamber, feedthrough wiring, in-chamber probe arms</td>
+              <td style="min-width:150px">High-frequency positioners, calibration-substrate holder, low-loss cabling</td>
+              <td style="min-width:150px">Fiber positioners with alignment optics alongside electrical probes</td>
+            </tr>
+            <tr>
+              <th scope="row">Best-fit applications</th>
+              <td style="min-width:150px">General current–voltage and capacitance characterization; wafer-level debug</td>
+              <td style="min-width:150px">Low-temperature device physics; superconducting and quantum-device screening</td>
+              <td style="min-width:150px">Elevated-temperature device behavior; reliability studies</td>
+              <td style="min-width:150px">Surface-sensitive devices; MEMS; moisture-free measurement</td>
+              <td style="min-width:150px">On-wafer high-frequency parameter extraction</td>
+              <td style="min-width:150px">Wafer-level optical coupling and photonic-circuit test</td>
+            </tr>
+            <tr>
+              <th scope="row">Cost drivers</th>
+              <td style="min-width:150px">Positioner precision; platform isolation grade</td>
+              <td style="min-width:150px">Cooling architecture; isolation stages; radiation shielding</td>
+              <td style="min-width:150px">Chuck uniformity engineering; thermal isolation of positioners</td>
+              <td style="min-width:150px">Chamber and pumping stack; feedthrough count and signal integrity</td>
+              <td style="min-width:150px">Calibration substrates; low-loss interconnect; probe replacement cycle</td>
+              <td style="min-width:150px">Alignment automation; optical instrumentation integration</td>
+            </tr>
+            <tr>
+              <th scope="row">Buyer’s key question</th>
+              <td style="min-width:150px">Which upgrades will the platform accept later?</td>
+              <td style="min-width:150px">What does the stage deliver under your real heat load?</td>
+              <td style="min-width:150px">How uniform and stable is the chuck across a long soak?</td>
+              <td style="min-width:150px">Which signals must cross the chamber wall?</td>
+              <td style="min-width:150px">What does the daily calibration workflow look like?</td>
+              <td style="min-width:150px">How repeatable is fiber-to-chip alignment?</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>The type-selection checklist</h2>
+      <p>Whichever type the roadmap points to, the same discipline applies when the request for quotation goes out. Ask every vendor to:</p>
+      <ul>
+        <li><strong>Name the environment.</strong> Confirm in writing which measurement environment the quoted configuration is engineered for — and which it merely tolerates.</li>
+        <li><strong>Condition every claim.</strong> For each controlled-environment figure, state the load, the duration, and the operating state of the system when the figure was measured.</li>
+        <li><strong>Map the boundary crossings.</strong> List every signal that crosses the environment boundary — electrical, thermal, optical — and how each crossing is engineered and rated.</li>
+        <li><strong>Provide the upgrade map.</strong> Specify which chucks, positioners, enclosures, and signal options the platform accepts after purchase, and which require a different platform.</li>
+        <li><strong>Demonstrate the daily workflow.</strong> Show probe landing, calibration or alignment, and sample exchange as they would run in your lab, not as a brochure describes them.</li>
+        <li><strong>Itemize the consumables.</strong> State what the configuration consumes in operation — cryogens, calibration substrates, probe tips, pumping maintenance — and who supplies each.</li>
+        <li><strong>Rate combined stresses.</strong> For power-device work, state how isolation stacks and feedthroughs behave under electrical and thermal stress together, not as separate ratings.</li>
+      </ul>
+      <p>If the purchase runs through institutional funding, our <a href="/insights/probe-station-procurement-nsf-doe-funded-projects">probe-station procurement guide</a> pairs this checklist with the funding and compliance side of the purchase.</p>
+
+      <h2>Where NineScrolls fits</h2>
+      <p>Once the environment type is settled, the practical question becomes the procurement path. NineScrolls provides US and Canada procurement, import, and after-sales support for <a href="/wafer-probe-stations/semishare">SEMISHARE wafer probe stations</a>, quoting configurations against the acceptance criteria in the checklist above — the environment named, the claims conditioned, the crossings mapped. For the wider selection framework across automation level, sample size, and signal type, the <a href="/wafer-probe-stations">wafer probe stations hub</a> walks through the whole decision.</p>
+
+      <h2>Further reading</h2>
+      <p>This type map is one lane of the probe-station cluster. For the decision framework across automation level, sample size, and budget, read <a href="/insights/how-to-choose-wafer-probe-station-university-lab">How to Choose a Wafer Probe Station for Your University Research Lab</a>. For the compliance side of an institutional purchase, see the <a href="/insights/probe-station-procurement-nsf-doe-funded-projects">probe-station procurement guide for federally funded projects</a>. And if the environment decision landed on cold, the <a href="/insights/cryogenic-probe-station-buyers-guide">cryogenic probe station buyer’s guide</a> is the deep dive.</p>
+
+      <!-- guard-exempt:references -->
+      <h2>References</h2>
+      <ol>
+        <li>NIST, "A Model for the Transient Behavior of a Pulse Tube Cryocooler" — separates no-load temperature, added thermal mass, net cooling capacity, and cooldown time — <a href="https://www.nist.gov/publications/model-transient-behavior-pulse-tube-cryocooler" target="_blank" rel="noopener noreferrer">nist.gov/publications/model-transient-behavior-pulse-tube-cryocooler</a>. Accessed 2026-07-19.</li>
+        <li>R. B. Marks, "A multiline method of network analyzer calibration," IEEE Transactions on Microwave Theory and Techniques, vol. 39, no. 7, pp. 1205–1215, 1991 — the NIST multiline TRL method underlying modern on-wafer calibration practice.</li>
+        <li>T. Kimoto and J. A. Cooper, Fundamentals of Silicon Carbide Technology: Growth, Characterization, Devices and Applications. Wiley-IEEE Press, 2014 — device physics and characterization context for SiC power-device testing.</li>
+        <li>A. Chambers, Modern Vacuum Physics. Boca Raton: Chapman &amp; Hall/CRC, 2004 — pumping, pressure measurement, and vacuum-chamber practice.</li>
+        <li>L. Chrostowski and M. Hochberg, Silicon Photonics Design: From Devices to Systems. Cambridge University Press, 2015 — includes wafer-scale photonic test and fiber-to-chip coupling design.</li>
+      </ol>
+      <!-- /guard-exempt:references -->
 </body>
 </html>
