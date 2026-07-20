@@ -217,11 +217,34 @@ async function seedInsights() {
 
   let success = 0;
   let failed = 0;
+  let skipped = 0;
 
   for (const post of insightsPosts) {
     const relatedProducts = RELATED_PRODUCTS_MAP[post.slug] || DEFAULT_RELATED_PRODUCTS;
     const heroImages = HERO_IMAGES_MAP[post.slug] || null;
     const isStandaloneComponent = STANDALONE_COMPONENT_SLUGS.has(post.slug);
+
+    // Idempotency guard: this loop uses .create() with no natural key, so re-running it
+    // against a populated table would duplicate every record. A duplicate is dangerous for
+    // articles whose body lives in scripts/articles/<slug>.html (empty content here): the
+    // render query picks the first record from the slug GSI, so an empty-content duplicate
+    // could shadow the live article. Skip any slug that already exists — never clobber.
+    const { data: existing } = await client.models.InsightsPost.listInsightsPostBySlug({ slug: post.slug });
+    if (existing && existing.length > 0) {
+      console.log(`  SKIP: ${post.slug} already exists (id: ${existing[0].id})`);
+      skipped++;
+      continue;
+    }
+
+    // Some articles source their body from scripts/articles/<slug>.html (synced via
+    // update-insight-from-html.ts) and carry no inline content here. On a fresh table this
+    // seeds a metadata-only record; sync the body afterward with:
+    //   update-insight-from-html.ts <slug> scripts/articles/<slug>.html
+    if (!post.content || !post.content.trim()) {
+      console.warn(
+        `  Note: ${post.slug} has no inline content — seeding metadata only; sync body from scripts/articles/${post.slug}.html`
+      );
+    }
 
     try {
       const { data, errors } = await client.models.InsightsPost.create({
@@ -255,7 +278,7 @@ async function seedInsights() {
     }
   }
 
-  console.log(`\nDone. Success: ${success}, Failed: ${failed}\n`);
+  console.log(`\nDone. Success: ${success}, Skipped (already existed): ${skipped}, Failed: ${failed}\n`);
 }
 
 seedInsights().catch(console.error);
