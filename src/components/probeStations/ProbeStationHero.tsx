@@ -127,7 +127,7 @@ export function ProbeStationHero({
               const isLast = index === breadcrumbs.length - 1;
               return (
                 <span key={crumb.to}>
-                  <span className="mx-2">/</span>
+                  <span className="mx-2" aria-hidden="true">/</span>
                   {isLast ? (
                     <span className="text-white" aria-current="page">{crumb.label}</span>
                   ) : (
@@ -179,7 +179,7 @@ interface HeroAtAGlanceProps {
  *  with a titled list, matching SEMISHARE's trust panel treatment. */
 export function HeroAtAGlance({ title, items }: HeroAtAGlanceProps) {
   return (
-    <div className="rounded-3xl border border-white/10 bg-white/[0.06] p-6 shadow-2xl backdrop-blur">
+    <div className="rounded-3xl border border-white/10 bg-white/[0.06] p-4 shadow-2xl backdrop-blur">
       <p className="text-sm font-bold uppercase tracking-[0.18em] text-sky-300">{title}</p>
       <dl className="mt-4 space-y-3">
         {items.map((item) => (

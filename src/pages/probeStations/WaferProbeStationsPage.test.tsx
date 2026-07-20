@@ -47,7 +47,7 @@ describe('WaferProbeStationsPage', () => {
       'href', '/applications/silicon-photonics-probing'
     );
     const quoteLinks = screen.getAllByRole('link', { name: /Request a quote/i });
-    expect(quoteLinks.length).toBeGreaterThanOrEqual(1);
+    expect(quoteLinks.length).toBe(2); // hero + final-CTA bookends
     for (const link of quoteLinks) expect(link).toHaveAttribute('href', '/request-quote?products=wafer-probe-station');
     const faqHeadings = screen.getAllByRole('heading', { level: 3 }).filter((h) => h.textContent?.endsWith('?'));
     expect(faqHeadings.length).toBeGreaterThanOrEqual(4);

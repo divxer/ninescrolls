@@ -51,7 +51,7 @@ describe('SemishareBrandPage', () => {
     // Hero and final-CTA each carry a primary "Request a quote" link (template
     // pattern); every one must point at the pre-filled RFQ.
     const quoteLinks = screen.getAllByRole('link', { name: /Request a quote/i });
-    expect(quoteLinks.length).toBeGreaterThanOrEqual(1);
+    expect(quoteLinks.length).toBe(2); // hero + final-CTA bookends
     for (const link of quoteLinks) {
       expect(link).toHaveAttribute('href', '/request-quote?products=semishare-probe-station');
     }

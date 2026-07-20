@@ -37,7 +37,7 @@ describe('CryogenicProbingPage', () => {
     expect(screen.getByRole('link', { name: /SEMISHARE product lines/i })).toHaveAttribute('href', '/wafer-probe-stations/semishare');
     expect(screen.getByRole('link', { name: /cryogenic probe station buyer.s guide/i })).toHaveAttribute('href', '/insights/cryogenic-probe-station-buyers-guide');
     const quoteLinks = screen.getAllByRole('link', { name: /Request a quote/i });
-    expect(quoteLinks.length).toBeGreaterThanOrEqual(1);
+    expect(quoteLinks.length).toBe(2); // hero + final-CTA bookends
     for (const link of quoteLinks) expect(link).toHaveAttribute('href', '/request-quote?products=cryogenic-probe-station');
   });
 
