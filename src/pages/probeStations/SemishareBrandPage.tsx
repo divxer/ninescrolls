@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { SEO } from '../../components/common/SEO';
-import { Breadcrumbs } from '../../components/common/Breadcrumbs';
 import { PartnerAttestationBanner } from '../../components/probeStations/PartnerAttestationBanner';
 import { SourcedSpecTable } from '../../components/probeStations/SourcedSpecTable';
+import { ProbeStationHero } from '../../components/probeStations/ProbeStationHero';
+import { ProbeStationCtaBand } from '../../components/probeStations/ProbeStationCtaBand';
 import {
   ATTESTATION_CONFIRMED,
   getBrandPageSeoTitle,
@@ -12,6 +13,38 @@ import {
 } from '../../data/probeStations/semishare';
 import { ProductEvidence } from '../../components/products/ProductEvidence';
 import { useScrollToTop } from '../../hooks/useScrollToTop';
+
+// SEMISHARE brand page. Content model is bespoke (evidence/attestation-driven,
+// live-sourced specs, no commerce panel) so it does NOT use the config-driven
+// ProductDetailPage component — but it shares the probe-station cluster's dark
+// theme (ProbeStationHero + ProbeStationCtaBand) and mirrors ProductDetailPage's
+// light-band content vocabulary (#FAFAFA canvas, sky-600 eyebrows, font-headline,
+// rounded-2xl slate-bordered cards) so it reads as one system with both.
+
+const heroStats = [
+  { label: 'Quoting', value: 'USD, delivered' },
+  { label: 'SAM.gov UEI', value: 'C4BFCTH5L5D1' },
+  { label: 'Serving labs', value: 'Since 2018' },
+  { label: 'Coverage', value: 'US & Canada' },
+];
+
+const whyBuy = [
+  {
+    title: 'US import, done for you',
+    copy:
+      'Customs, tariffs, and freight handled end-to-end — your PO is in USD with delivered pricing, not an overseas wire and a customs broker to find.',
+  },
+  {
+    title: 'Federal-ready procurement',
+    copy:
+      'NineScrolls LLC is SAM.gov-registered (UEI C4BFCTH5L5D1), supporting NSF/DOE-funded and other federally funded purchases.',
+  },
+  {
+    title: 'Local support since 2018',
+    copy:
+      '8+ years supplying North American research labs — installation coordination, warranty handling, and a US time-zone contact.',
+  },
+];
 
 const faqs = [
   {
@@ -67,9 +100,8 @@ export function SemishareBrandPage() {
       acceptedAnswer: { '@type': 'Answer', text: f.answer },
     })),
   };
-
   return (
-    <div className="bg-white text-slate-950">
+    <div className="bg-[#FAFAFA] text-slate-950">
       <SEO
         title={getBrandPageSeoTitle(ATTESTATION_CONFIRMED)}
         description="Buy SEMISHARE wafer probe stations in the US and Canada through NineScrolls: quoting in USD, import and customs handled, local after-sales support, SAM.gov-registered federal supplier."
@@ -80,102 +112,121 @@ export function SemishareBrandPage() {
         <script type="application/ld+json">{JSON.stringify(orgJsonLd)}</script>
         <script type="application/ld+json">{JSON.stringify(faqJsonLd)}</script>
       </Helmet>
-      <Breadcrumbs
-        items={[
-          { name: 'Wafer Probe Stations', path: '/wafer-probe-stations' },
-          { name: 'SEMISHARE', path: '/wafer-probe-stations/semishare' },
+
+      <ProbeStationHero
+        motif="wafer"
+        breadcrumbs={[
+          { label: 'Wafer Probe Stations', to: '/wafer-probe-stations' },
+          { label: 'SEMISHARE', to: '/wafer-probe-stations/semishare' },
         ]}
+        eyebrow="SEMISHARE"
+        title={<>SEMISHARE wafer probe stations — US &amp; Canada procurement</>}
+        description="SEMISHARE builds manual, semi-automatic, and fully automatic wafer probe stations, plus cryogenic vacuum systems and wafer-level silicon photonics probing. NineScrolls gives US and Canadian labs a direct procurement path: USD quoting, import and customs handled, and local support."
+        primaryAction={{ label: 'Request a quote', to: '/request-quote?products=semishare-probe-station' }}
+        secondaryAction={{ label: 'Probe station selection hub', to: '/wafer-probe-stations' }}
+        aside={
+          <div className="rounded-3xl border border-white/10 bg-white/[0.06] p-4 shadow-2xl backdrop-blur">
+            <PartnerAttestationBanner />
+            <div className="mt-4 grid gap-2 sm:grid-cols-2">
+              {heroStats.map((item) => (
+                <div key={item.label} className="rounded-2xl border border-white/10 bg-black/20 p-4">
+                  <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-slate-400">{item.label}</p>
+                  <p className="mt-2 font-mono text-lg font-semibold tracking-normal text-white">{item.value}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        }
       />
 
-      <header className="mx-auto max-w-5xl px-6 py-14">
-        <p className="text-sm font-bold uppercase tracking-[0.22em] text-sky-600">SEMISHARE</p>
-        <h1 className="mt-3 text-4xl font-bold">SEMISHARE wafer probe stations — US & Canada procurement</h1>
-        <p className="mt-4 max-w-3xl text-lg text-slate-600">
-          SEMISHARE builds manual, semi-automatic, and fully automatic wafer probe stations, plus
-          cryogenic vacuum systems and wafer-level silicon photonics probing. NineScrolls gives US
-          and Canadian labs a direct procurement path: USD quoting, import and customs handled,
-          and local support.
-        </p>
-        <div className="mt-6">
-          <PartnerAttestationBanner />
-        </div>
-      </header>
-
-      <section className="mx-auto max-w-5xl px-6 pb-10">
-        <h2 className="text-2xl font-bold">Product lines</h2>
-        <div className="mt-6 space-y-10">
-          {productLines.map((line) => (
-            <div key={line.key}>
-              <h3 className="text-xl font-semibold">{line.name}</h3>
-              <p className="mt-2 text-slate-700">{line.positioning}</p>
-              <div className="mt-4">
-                <SourcedSpecTable specs={line.specs} caption={line.name} />
-              </div>
-            </div>
-          ))}
+      {/* Product lines */}
+      <section className="px-6 py-20 md:px-10 lg:px-16">
+        <div className="mx-auto max-w-screen-2xl">
+          <div className="max-w-3xl">
+            <p className="text-sm font-bold uppercase tracking-[0.22em] text-sky-600">Product lines</p>
+            <h2 className="mt-4 font-headline text-4xl font-semibold tracking-normal text-slate-950 md:text-5xl">
+              Five families, one procurement path
+            </h2>
+            <p className="mt-5 text-base leading-8 text-slate-600">
+              From hand-driven analytical stations to fully automatic ATE probing and cryogenic vacuum
+              systems. Specifications are drawn from manufacturer public materials and confirmed with
+              the OEM before quoting.
+            </p>
+          </div>
+          <div className="mt-10 grid gap-4">
+            {productLines.map((line) => (
+              <article key={line.key} className="rounded-2xl border border-slate-200 bg-white p-6 md:p-8">
+                <h3 className="text-xl font-semibold tracking-normal text-slate-950">{line.name}</h3>
+                <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">{line.positioning}</p>
+                <div className="mt-6">
+                  <SourcedSpecTable specs={line.specs} caption={line.name} />
+                </div>
+              </article>
+            ))}
+          </div>
         </div>
       </section>
 
-      <section className="mx-auto max-w-5xl px-6 pb-10">
-        <h2 className="text-2xl font-bold">Why buy through NineScrolls</h2>
-        <div className="mt-5 grid gap-5 md:grid-cols-3">
-          <div className="rounded-xl border border-slate-200 p-6">
-            <h3 className="text-lg font-semibold">US import, done for you</h3>
-            <p className="mt-2 text-sm text-slate-600">
-              Customs, tariffs, and freight handled end-to-end — your PO is in USD with delivered
-              pricing, not an overseas wire and a customs broker to find.
-            </p>
+      {/* Why buy through NineScrolls */}
+      <section className="border-y border-slate-200 bg-white px-6 py-20 md:px-10 lg:px-16">
+        <div className="mx-auto max-w-screen-2xl">
+          <div className="max-w-3xl">
+            <p className="text-sm font-bold uppercase tracking-[0.22em] text-sky-600">Procurement</p>
+            <h2 className="mt-4 font-headline text-4xl font-semibold tracking-normal text-slate-950">
+              Why buy through NineScrolls
+            </h2>
           </div>
-          <div className="rounded-xl border border-slate-200 p-6">
-            <h3 className="text-lg font-semibold">Federal-ready procurement</h3>
-            <p className="mt-2 text-sm text-slate-600">
-              NineScrolls LLC is SAM.gov-registered (UEI C4BFCTH5L5D1), supporting NSF/DOE-funded
-              and other federally funded purchases.
-            </p>
-          </div>
-          <div className="rounded-xl border border-slate-200 p-6">
-            <h3 className="text-lg font-semibold">Local support since 2018</h3>
-            <p className="mt-2 text-sm text-slate-600">
-              8+ years supplying North American research labs — installation coordination,
-              warranty handling, and a US time-zone contact.
-            </p>
+          <div className="mt-10 grid gap-4 md:grid-cols-3">
+            {whyBuy.map((card) => (
+              <div key={card.title} className="rounded-2xl border border-slate-200 bg-[#FAFAFA] p-6">
+                <h3 className="text-xl font-semibold tracking-normal text-slate-950">{card.title}</h3>
+                <p className="mt-3 text-sm leading-7 text-slate-600">{card.copy}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* Dynamic, Evidence-framework-driven peer-reviewed research (published
-          probe-station publication records). Supersedes the former static
-          SEMISHARE_PUBLICATIONS list. Renders nothing until records publish. */}
+          probe-station publication records). Renders nothing until records
+          publish, and already carries the shared template section styling. */}
       <ProductEvidence productSlug="probe-station" />
 
-      <section className="mx-auto max-w-5xl px-6 pb-10">
-        <h2 className="text-2xl font-bold">Frequently asked questions</h2>
-        <div className="mt-5 space-y-6">
-          {faqs.map((f) => (
-            <div key={f.question}>
-              <h3 className="text-lg font-semibold">{f.question}</h3>
-              <p className="mt-2 text-slate-700">{f.answer}</p>
-            </div>
-          ))}
+      {/* FAQ */}
+      <section className="border-t border-slate-200 bg-[#FAFAFA] px-6 py-20 md:px-10 lg:px-16">
+        <div className="mx-auto max-w-screen-2xl">
+          <div className="max-w-3xl">
+            <p className="text-sm font-bold uppercase tracking-[0.22em] text-sky-600">FAQ</p>
+            <h2 className="mt-4 font-headline text-4xl font-semibold tracking-normal text-slate-950">
+              Frequently asked questions
+            </h2>
+          </div>
+          <div className="mt-10 grid gap-4 lg:grid-cols-2">
+            {faqs.map((f) => (
+              <article key={f.question} className="rounded-2xl border border-slate-200 bg-white p-6">
+                <h3 className="text-xl font-semibold tracking-normal text-slate-950">{f.question}</h3>
+                <p className="mt-3 text-sm leading-7 text-slate-600">{f.answer}</p>
+              </article>
+            ))}
+          </div>
         </div>
       </section>
 
-      <section className="mx-auto max-w-5xl px-6 pb-16">
-        <div className="rounded-xl bg-[#1e3a5f] p-8 text-white">
-          <h2 className="text-2xl font-bold">Get a US quote for a SEMISHARE probe station</h2>
-          <p className="mt-2 text-white/80">
+      <ProbeStationCtaBand
+        title="Get a US quote for a SEMISHARE probe station"
+        copy={
+          <>
             Send your application details — we confirm the exact configuration with SEMISHARE and
             quote with delivery and support included. New to probe stations? Start with the{' '}
-            <Link to="/wafer-probe-stations" className="text-sky-300 underline">
+            <Link to="/wafer-probe-stations" className="text-sky-300 underline hover:text-sky-200">
               probe station selection hub
             </Link>
             .
-          </p>
-          <Link to="/request-quote?products=semishare-probe-station" className="mt-5 inline-flex items-center justify-center rounded-md bg-sky-500 px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-sky-400">
-            Request a quote
-          </Link>
-        </div>
-      </section>
+          </>
+        }
+        primaryAction={{ label: 'Request a quote', to: '/request-quote?products=semishare-probe-station' }}
+        secondaryAction={{ label: 'Probe station selection hub', to: '/wafer-probe-stations' }}
+      />
     </div>
   );
 }
