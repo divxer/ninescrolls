@@ -1,5 +1,18 @@
 <p>ICP-RIE (Inductively Coupled Plasma Reactive Ion Etching) is a high-density dry-etching technology that uses a radio-frequency induction coil to generate a dense plasma while a separate radio-frequency bias drives reactive ions into the wafer with controlled energy. An ICP etcher decouples plasma generation from ion acceleration, giving process engineers independent control over reactive-species density and ion bombardment energy. This separation is what distinguishes ICP plasma etching from conventional <a href="/insights/reactive-ion-etching-guide">Reactive Ion Etching (RIE)</a>, where a single power supply sets both quantities at once. The result is faster, more anisotropic, and better-controlled etching across silicon, dielectrics, compound semiconductors, and metals.</p>
 
+<!-- ================= SKELETON (Phase 1) =================
+     Section order below is the approved reflow. Existing content is preserved
+     VERBATIM under renumbered headings. New sections are marked NEW with a
+     one-line intent stub and the drafting phase that will fill them.
+     Guardrails: qualitative only (no fabricated specs); link OUT to sibling
+     articles for shared fundamentals (anti-cannibalization).
+     ====================================================== -->
+
+<!-- NEW · Phase 4 · TL;DR — snippet-friendly 3-4 sentence summary of what ICP-RIE
+     is, the source/bias decoupling, and when to reach for it. Mirrors sibling template. -->
+<h2>TL;DR</h2>
+<!-- SKELETON STUB: TL;DR paragraph to be written in Phase 4 -->
+
 <h2>1) What Is ICP-RIE?</h2>
 <p>ICP-RIE is a two-source plasma etching process. A first radio-frequency supply drives an inductive coil that creates a high-density plasma, and a second radio-frequency supply biases the substrate electrode to accelerate ions toward the wafer surface. The combination delivers the chemical reactivity of a dense plasma with the directional ion bombardment needed for vertical, anisotropic profiles.</p>
 <p>In a conventional RIE system, a single capacitively coupled radio-frequency electrode both generates the plasma and accelerates the ions. Raising the power to increase plasma density therefore also raises ion energy, and lowering ion energy to protect a sensitive surface simultaneously starves the plasma of reactive species. Because the two effects are linked, the operating window is narrow.</p>
@@ -10,16 +23,43 @@
 <p>Free electrons in the gas are accelerated by this induced electric field. Because the field oscillates with the coil current, electrons are continuously heated as they oscillate in this induced electric field, gaining enough energy to ionize neutral gas molecules through collisions. Each ionizing collision releases additional electrons, which are themselves heated and go on to ionize further molecules. This sustained, efficient electron heating produces a dense, well-ionized discharge.</p>
 <p>Because the power is transferred through a magnetic field rather than directly across a sheath, the coil can pump large amounts of energy into the electron population without imposing a correspondingly large voltage on the wafer. That is precisely what enables high-density plasma etching: the inductive source maintains a copious supply of reactive radicals and ions, while the wafer-side conditions remain free to be tuned separately. The dielectric window isolates the coil electrically from the plasma so that power couples inductively into the gas rather than capacitively into the electrode, which is the physical basis of the density-versus-energy decoupling that defines ICP-RIE.</p>
 
+<!-- Phase 2 · TIGHTEN: trim §3 to the essential mechanism, since the new §4
+     matrix now carries the outcome-mapping depth. Avoid restating §4. -->
 <h2>3) ICP Source Power vs RF Bias Power</h2>
 <p>The single most important concept in ICP-RIE is the separation of two power supplies that perform two different jobs. ICP source power, applied to the induction coil, governs plasma density: how many ions and reactive radicals are created per unit volume. ICP bias power, applied to the substrate platen electrode, governs ion energy: how forcefully those ions are accelerated across the sheath and into the wafer.</p>
 <p>The bias supply works by establishing a DC self-bias on the wafer-bearing electrode. Because electrons are far more mobile than ions, the radio-frequency-driven electrode charges negatively relative to the plasma, and the resulting sheath voltage accelerates positive ions toward the surface. Raising the bias power deepens the DC self-bias and increases the average ion energy striking the wafer, which sharpens directionality and physical sputtering. Lowering it softens the bombardment to reduce damage and improve selectivity.</p>
 <p>Crucially, these two controls are largely independent. Increasing ICP source power raises ion flux and etch rate with only a modest effect on ion energy, while increasing ICP bias power raises ion energy with little effect on the bulk plasma density. This independent ion density control is the key advantage over capacitively coupled plasma (CCP) reactors and standard RIE, where one knob sets both. In a CCP or RIE tool, achieving a high etch rate forces high ion energy, which can sputter the mask, damage the substrate, or degrade selectivity. By contrast, an ICP etcher can supply a high reactive-species flux at a deliberately low ion energy, or maintain modest density while delivering high-energy directional ions. This decoupling is what lets process engineers optimize etch rate, profile, selectivity, and substrate damage as separate variables rather than accepting a single compromised operating point.</p>
 
-<h2>4) Why ICP Achieves High Plasma Density</h2>
+<!-- NEW · Phase 2 · CORE MECHANICAL SECTION. The explicit two-vector interaction
+     matrix (approved). Table maps High-source/Low-bias vs Low-source/High-bias
+     across radical density, ion energy, etch character, selectivity, damage,
+     plus the mixed-regime narrative and why decoupling makes each axis
+     independent (impossible on a coupled CCP). Qualitative only. -->
+<h2>4) Decoupled Control in Practice</h2>
+<!-- SKELETON STUB (Phase 2):
+       - Intro: the two knobs as orthogonal axes.
+       - <table class="insights-table"> interaction matrix:
+           columns: Regime | Radical density | Ion energy | Etch character | Selectivity | Lattice/mask damage
+           row A: High source / low bias  | High | Low  | Chemical / isotropic-leaning  | High  | Ultra-low
+           row B: Low source / high bias   | Low  | High | Physical / anisotropic, sputter-leaning | Lower | Higher
+       - Mixed-regime narrative: where real recipes sit between the poles.
+       - Why coupled CCP/RIE cannot move along these axes independently. -->
+
+<h2>5) Why ICP Achieves High Plasma Density</h2>
 <p>The efficiency of inductive power transfer is what gives ICP-RIE its characteristically high plasma density. Inductive coupling deposits energy directly into the electron population across the volume of the discharge, sustaining far more ionization than the sheath-limited capacitive coupling of a conventional RIE electrode. As a result, ICP sources routinely reach ion densities on the order of 10<sup>11</sup>–10<sup>12</sup> cm<sup>-3</sup>, roughly one to two orders of magnitude higher than the 10<sup>9</sup>–10<sup>10</sup> cm<sup>-3</sup> typical of capacitively coupled or conventional RIE plasmas.</p>
 <p>This high density translates directly into a large flux of reactive radicals and ions at the wafer, which is the origin of the high etch rates ICP-RIE is known for. Equally important, the dense plasma can be sustained at low pressure, often just a few millitorr. Low pressure lengthens the mean free path of ions traveling through the sheath, so ions reach the wafer with fewer collisions and a more tightly collimated, near-vertical trajectory. Directional ions arriving with minimal angular spread are what produce anisotropic, high-aspect-ratio profiles with straight sidewalls. The combination of high density for rate and low pressure for directionality is the technical foundation of the platform's anisotropy advantage.</p>
 
-<h2>5) ICP-RIE Equipment Architecture</h2>
+<!-- NEW · Phase 2 · Follows density naturally (density + low pressure -> HAR).
+     Why high-density plasma enables deep/high-AR etching; passivation-driven
+     anisotropy at the qualitative level. LINKS OUT (do not re-teach):
+       /insights/deep-reactive-ion-etching-bosch-process  (Bosch / deep Si)
+       /insights/cryogenic-etching-vs-bosch-process        (cryo alternative)
+     Note: ARDE/RIE-lag introduced here conceptually, mechanisms detailed in §10. -->
+<h2>6) High-Aspect-Ratio &amp; Deep Etching</h2>
+<!-- SKELETON STUB (Phase 2): qualitative HAR mechanism + passivation; link out to
+     DRIE/Bosch and cryo articles rather than duplicating them. -->
+
+<h2>7) ICP-RIE Equipment Architecture</h2>
 <p>An ICP-RIE system is built around its two plasma sources, with supporting subsystems that make the process repeatable and well controlled. Understanding the architecture clarifies where the capability comes from rather than serving as a buying guide.</p>
 <ul>
 <li><strong>Induction coil and dielectric window:</strong> A radio-frequency coil sits outside a dielectric (typically quartz or alumina) window at the top of the chamber. The window passes the magnetic field while keeping the coil electrically isolated from the plasma, ensuring inductive rather than capacitive coupling.</li>
@@ -31,7 +71,12 @@
 <li><strong>Load-lock:</strong> A vacuum transfer chamber lets wafers enter and exit without venting the process chamber, preserving chamber conditioning and improving throughput and cleanliness.</li>
 </ul>
 
-<h2>6) Semiconductor Manufacturing Applications</h2>
+<!-- Phase 3 · TIGHTEN: keep the device-domain applications overview here, but
+     move the materials-PHYSICS depth (why ICP for hard/low-volatility materials)
+     into the new §9 so the two sections are complementary, not redundant.
+     This section = "where it's used by device domain"; §9 = "why the physics
+     demands ICP". -->
+<h2>8) Semiconductor Manufacturing Applications</h2>
 <p>Because ICP-RIE delivers high etch rates, strong anisotropy, and independent control of density and ion energy, it is applied across logic, memory, power, photonic, and packaging fabrication. The following examples illustrate where the platform's capabilities matter most.</p>
 <h3>Logic &amp; Memory</h3>
 <p>In advanced CMOS logic and memory, ICP-RIE etches gate stacks, shallow-trench isolation, contact and via openings, and the deep, high-aspect-ratio features of 3D NAND. The ability to run a dense plasma at controlled, relatively low ion energy is essential here: it protects thin gate dielectrics and ultra-shallow junctions from ion-induced damage while still clearing material at production throughput. Tight profile control over millions of identical features also keeps critical dimensions within the narrow tolerances that modern nodes demand.</p>
@@ -42,7 +87,43 @@
 <h3>Advanced Packaging (TSV &amp; Deep Silicon)</h3>
 <p>In 3D integration and advanced packaging, ICP-RIE forms through-silicon vias (TSVs) and other deep silicon structures, often using the time-multiplexed Bosch process that alternates SF<sub>6</sub> etch steps with C<sub>4</sub>F<sub>8</sub> passivation steps. The high plasma density sustains the rapid silicon removal these deep features demand, while bias control and sidewall passivation keep the high-aspect-ratio profiles straight. The same deep-silicon capability serves MEMS sensors, actuators, and microfluidic structures.</p>
 
-<h2>7) Advantages of ICP-RIE</h2>
+<!-- NEW · Phase 3 · Materials-PHYSICS depth, framed around the LIMITS OF STANDARD
+     RIE (approved framing). Qualitative only, no recipe numbers.
+       - SiC / GaN / wide-bandgap: high bond/binding energies require the
+         INDEPENDENT high ion flux of an ICP source to break bonds efficiently
+         WITHOUT the excessive bias a CCP would need (which erodes masks / damages
+         lattice).
+       - III-V (InP, GaAs): volatility balance — temperature-dependent volatility
+         of indium by-products vs. phosphorus/arsenic; high density + independent
+         temp/energy control keeps etching congruent.
+     LINK OUT: /insights/metal-etching-complete-guide for metal/hard-mask specifics. -->
+<h2>9) Material-Specific ICP-RIE Behavior: Where Standard RIE Hits Its Limits</h2>
+<!-- SKELETON STUB (Phase 3): SiC/GaN binding-energy argument + III-V volatility
+     balance, each tied back to the source/bias decoupling. -->
+
+<!-- NEW · Phase 3 · ICP-specific failure modes AMPLIFIED by high-density plasma.
+     Emphasize ARDE/RIE-lag and micro-trenching (ion deflection off charging
+     sidewalls). Bridge to why He backside cooling + precise wafer-temperature
+     control are paramount in ICP vs. simple parallel-plate. Qualitative.
+     Note: absorbs/dedupes the ARDE/microloading/charging bullets currently in
+     §14 Limitations — keep §14 short and cross-reference here. -->
+<h2>10) Profile, Damage &amp; Uniformity Control</h2>
+<!-- SKELETON STUB (Phase 3): ARDE/RIE-lag, micro-trenching, notching/charging,
+     sidewall bowing, loading; temperature control & He backside cooling bridge. -->
+
+<!-- NEW · Phase 3 · Endpoint & metrology considerations unique to high-density
+     ICP: OES emission-line tracking, laser interferometry, why high density
+     changes signal/timing. Qualitative. Cross-ref §7 hardware. -->
+<h2>11) Endpoint Detection &amp; Metrology</h2>
+<!-- SKELETON STUB (Phase 3): OES + interferometry at high density. -->
+
+<!-- NEW · Phase 3 · ICP-RIE-specific troubleshooting reference. Qualitative
+     cause -> fix table for: RIE-lag, micro-trenching, notching, grass/black-Si,
+     sidewall bowing. Use <table class="insights-table">. -->
+<h2>12) Troubleshooting: ICP-RIE-Specific Failure Modes</h2>
+<!-- SKELETON STUB (Phase 3): symptom | likely cause | qualitative fix table. -->
+
+<h2>13) Advantages of ICP-RIE</h2>
 <ul>
 <li><strong>High etch rate:</strong> The dense plasma supplies a large flux of reactive species, enabling fast material removal and strong throughput.</li>
 <li><strong>High density at low pressure:</strong> Inductive coupling sustains high ionization at a few millitorr, combining ample reactivity with the long mean free path needed for directional etching.</li>
@@ -51,7 +132,10 @@
 <li><strong>Lower substrate damage potential:</strong> Because a high etch rate no longer requires high ion energy, sensitive surfaces can be etched at reduced bombardment energy to minimize lattice and interface damage.</li>
 </ul>
 
-<h2>8) Limitations and Trade-offs</h2>
+<!-- Phase 3 · TIGHTEN: ARDE / microloading / charging now live in depth in §10.
+     Reduce this list to a short trade-off summary and cross-reference §10 to
+     avoid duplication. -->
+<h2>14) Limitations and Trade-offs</h2>
 <ul>
 <li><strong>Higher cost and complexity:</strong> Two radio-frequency power supplies, matching networks, a dielectric window, and high vacuum hardware make ICP-RIE tools more expensive and more involved to maintain than basic RIE systems.</li>
 <li><strong>ARDE (Aspect-Ratio-Dependent Etching):</strong> Deeper and narrower features etch more slowly than wider ones because reactant transport and product removal become limited at the bottom of high-aspect-ratio trenches.</li>
@@ -60,7 +144,27 @@
 <li><strong>Process-tuning burden:</strong> The large multi-parameter space of source power, bias power, pressure, gas ratios, and temperature gives great flexibility but requires significant development effort to optimize for each material and feature.</li>
 </ul>
 
-<h2>9) ICP-RIE vs RIE: Summary</h2>
+<!-- NEW · Phase 4 · CLEAN COMMERCIAL INTEGRATION. Anchor on the INFLECTION POINT
+     where a lab/fab must move from standard RIE to ICP-RIE (aspect ratios past a
+     practical threshold; mask selectivity failing on hard materials), then map
+     those inflection points to NineScrolls ICP hardware. No hard sell.
+     Absorbs the existing live CTA paragraph (link to /products/icp-etcher).
+     LINK OUT: /insights/reactive-ion-etching-vs-ion-milling (when physical etch
+     is the better fit). Product links: /products/icp-etcher, /products/rie-etcher. -->
+<h2>15) Choosing ICP-RIE: When to Move Up from Standard RIE</h2>
+<!-- SKELETON STUB (Phase 4): inflection-point decision guidance -> NineScrolls
+     ICP portfolio mapping. Fold in existing CTA:
+     "If you are selecting an ICP-RIE etching system and need wafer-size, ICP
+      power, bias-control, gas-line, temperature-range, or quote details, see the
+      NineScrolls ICP-RIE etching system specifications (/products/icp-etcher)." -->
+
+<!-- NEW · Phase 4 · ICP-relevant future trends only (do NOT duplicate the RIE
+     guide's broader trends section): ALE (atomic layer etching) on ICP platforms,
+     pulsed / mixed-mode plasma as an RF-generator retrofit. Brief. -->
+<h2>16) Future Trends: ALE &amp; Pulsed Plasma</h2>
+<!-- SKELETON STUB (Phase 4): ALE + pulsed/mixed-mode plasma, ICP-specific. -->
+
+<h2>17) ICP-RIE vs RIE: Summary</h2>
 <table class="insights-table">
 <thead>
 <tr><th>Parameter</th><th>Conventional RIE</th><th>ICP-RIE</th></tr>
@@ -76,3 +180,19 @@
 </tbody>
 </table>
 <p>For a full side-by-side selection guide covering plasma etching, RIE, and ICP-RIE reactor types and how to choose between them, see our <a href="/insights/understanding-differences-pe-rie-icp-rie-plasma-etching">comparison of PE, RIE, and ICP-RIE plasma etching</a>.</p>
+
+<!-- NEW · Phase 4 · ICP-RIE-specific FAQ (snippet targets). Questions drawn from
+     the sections above; qualitative answers. -->
+<h2>18) Frequently Asked Questions</h2>
+<!-- SKELETON STUB (Phase 4): 5-8 ICP-RIE-specific Q/A. -->
+
+<!-- NEW · Phase 4 · Short glossary of ICP-RIE terms (ICP source power, RF bias,
+     DC self-bias, ARDE, micro-trenching, He backside cooling, ALE, etc.). -->
+<h2>Glossary</h2>
+<!-- SKELETON STUB (Phase 4): term list. -->
+
+<!-- NEW · Phase 4 · References. Reuse the already-established citations from the
+     legacy copy (Lieberman & Lichtenberg 2005; Hopwood 1992; Lee SiC 2004;
+     Pearton wide-bandgap 2005) plus any traceable additions. NO invented data. -->
+<h2>References</h2>
+<!-- SKELETON STUB (Phase 4): ordered citation list. -->
