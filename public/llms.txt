@@ -119,6 +119,7 @@ NineScrolls serves universities, research institutes, and corporate R&D labs wor
 - [How to Choose a Wafer Probe Station for Your University Research Lab](https://ninescrolls.com/insights/how-to-choose-wafer-probe-station-university-lab): Buyer's guide — automation level, temperature, signal type, sample size, positioning; public price/award examples and university procurement guidance
 - [Probe Station Procurement for NSF and DOE-Funded Projects](https://ninescrolls.com/insights/probe-station-procurement-nsf-doe-funded-projects): How to buy compliantly under a Federal assistance award — institution-adopted thresholds, procurement methods, noncompetitive circumstances, timelines, and vendor onboarding
 - [Cryogenic Probe Station Buyer's Guide: Architectures, Specifications, and an Acceptance-Ready RFQ](https://ninescrolls.com/insights/cryogenic-probe-station-buyers-guide): How to evaluate cryogenic probe stations — cooling architectures (LN2 / closed-cycle / LHe), base temperature under defined load, like-for-like vibration metrics, vacuum and interfaces, total cost of ownership, and an acceptance-criteria RFQ checklist
+- [Types of Wafer Probe Stations: Measurement-Environment Guide](https://ninescrolls.com/insights/types-of-wafer-probe-stations): The environment/capability type map — standard ambient, cryogenic, high-temperature, vacuum, RF & microwave, and silicon photonics — with hardware signatures, datasheet review points, qualitative cost drivers, and a type-selection checklist
 
 ## Insights — Process Integration & Applications
 

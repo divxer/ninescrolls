@@ -354,6 +354,11 @@ Summary: Guide to chamber design and contamination management — covers body ma
 
 ### Metrology & Testing
 
+#### Types of Wafer Probe Stations: Measurement-Environment Guide
+URL: https://ninescrolls.com/insights/types-of-wafer-probe-stations
+Covers: the six probe-station types along the environment/capability axis (standard ambient, cryogenic, high-temperature, vacuum, RF & microwave, silicon photonics) with a uniform profile template — distinguishing hardware, typical applications, datasheet review points, qualitative cost drivers, and when not to choose each; a 6×4 comparison matrix; high-power (SiC/GaN) boundary considerations woven into the high-temperature and vacuum profiles; an RFQ-ready type-selection checklist
+Best for: researchers and lab managers deciding which probe-station type a measurement program actually needs, before configuring a specific system
+
 #### Cryogenic Probe Station Buyer's Guide: Architectures, Specifications, and an Acceptance-Ready RFQ
 URL: https://ninescrolls.com/insights/cryogenic-probe-station-buyers-guide
 Covers: the three cooling architectures (LN2 flow/reservoir, closed-cycle cryocooler, LHe flow/bath) and their operating trade-offs; reading base temperature as a load-dependent system property rather than a headline number; comparing vibration specifications on like-for-like metrics; vacuum levels and interface dimensions as evaluation criteria; a total-cost-of-ownership framework (consumables, utilities, facilities); an acceptance-criteria-based RFQ checklist
