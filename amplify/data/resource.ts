@@ -551,6 +551,20 @@ const schema = a.schema({
     error: a.string(),
   }),
 
+  AttributionSnapshot: a.customType({
+    source: a.string(),
+    medium: a.string(),
+    campaign: a.string(),
+    term: a.string(),
+    content: a.string(),
+    gclid: a.string(),
+    gbraid: a.string(),
+    wbraid: a.string(),
+    msclkid: a.string(),
+    capturedAt: a.string(),
+    landingPath: a.string(),
+  }),
+
   RfqSubmission: a.customType({
     rfqId: a.id().required(),
     referenceNumber: a.string(),
@@ -582,6 +596,8 @@ const schema = a.schema({
     linkedOrderId: a.string(),
     attachmentKeys: a.json(),
     referrerSource: a.string(),
+    visitorId: a.string(),
+    attribution: a.ref('AttributionSnapshot'),
   }),
 
   RfqConnection: a.customType({

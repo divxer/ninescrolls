@@ -11,6 +11,7 @@ import {
   type FlushReason,
   type PageTimeFlushParams,
 } from '../../services/analyticsStorageService';
+import { captureLandingAttribution } from '../../services/attributionSnapshot';
 
 // ─── Time tracking constants ─────────────────────────────────────────────────
 const MIN_TRACK_SECONDS = 5;       // Minimum seconds to track (filters bots/misclicks)
@@ -508,6 +509,10 @@ export const PageTimeTracker: React.FC = () => {
     // Track traffic source on first page load
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
+      // Persist a first-party last-non-direct attribution snapshot for later RFQ
+      // submission (join paid clicks to conversions). Safe to call every load —
+      // param-less loads never overwrite an in-window snapshot.
+      captureLandingAttribution();
       const utmSource = urlParams.get('utm_source');
       const utmMedium = urlParams.get('utm_medium');
       const utmCampaign = urlParams.get('utm_campaign');

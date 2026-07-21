@@ -15,6 +15,7 @@ export function RFQDetailPage() {
   const [showConvert, setShowConvert] = useState(false);
   const [showDecline, setShowDecline] = useState(false);
   const [reverting, setReverting] = useState(false);
+  const [gclidCopied, setGclidCopied] = useState(false);
 
   if (loading) return <div className="flex items-center justify-center py-20 text-on-surface-variant font-body">Loading RFQ...</div>;
   if (error) return <div className="bg-error-container text-on-error-container p-4 rounded-lg font-body">Error: {error.message}</div>;
@@ -184,6 +185,51 @@ export function RFQDetailPage() {
             <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Key Specifications</p>
             <p className="text-sm text-on-surface whitespace-pre-wrap">{rfq.keySpecifications}</p>
           </div>
+        )}
+      </div>
+
+      {/* Traffic Source */}
+      <div className="bg-surface-container-lowest rounded-xl p-4 md:p-6 shadow-card mb-6">
+        <h3 className="text-sm font-bold text-on-surface-variant uppercase tracking-wider flex items-center gap-2 mb-6">
+          <span className="material-symbols-outlined text-lg">ads_click</span>
+          Traffic Source
+        </h3>
+        {rfq.attribution ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+            {(rfq.attribution.gclid || rfq.attribution.medium === 'cpc' || rfq.attribution.medium === 'ppc') && (
+              <div className="md:col-span-2">
+                <span
+                  className="inline-flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full bg-primary-container text-on-primary-container"
+                  title="GCLID present (paid Google traffic)"
+                >
+                  Paid — Google
+                </span>
+                {rfq.attribution.gclid && (
+                  <button
+                    type="button"
+                    className="ml-2 text-xs text-primary underline"
+                    onClick={() => {
+                      navigator.clipboard?.writeText(rfq.attribution!.gclid!);
+                      setGclidCopied(true);
+                      window.setTimeout(() => setGclidCopied(false), 1500);
+                    }}
+                  >
+                    {gclidCopied ? 'Copied ✓' : 'Copy GCLID'}
+                  </button>
+                )}
+              </div>
+            )}
+            <div><p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Source</p><p className="text-sm font-medium text-on-surface">{rfq.attribution.source || '-'}</p></div>
+            <div><p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Medium</p><p className="text-sm font-medium text-on-surface">{rfq.attribution.medium || '-'}</p></div>
+            <div><p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Campaign</p><p className="text-sm font-medium text-on-surface">{rfq.attribution.campaign || '-'}</p></div>
+            <div><p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Term</p><p className="text-sm font-medium text-on-surface">{rfq.attribution.term || '-'}</p></div>
+            <div><p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Landing Page</p><p className="text-sm font-medium text-on-surface">{rfq.attribution.landingPath || '-'}</p></div>
+            <div><p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Captured</p><p className="text-sm font-medium text-on-surface">{rfq.attribution.capturedAt ? formatDateTime(rfq.attribution.capturedAt) : '-'}</p></div>
+          </div>
+        ) : rfq.referrerSource ? (
+          <p className="text-sm text-on-surface-variant">Started from: <span className="font-medium text-on-surface">{rfq.referrerSource}</span></p>
+        ) : (
+          <p className="text-sm text-on-surface-variant">Direct / not captured</p>
         )}
       </div>
 

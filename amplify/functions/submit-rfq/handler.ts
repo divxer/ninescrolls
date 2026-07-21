@@ -29,7 +29,9 @@ import { toSend, upsertVisitorBridge } from '../../lib/crm/visitor-bridge';
 // Clients
 // ---------------------------------------------------------------------------
 const ddbClient = new DynamoDBClient({});
-const docClient = DynamoDBDocumentClient.from(ddbClient);
+const docClient = DynamoDBDocumentClient.from(ddbClient, {
+    marshallOptions: { removeUndefinedValues: true },
+});
 const s3Client = new S3Client({});
 
 // ---------------------------------------------------------------------------
@@ -118,6 +120,21 @@ export const rfqSchema = z.object({
     turnstileToken: z.string().min(1),
     // Browser visitor identity for the VISITOR# bridge (2C-analytics)
     visitorId: z.string().max(L.visitorId.max).optional(),
+    // First-party last-non-direct attribution snapshot (paid-click join). utm
+    // fields lowercased client-side; click ids verbatim. All sub-fields optional.
+    attribution: z.object({
+        source: z.string().max(L.attribution.source.max).optional(),
+        medium: z.string().max(L.attribution.medium.max).optional(),
+        campaign: z.string().max(L.attribution.campaign.max).optional(),
+        term: z.string().max(L.attribution.term.max).optional(),
+        content: z.string().max(L.attribution.content.max).optional(),
+        gclid: z.string().max(L.attribution.gclid.max).optional(),
+        gbraid: z.string().max(L.attribution.gbraid.max).optional(),
+        wbraid: z.string().max(L.attribution.wbraid.max).optional(),
+        msclkid: z.string().max(L.attribution.msclkid.max).optional(),
+        capturedAt: z.string().max(L.attribution.capturedAt.max).optional(),
+        landingPath: z.string().max(L.attribution.landingPath.max).optional(),
+    }).optional(),
     // S3 keys from presigned URL uploads — must be temp/rfq/ keys this Lambda issued
     attachmentKeys: z
         .array(z.string().max(500).refine(isValidTempAttachmentKey, {
@@ -803,6 +820,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
             submittedAt,
             ipHash: ipHashed,
             visitorId: data.visitorId,
+            attribution: data.attribution,
             // All form fields (stored raw; sanitize() is applied inline in email templates)
             name: data.name,
             email: data.email,

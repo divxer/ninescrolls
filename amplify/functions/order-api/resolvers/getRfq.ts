@@ -2,6 +2,23 @@ import { GetCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient, TABLE_NAME } from '../lib/dynamodb.js';
 import type { AppSyncEvent } from '../lib/types.js';
 
+function mapAttribution(a: any) {
+  if (!a) return null;
+  return {
+    source: a.source || null,
+    medium: a.medium || null,
+    campaign: a.campaign || null,
+    term: a.term || null,
+    content: a.content || null,
+    gclid: a.gclid || null,
+    gbraid: a.gbraid || null,
+    wbraid: a.wbraid || null,
+    msclkid: a.msclkid || null,
+    capturedAt: a.capturedAt || null,
+    landingPath: a.landingPath || null,
+  };
+}
+
 export async function getRfq(event: AppSyncEvent) {
     const { rfqId } = event.arguments as { rfqId: string };
 
@@ -49,5 +66,7 @@ export async function getRfq(event: AppSyncEvent) {
         shippingCountry: item.shippingCountry || null,
         linkedOrderId: item.linkedOrderId || null,
         attachmentKeys: item.attachmentKeys || null,
+        visitorId: item.visitorId || null,
+        attribution: mapAttribution(item.attribution),
     };
 }

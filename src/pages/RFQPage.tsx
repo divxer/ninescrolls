@@ -4,6 +4,7 @@ import { SEO } from '../components/common/SEO';
 import { useCombinedAnalytics } from '../hooks/useCombinedAnalytics';
 import { behaviorAnalytics } from '../services/behaviorAnalytics';
 import { getVisitorId } from '../services/analyticsStorageService';
+import { getAttributionSnapshot } from '../services/attributionSnapshot';
 import { describeSubmitError, type SubmitErrorBody } from './rfqSubmitError';
 import { uploadRfqAttachments, RFQ_API_URL } from '../services/rfqAttachmentService';
 import { capturePartialRfq } from '../services/rfqPartialCapture';
@@ -606,6 +607,8 @@ export function RFQPage() {
       }
       if (turnstileToken) payload.turnstileToken = turnstileToken;
       if (referrerSource) payload.referrerSource = referrerSource;
+      const attribution = getAttributionSnapshot();
+      if (attribution) payload.attribution = attribution;
 
       // Attachments go straight to S3 first; the RFQ payload carries only their keys.
       if (files.length > 0) {

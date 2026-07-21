@@ -2,6 +2,23 @@ import { QueryCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient, TABLE_NAME } from '../lib/dynamodb.js';
 import type { AppSyncEvent } from '../lib/types.js';
 
+function mapAttribution(a: any) {
+  if (!a) return null;
+  return {
+    source: a.source || null,
+    medium: a.medium || null,
+    campaign: a.campaign || null,
+    term: a.term || null,
+    content: a.content || null,
+    gclid: a.gclid || null,
+    gbraid: a.gbraid || null,
+    wbraid: a.wbraid || null,
+    msclkid: a.msclkid || null,
+    capturedAt: a.capturedAt || null,
+    landingPath: a.landingPath || null,
+  };
+}
+
 // The unfiltered "All" view intentionally lists only real RFQs (pending/declined/
 // converted). Abandoned Step-1 captures (RFQ_STATUS#partial, written by submit-rfq's
 // capturePartial action) are high-volume and carry submittedAt=now, so mixing them
@@ -123,5 +140,7 @@ function buildRfqResponse(item: Record<string, unknown>) {
         shippingCountry: item.shippingCountry || null,
         linkedOrderId: item.linkedOrderId || null,
         attachmentKeys: item.attachmentKeys || null,
+        visitorId: item.visitorId || null,
+        attribution: mapAttribution(item.attribution),
     };
 }

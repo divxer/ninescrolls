@@ -55,6 +55,7 @@ function renderRfq(initialEntry: string) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  localStorage.clear();
   vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
     callback(0);
     return 0;
@@ -389,6 +390,33 @@ describe('RFQPage URL attribution contract', () => {
       productCount: 2,
       viaAskCheckbox: true,
     });
+  });
+
+  it('includes the attribution snapshot in the submit payload when present', async () => {
+    const { captureLandingAttribution } = await import('../services/attributionSnapshot');
+    captureLandingAttribution('?utm_source=google&utm_medium=cpc&gclid=g-abc', new Date());
+
+    renderRfq('/request-quote?category=ICP');
+
+    fireEvent.change(screen.getByLabelText(/Full Name/i), { target: { value: 'Ada Lovelace' } });
+    fireEvent.change(screen.getByLabelText(/^Email/i), { target: { value: 'ada@example.edu' } });
+    fireEvent.change(screen.getByLabelText(/Institution/i), { target: { value: 'Example Lab' } });
+    fireEvent.change(screen.getByLabelText(/Application \/ Research Goal/i), {
+      target: { value: 'Deep silicon etching process development for MEMS sensors.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Continue to Project Details/i }));
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/Preferred Model/i)).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Request Proposal/i }));
+
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalledWith('https://api.ninescrolls.com/api/rfq', expect.anything());
+    });
+    const fetchMock = fetch as unknown as { mock: { calls: Array<[string, RequestInit]> } };
+    const body = JSON.parse(fetchMock.mock.calls.at(-1)![1].body as string);
+    expect(body.attribution).toMatchObject({ source: 'google', medium: 'cpc', gclid: 'g-abc' });
   });
 });
 
