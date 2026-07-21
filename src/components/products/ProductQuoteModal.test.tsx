@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render } from '@testing-library/react';
 
 const { downloadFile } = vi.hoisted(() => ({ downloadFile: vi.fn() }));
+const { trackCustomEvent } = vi.hoisted(() => ({ trackCustomEvent: vi.fn() }));
 const captured = vi.hoisted(() => ({ props: null as { onDownloadBrochure?: () => void; productName?: string } | null }));
 
 // Capture the props ProductQuoteModal passes down, without rendering the real modal.
@@ -12,13 +13,31 @@ vi.mock('../common/QuoteModal', () => ({
   },
 }));
 vi.mock('../../utils/downloadFile', () => ({ downloadFile }));
+vi.mock('../../hooks/useCombinedAnalytics', () => ({
+  useCombinedAnalytics: () => ({ trackCustomEvent }),
+}));
 
 import { ProductQuoteModal } from './ProductQuoteModal';
 
 describe('ProductQuoteModal', () => {
   beforeEach(() => {
     downloadFile.mockClear();
+    trackCustomEvent.mockClear();
     captured.props = null;
+  });
+
+  it('tracks a Datasheet Downloaded event with productName when the brochure is downloaded', () => {
+    render(
+      <ProductQuoteModal
+        isOpen defaultIsQuote={false} onClose={vi.fn()}
+        productName="PLUTO-F" brochureHref="/docs/pluto-f.pdf" brochureFilename="NineScrolls-PLUTO-F.pdf"
+      />,
+    );
+    captured.props?.onDownloadBrochure?.();
+    expect(trackCustomEvent).toHaveBeenCalledWith(
+      'Datasheet Downloaded',
+      expect.objectContaining({ productName: 'PLUTO-F' }),
+    );
   });
 
   it('downloads via downloadFile and does NOT close when closeOnDownload is unset', () => {

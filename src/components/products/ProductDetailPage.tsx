@@ -392,6 +392,7 @@ export function ProductDetailPage({ config }: ProductDetailPageProps) {
         fileUrl={config.datasheet.fileUrl}
         fileName={config.datasheet.fileName}
         title={config.datasheet.title}
+        productName={config.schema.name}
         turnstileSiteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY as string}
       />
     </>

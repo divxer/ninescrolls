@@ -9,6 +9,10 @@ interface DownloadGateModalProps {
   fileName?: string;
   title?: string;
   turnstileSiteKey?: string; // Optional Cloudflare Turnstile site key
+  /** Product this datasheet belongs to. Attaches productName to the analytics
+   *  events so the download counts in the admin per-product Downloads metric.
+   *  Omit on non-product pages (e.g. the /products listing). */
+  productName?: string;
 }
 
 declare global {
@@ -27,7 +31,7 @@ const intents = [
 ];
 
 
-export const DownloadGateModal: React.FC<DownloadGateModalProps> = ({ isOpen, onClose, fileUrl, fileName = '', title = 'Get the Brochure', turnstileSiteKey }) => {
+export const DownloadGateModal: React.FC<DownloadGateModalProps> = ({ isOpen, onClose, fileUrl, fileName = '', title = 'Get the Brochure', turnstileSiteKey, productName }) => {
   const analytics = useCombinedAnalytics();
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
@@ -122,6 +126,8 @@ export const DownloadGateModal: React.FC<DownloadGateModalProps> = ({ isOpen, on
     // hold non-PII signal so they can be retained without GDPR redaction concerns.
     analytics.trackCustomEvent('Lead Captured', {
       source: 'Download Gate',
+      productId: productName,
+      productName,
       fileUrl,
       fileName,
       intent: form.intent,
@@ -139,7 +145,7 @@ export const DownloadGateModal: React.FC<DownloadGateModalProps> = ({ isOpen, on
     a.click();
     document.body.removeChild(a);
 
-    analytics.trackCustomEvent('Datasheet Downloaded', { fileUrl, fileName, origin: 'Download Gate', intent: form.intent });
+    analytics.trackCustomEvent('Datasheet Downloaded', { productId: productName, productName, fileUrl, fileName, origin: 'Download Gate', intent: form.intent });
 
     setSubmitting(false);
     onClose();

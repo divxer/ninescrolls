@@ -45,6 +45,31 @@ describe('aggregateProductStats', () => {
     expect(hy?.conversionRate).toBeCloseTo(1); // 2 conversions / 2 unique visitors
   });
 
+  it('counts pdf_download events by pathname when productName is absent', () => {
+    // Real DownloadGateModal events carry pathname but no productName (productName: null).
+    const pageStats = aggregatePageStats([
+      ev({ eventType: 'page_view', pathname: '/products/rie-etcher', visitorId: 'v1' }),
+      ev({ eventType: 'page_view', pathname: '/products/rie-etcher', visitorId: 'v2' }),
+    ]);
+    const products = aggregateProductStats(pageStats, [
+      ev({ eventType: 'pdf_download', pathname: '/products/rie-etcher', productName: null }),
+      ev({ eventType: 'pdf_download', pathname: '/products/rie-etcher', productName: null }),
+    ]);
+    const rie = products.find(p => p.pathname === '/products/rie-etcher');
+    expect(rie?.pdfDownloads).toBe(2);
+    expect(rie?.conversionRate).toBeCloseTo(1); // 2 downloads / 2 unique visitors
+  });
+
+  it('does not double-count a download that has both a matching pathname and productName', () => {
+    const pageStats = aggregatePageStats([
+      ev({ eventType: 'page_view', pathname: '/products/hy-20l', visitorId: 'v1' }),
+    ]);
+    const products = aggregateProductStats(pageStats, [
+      ev({ eventType: 'pdf_download', pathname: '/products/hy-20l', productName: 'HY-20L' }),
+    ]);
+    expect(products.find(p => p.pathname === '/products/hy-20l')?.pdfDownloads).toBe(1);
+  });
+
   it('caps conversion rate at 100%', () => {
     const pageStats = aggregatePageStats([
       ev({ eventType: 'page_view', pathname: '/products/x', visitorId: 'v1' }),

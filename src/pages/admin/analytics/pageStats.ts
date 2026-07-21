@@ -94,32 +94,50 @@ export function aggregatePageStats(events: AnalyticsEvent[]): PageStats[] {
 
 export function aggregateProductStats(pageStats: PageStats[], events: AnalyticsEvent[]): ProductPageStats[] {
   const productPages = pageStats.filter(p => p.isProductPage);
+  const productPaths = new Set(productPages.map(p => p.pathname));
 
-  // Count PDF downloads per productName
-  const pdfCounts = new Map<string, number>();
-  const contactCounts = new Map<string, number>();
+  // Downloads/contacts are attributed to a product page in two ways, in order:
+  //   1. by pathname — the public DownloadGateModal flow stores pdf_download
+  //      events with the product path (e.g. /products/rie-etcher) but NO
+  //      productName, so pathname is the only reliable key for real traffic.
+  //   2. by productName slug-match — legacy fallback for events that carry a
+  //      productName but land on a non-product path (e.g. RFQs submitted from
+  //      /request-quote, or contact forms with an empty pathname).
+  // An event that already matched by pathname is never also counted by name,
+  // so a download with both keys is counted exactly once.
+  const pathPdf = new Map<string, number>();
+  const pathContact = new Map<string, number>();
+  const namePdf = new Map<string, number>();
+  const nameContact = new Map<string, number>();
+
   for (const e of events) {
-    if ((e.eventType === 'pdf_download' || e.eventName === 'Document Downloaded') && e.productName) {
-      pdfCounts.set(e.productName, (pdfCounts.get(e.productName) || 0) + 1);
-    }
-    if ((e.eventType === 'contact_form' || e.eventType === 'rfq_submission') && (e.productId || e.productName)) {
-      const key = e.productName || e.productId || '';
-      contactCounts.set(key, (contactCounts.get(key) || 0) + 1);
+    const isPdf = e.eventType === 'pdf_download' || e.eventName === 'Document Downloaded';
+    const isContact = e.eventType === 'contact_form' || e.eventType === 'rfq_submission';
+    if (!isPdf && !isContact) continue;
+
+    const path = e.pathname ? normalizePath(e.pathname) : '';
+    const pathMap = isPdf ? pathPdf : pathContact;
+    const nameMap = isPdf ? namePdf : nameContact;
+
+    if (path && productPaths.has(path)) {
+      pathMap.set(path, (pathMap.get(path) || 0) + 1);
+    } else {
+      const key = e.productName || (isContact ? e.productId : undefined) || '';
+      if (key) nameMap.set(key, (nameMap.get(key) || 0) + 1);
     }
   }
 
+  const normalize = (s: string) => s.toLowerCase().replace(/[\s-]/g, '');
+
   return productPages.map(p => {
-    // Extract product name from pathname: /products/hy-20l → HY-20L
+    // Extract product name from pathname: /products/hy-20l → hy-20l
     const slug = p.pathname.replace('/products/', '').replace(/\/$/, '');
-    // Try to match by slug in pdfCounts keys (case-insensitive)
-    const matchedPdfKey = Array.from(pdfCounts.keys()).find(k =>
-      k.toLowerCase().replace(/[\s-]/g, '') === slug.toLowerCase().replace(/[\s-]/g, '')
-    );
-    const matchedContactKey = Array.from(contactCounts.keys()).find(k =>
-      k.toLowerCase().replace(/[\s-]/g, '') === slug.toLowerCase().replace(/[\s-]/g, '')
-    );
-    const downloads = matchedPdfKey ? (pdfCounts.get(matchedPdfKey) || 0) : 0;
-    const contacts = matchedContactKey ? (contactCounts.get(matchedContactKey) || 0) : 0;
+    // Slug-match the legacy name-keyed counts (case-insensitive, ignore spaces/dashes)
+    const matchedPdfKey = Array.from(namePdf.keys()).find(k => normalize(k) === normalize(slug));
+    const matchedContactKey = Array.from(nameContact.keys()).find(k => normalize(k) === normalize(slug));
+
+    const downloads = (pathPdf.get(p.pathname) || 0) + (matchedPdfKey ? (namePdf.get(matchedPdfKey) || 0) : 0);
+    const contacts = (pathContact.get(p.pathname) || 0) + (matchedContactKey ? (nameContact.get(matchedContactKey) || 0) : 0);
     const conversions = downloads + contacts;
     // Use unique visitors for conversion rate (more accurate)
     const convRate = p.uniqueVisitors > 0 ? conversions / p.uniqueVisitors : 0;
