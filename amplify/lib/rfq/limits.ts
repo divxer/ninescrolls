@@ -27,6 +27,19 @@ export const RFQ_FIELD_LIMITS = {
   shippingCountry: { max: 100 },
   visitorId: { max: 100 },
   referrerSource: { max: 200 },
+  attribution: {
+    source: { max: 128 },
+    medium: { max: 64 },
+    campaign: { max: 256 },
+    term: { max: 256 },
+    content: { max: 256 },
+    gclid: { max: 512 },
+    gbraid: { max: 512 },
+    wbraid: { max: 512 },
+    msclkid: { max: 512 },
+    capturedAt: { max: 40 },
+    landingPath: { max: 512 },
+  },
 } as const;
 
 export type RfqFieldLimits = typeof RFQ_FIELD_LIMITS;
