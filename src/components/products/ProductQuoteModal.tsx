@@ -1,5 +1,6 @@
 import { QuoteModal } from '../common/QuoteModal';
 import { downloadFile } from '../../utils/downloadFile';
+import { useCombinedAnalytics } from '../../hooks/useCombinedAnalytics';
 
 interface ProductQuoteModalProps {
   isOpen: boolean;
@@ -30,10 +31,20 @@ export function ProductQuoteModal({
   downloadLabel,
   closeOnDownload = false,
 }: ProductQuoteModalProps) {
+  const analytics = useCombinedAnalytics();
   const handleDownload = brochureHref
     ? () => {
         if (closeOnDownload) onClose();
         downloadFile(brochureHref, brochureFilename ?? '');
+        // Attribute the download to this product page. trackCustomEvent stores a
+        // pdf_download AnalyticsEvent with the current pathname + productName, so
+        // it counts in the admin Products "Downloads" metric.
+        analytics.trackCustomEvent('Datasheet Downloaded', {
+          productId: productName,
+          productName,
+          fileName: brochureFilename,
+          origin: 'Product Quote Modal',
+        });
       }
     : undefined;
 
