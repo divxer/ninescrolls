@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { QuoteModal } from './QuoteModal';
 
@@ -19,7 +19,10 @@ function fillRequired() {
   });
 }
 
-beforeEach(() => vi.clearAllMocks());
+beforeEach(() => {
+  vi.clearAllMocks();
+  localStorage.clear();
+});
 afterEach(() => vi.unstubAllGlobals());
 
 describe('QuoteModal submission errors', () => {
@@ -67,5 +70,27 @@ describe('QuoteModal submission errors', () => {
     fireEvent.click(screen.getByRole('button', { name: /Submit Request/i }));
 
     expect(await screen.findByText(/Failed to submit request\. Please try again\./i)).toBeInTheDocument();
+  });
+});
+
+describe('QuoteModal attribution snapshot', () => {
+  it('includes the attribution snapshot in the submit payload when present', async () => {
+    const { captureLandingAttribution } = await import('../../services/attributionSnapshot');
+    captureLandingAttribution('?utm_source=google&utm_medium=cpc&gclid=g-abc', new Date());
+
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({ referenceNumber: 'RFQ-123456-TEST', rfqId: 'rfq-test' }),
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<QuoteModal isOpen onClose={() => {}} productName="ICP Etcher" />);
+    fillRequired();
+    fireEvent.click(screen.getByRole('button', { name: /Submit Request/i }));
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    const call = fetchMock.mock.calls.at(-1) as unknown as [string, RequestInit];
+    const body = JSON.parse(call[1].body as string);
+    expect(body.attribution).toMatchObject({ source: 'google', medium: 'cpc', gclid: 'g-abc' });
   });
 });

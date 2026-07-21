@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useCombinedAnalytics } from '../../hooks/useCombinedAnalytics';
 import { getVisitorId } from '../../services/analyticsStorageService';
+import { getAttributionSnapshot } from '../../services/attributionSnapshot';
 import { describeSubmitError } from '../../pages/rfqSubmitError';
 
 interface QuoteModalProps {
@@ -94,6 +95,7 @@ export function QuoteModal({ isOpen, onClose, onDownloadBrochure, productName, d
     try {
       const { address, city, state, zipCode, country, ...rest } = form;
       const productLabel = rest.product || productName || 'Products Inquiry';
+      const attribution = getAttributionSnapshot();
       const rfqPayload = {
         name: rest.name,
         email: rest.email,
@@ -107,6 +109,7 @@ export function QuoteModal({ isOpen, onClose, onDownloadBrochure, productName, d
           : `${rest.message} — Quick inquiry via product page (${productLabel})`.padEnd(10, '.'),
         turnstileToken: token,
         visitorId: getVisitorId(),
+        ...(attribution ? { attribution } : {}),
         additionalComments: [
           `Source: Quote Modal`,
           `Product: ${productLabel}`,
