@@ -1323,3 +1323,17 @@ backend.evidenceApi.resources.lambda.addToRolePolicy(
   })
 );
 backend.evidenceApi.addEnvironment('EVIDENCE_TABLE', evidenceTable.tableName);
+
+// =============================================================================
+// Auth hardening: disable self-service sign-up on the Cognito user pool.
+// =============================================================================
+// The entire admin API surface (order-api / crm / analytics resolvers in
+// amplify/data/resource.ts) authorizes with allow.authenticated(), on the
+// premise that every pool identity is an admin-provisioned, trusted user.
+// Amplify's default leaves the SignUp API open (AllowAdminCreateUserOnly=false),
+// so a stranger could self-register and read customer PII (RFQs, leads, orders)
+// regardless of the frontend's <Authenticator hideSignUp>. Force admin-only
+// creation: self-service SignUp is rejected server-side; admins are still added
+// via scripts/add-admin-user.ts (AdminCreateUser), which is unaffected.
+const { cfnUserPool } = backend.auth.resources.cfnResources;
+cfnUserPool.adminCreateUserConfig = { allowAdminCreateUserOnly: true };
