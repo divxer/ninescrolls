@@ -38,7 +38,8 @@ export interface AttributionSnapshot {
 
 - `captureLandingAttribution(search = window.location.search, now = new Date())`: parse `utm_source/medium/campaign/term/content` + `gclid/gbraid/wbraid/msclkid`. **If any of those params is present** → write `ns_attribution` to localStorage (overwrite unconditionally — recency wins). **If none present** → read existing snapshot; if `capturedAt` is older than 90 days, remove it; otherwise leave untouched. localStorage failures are swallowed (try/catch), matching `analyticsStorageService` style.
 - `getAttributionSnapshot(): AttributionSnapshot | undefined`: return the parsed snapshot if present and well-formed, else undefined.
-- Values are individually length-capped on read to the limits in §3 (defensive; a hostile URL can't bloat the payload).
+- **Normalize on capture:** `utm_source/medium/campaign/term/content` are lowercased (`CPC`→`cpc`, `Google`→`google`) for downstream aggregation alignment; **click ids (`gclid/gbraid/wbraid/msclkid`) are stored VERBATIM — never lowercased** (case-sensitive; folding breaks Google Ads offline-conversion match). Empty-string params (`?utm_source=&utm_medium=cpc`) are treated as absent (`undefined`), never stored/sent.
+- Values are individually length-capped on capture via `.slice(0, RFQ_FIELD_LIMITS.attribution.<field>.max)` — the SAME `amplify/lib/rfq/limits.ts` object the Lambda uses, so client and server truncation can't drift (defensive; a hostile URL can't bloat the payload).
 
 Wired by calling `captureLandingAttribution()` once from the existing page-load path in `PageTimeTracker.tsx` (alongside the current `classifyTrafficChannel` block, same guard site), so capture happens on the very first pageview of every session.
 
@@ -59,22 +60,27 @@ attribution: {
 }
 ```
 
-**Lambda schema** (`submit-rfq/handler.ts`): add an optional `attribution` object to the RFQ Zod schema, every sub-field `.max(L.attribution.<f>.max).optional()`, `capturedAt` an ISO-datetime string (bounded). Unknown/missing `attribution` accepted exactly like a missing `visitorId` (old clients keep working) — add an explicit "accepts a missing attribution" test mirroring `handler.test.ts:1022`.
+**Lambda schema** (`submit-rfq/handler.ts`): add an optional `attribution` object to the RFQ Zod schema — `z.object({...}).optional()`, every sub-field `.max(L.attribution.<f>.max).optional()` so a partial snapshot (e.g. `utm_source` present, `utm_campaign` absent) validates; `capturedAt` an ISO-datetime string (bounded). Do NOT use `.strict()` on the attribution object (tolerate extra keys from future clients); the top-level schema keeps its current mode. Unknown/missing `attribution` accepted exactly like a missing `visitorId` (old clients keep working) — add an explicit "accepts a missing attribution" test mirroring `handler.test.ts:1022`.
 
-**Storage**: set `item.attribution = data.attribution` on the RFQ META item next to `visitorId` (line ~805), only when present. Add a "stores attribution when provided" test mirroring the visitorId case.
+**Storage**: set `item.attribution = data.attribution` on the RFQ META item next to `visitorId` (line ~805), only when present. **REQUIRED fix (verified):** the current `docClient` is `DynamoDBDocumentClient.from(ddbClient)` at `handler.ts:32` with NO marshallOptions, so `removeUndefinedValues` defaults to false — writing a partial attribution map (undefined sub-fields) WOULD throw. Change to `DynamoDBDocumentClient.from(ddbClient, { marshallOptions: { removeUndefinedValues: true } })`. This is safe for all existing writes and necessary here. Add a "stores attribution when provided" test and a "stores a partial attribution (some utm fields absent, no marshalling error)" test.
 
 ## §4 Resolver + type projection (also fixes the visitorId blind spot)
 
-- `RfqSubmission` customType (`amplify/data/resource.ts:554-586`): **add `visitorId: a.string()`** (currently absent — it was never declared here, only on `LeadSubmission`) **and** a nested `attribution` field. For the nested shape use `a.customType({...})` for `RfqAttribution` (source/medium/campaign/term/content/gclid/gbraid/wbraid/msclkid/capturedAt/landingPath, all `a.string()`) referenced as `attribution: a.ref('RfqAttribution')`, or an inline nested customType — pick whichever the existing file already uses for nested objects; keep it consistent with sibling types.
-- `listRfqs` (`amplify/functions/order-api/resolvers/listRfqs.ts`) and `getRfq` resolvers: add `visitorId: item.visitorId || null` and `attribution: item.attribution || null` to the returned projection. This closes the pre-existing gap where stored `visitorId` was never surfaced — verify end-to-end by re-querying a recent real RFQ (2026-07-13…-20) after deploy and confirming a non-null visitorId comes back.
+- `RfqSubmission` customType (`amplify/data/resource.ts:554-586`): **add `visitorId: a.string()`** (currently absent — it was never declared here, only on `LeadSubmission`) **and** `attribution: a.ref('AttributionSnapshot')`. Define a **reusable `AttributionSnapshot` customType** (not RFQ-specific in name) with source/medium/campaign/term/content/gclid/gbraid/wbraid/msclkid/capturedAt/landingPath, all `a.string()` — chosen generic so a later LeadSubmission/other form can reference the same type without duplication. Match whatever nested-type convention the file already uses for sibling types.
+- `listRfqs` (`amplify/functions/order-api/resolvers/listRfqs.ts`) and `getRfq` resolvers: add `visitorId: item.visitorId || null` to the projection, and map `attribution` **field-by-field with explicit `|| null` fallbacks** — `attribution: item.attribution ? { source: item.attribution.source || null, medium: …, /* all 11 fields */ } : null` — never spread the raw DDB map, so a missing sub-field yields `null` and the AppSync response matches the GraphQL type 100% (no non-nullable violation). Verify end-to-end by re-querying a recent real RFQ (2026-07-13…-20) after deploy and confirming a non-null visitorId comes back.
 
 ## §5 Admin UI — RFQ detail "Traffic Source" subcard
 
-In the existing RFQ detail page (read-only, list page untouched): a small "Traffic Source" section rendering `source / medium / campaign / term`, a Paid badge when `gclid` (or medium `cpc/ppc`) is present, `landingPath`, and captured time. When `attribution` is null → "Direct / not captured". Reuse existing admin card styling; no new global components.
+In the existing RFQ detail page (read-only, list page untouched): a small "Traffic Source" section with a **three-tier display fallback** for visual continuity:
+1. **`attribution` present** → render `source / medium / campaign / term`, `landingPath`, captured time; a **"Paid — Google" badge** when `gclid` (or medium `cpc/ppc`) is present, with a tooltip "GCLID present (paid Google traffic)" and a one-click copy of the gclid value for audit/manual offline-upload.
+2. **no `attribution` but `referrerSource` present** → show `Started from: <referrerSource>` (an on-site article/product path such as `insights/<slug>`). NOTE: `referrerSource` in this codebase is the INTERNAL page the RFQ was initiated from (regex-validated `^(insights|news|products)/…` per `handler.ts:141`), NOT an external HTTP referrer/traffic channel — so this tier is a "which page drove the form" hint, not a marketing-channel claim. Do not label it "Organic" or render it as a traffic source.
+3. **neither** → "Direct / not captured".
+
+Reuse existing admin card styling; no new global components.
 
 ## §6 Testing
 
-- `attributionSnapshot.test.ts`: param capture writes; no-param leaves an in-window snapshot untouched; no-param clears a >90-day snapshot; a new param landing overwrites an unexpired snapshot (recency); all four click ids + five utm fields parsed; length caps enforced; localStorage-throwing is swallowed.
+- `attributionSnapshot.test.ts`: param capture writes; no-param leaves an in-window snapshot untouched; no-param clears a >90-day snapshot; a new param landing overwrites an unexpired snapshot (recency); all four click ids + five utm fields parsed; **utm fields lowercased, click ids kept verbatim (case-sensitive)**; **empty-string params (`utm_source=`) become undefined**; length caps enforced **from `RFQ_FIELD_LIMITS.attribution` (assert the cap value comes from that object, not a local literal)**; localStorage-throwing is swallowed.
 - `handler.test.ts`: "stores attribution when provided", "accepts a missing attribution".
 - Component tests: RFQPage and QuoteModal each include `attribution` in the submit payload when a snapshot exists; ProductQuoteModal covered transitively through QuoteModal.
 - Resolver mapping assertions: `listRfqs`/`getRfq` return `visitorId` + `attribution`.
