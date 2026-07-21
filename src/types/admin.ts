@@ -145,6 +145,20 @@ export interface RfqSubmission {
   shippingCountry?: string | null;
   linkedOrderId?: string | null;
   attachmentKeys?: unknown;
+  visitorId?: string | null;
+  attribution?: {
+    source?: string | null;
+    medium?: string | null;
+    campaign?: string | null;
+    term?: string | null;
+    content?: string | null;
+    gclid?: string | null;
+    gbraid?: string | null;
+    wbraid?: string | null;
+    msclkid?: string | null;
+    capturedAt?: string | null;
+    landingPath?: string | null;
+  } | null;
 }
 
 // --- Lead Types ---
