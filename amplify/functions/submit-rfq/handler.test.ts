@@ -1031,6 +1031,51 @@ describe('submit-rfq handler', () => {
         });
     });
 
+    describe('attribution snapshot (paid-click join)', () => {
+        function findRfqMetaPut() {
+            return (PutCommand as unknown as ReturnType<typeof vi.fn>).mock.calls
+                .find((c: unknown[]) => {
+                    const params = c[0] as { Item?: { PK?: string; SK?: string } };
+                    return (params.Item?.PK ?? '').startsWith('RFQ#') && params.Item?.SK === 'META';
+                });
+        }
+
+        const ATTR = {
+            source: 'google',
+            medium: 'cpc',
+            gclid: 'g-1',
+            capturedAt: '2026-07-21T00:00:00.000Z',
+            landingPath: '/products/ald',
+        };
+
+        it('stores attribution on the RFQ META when provided', async () => {
+            const result = await handler(
+                makeEvent({ ...VALID_RFQ, attribution: ATTR }),
+                {} as never,
+                (() => {}) as never,
+            );
+
+            expect(JSON.parse((result as { body: string }).body).success).toBe(true);
+            const metaPut = findRfqMetaPut();
+            expect(metaPut).toBeDefined();
+            const putParams = metaPut![0] as { Item: Record<string, unknown> };
+            expect(putParams.Item.attribution).toMatchObject({ source: 'google', gclid: 'g-1' });
+        });
+
+        it('stores a partial attribution (some utm fields absent) without a marshalling error', async () => {
+            const partial = { source: 'google', capturedAt: '2026-07-21T00:00:00.000Z', landingPath: '/x' };
+            await expect(
+                handler(makeEvent({ ...VALID_RFQ, attribution: partial }), {} as never, (() => {}) as never),
+            ).resolves.toBeDefined();
+        });
+
+        it('accepts a missing attribution (optional, old clients)', async () => {
+            await expect(
+                handler(makeEvent({ ...VALID_RFQ }), {} as never, (() => {}) as never),
+            ).resolves.toBeDefined();
+        });
+    });
+
     describe('visitor bridge + retro fire (2C-analytics)', () => {
         it('writes the VISITOR# bridge after org match when visitorId present', async () => {
             mockInvokeOrgApi.mockResolvedValueOnce({ matchedOrgId: 'stanford.edu' });
