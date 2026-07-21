@@ -320,12 +320,19 @@ Then after the `payload` object literal (after line 586, alongside the other `if
 import { getAttributionSnapshot } from '../../services/attributionSnapshot';
 ```
 
-The `rfqPayload` in QuoteModal is a single object literal (line ~100-116). It has no trailing `if (...)` optional block, so add the field inside the literal, after `visitorId: getVisitorId(),`:
+The `rfqPayload` in QuoteModal is a single object literal (line ~100-116). It has no trailing `if (...)` optional block. Resolve the snapshot ONCE into a local before the literal (avoid a second localStorage parse), then spread it in:
 
 ```ts
+      const attribution = getAttributionSnapshot();
+      const rfqPayload = {
+        // ...existing fields...
         visitorId: getVisitorId(),
-        ...(getAttributionSnapshot() ? { attribution: getAttributionSnapshot() } : {}),
+        ...(attribution ? { attribution } : {}),
+        // ...rest...
+      };
 ```
+
+(Place `const attribution = getAttributionSnapshot();` immediately above the existing `const rfqPayload = {` line, and add the spread inside the literal after `visitorId: getVisitorId(),`.)
 
 - [ ] **Step 5: Write + run QuoteModal test** — add the analogous test to `QuoteModal.test.tsx` (seed snapshot, submit, assert `body.attribution`), then Run: `cd <worktree> && npx vitest run src/pages/RFQPage.test.tsx src/components/common/QuoteModal.test.tsx`
 Expected: PASS (both attribution tests + all pre-existing tests green).
@@ -560,7 +567,7 @@ it('shows Direct / not captured when neither present', () => {
 - [ ] **Step 3: Run to verify it fails** — Run: `cd <worktree> && rm -rf node_modules && ln -sfn /Users/harvey/Dev/src/cursor/ninescrolls/node_modules node_modules && npx vitest run src/pages/admin/RFQDetailPage.test.tsx`
 Expected: FAIL — the Traffic Source section doesn't exist yet.
 
-- [ ] **Step 4: Add the Traffic Source subcard** to `RFQDetailPage.tsx`, after the Equipment Requirements card (mirror the existing card markup style — `bg-surface-container-lowest rounded-xl p-4 md:p-6 shadow-card mb-6`):
+- [ ] **Step 4: Add the Traffic Source subcard** to `RFQDetailPage.tsx`, after the Equipment Requirements card (mirror the existing card markup style — `bg-surface-container-lowest rounded-xl p-4 md:p-6 shadow-card mb-6`). First add local copy-feedback state near the top of the component (after the existing hooks): `const [gclidCopied, setGclidCopied] = useState(false);` (import `useState` from `react` if not already imported). Then the subcard:
 
 ```tsx
       {/* Traffic Source */}
@@ -583,9 +590,13 @@ Expected: FAIL — the Traffic Source section doesn't exist yet.
                   <button
                     type="button"
                     className="ml-2 text-xs text-primary underline"
-                    onClick={() => navigator.clipboard?.writeText(rfq.attribution!.gclid!)}
+                    onClick={() => {
+                      navigator.clipboard?.writeText(rfq.attribution!.gclid!);
+                      setGclidCopied(true);
+                      window.setTimeout(() => setGclidCopied(false), 1500);
+                    }}
                   >
-                    Copy GCLID
+                    {gclidCopied ? 'Copied ✓' : 'Copy GCLID'}
                   </button>
                 )}
               </div>
