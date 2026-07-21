@@ -298,3 +298,19 @@ describe('type-matrix figure assets', () => {
     }
   });
 });
+
+describe('types cover assets', () => {
+  const base = 'public/assets/images/insights/probe-station-types-cover';
+  it('source is 1600×900 sRGB with all eight variants present and sRGB', async () => {
+    const sharp = (await import('sharp')).default;
+    const meta = await sharp(`${base}.png`).metadata();
+    expect([meta.width, meta.height]).toEqual([1600, 900]);
+    expect(meta.space).toBe('srgb');
+    for (const size of ['sm', 'md', 'lg', 'xl']) {
+      for (const ext of ['png', 'webp']) {
+        const m = await sharp(`${base}-${size}.${ext}`).metadata();
+        expect(m.space, `${size}.${ext}`).toBe('srgb');
+      }
+    }
+  });
+});
