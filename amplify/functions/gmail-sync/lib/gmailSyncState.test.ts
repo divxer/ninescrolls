@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 const send = vi.fn();
 vi.mock('./dynamodb', () => ({ docClient: { send: (...a: unknown[]) => send(...a) }, TABLE_NAME: () => 'T' }));
-import { acquireLease, writeStateFenced, releaseLease, readState, isNewerHistoryId, stateKey } from './gmailSyncState';
+import { acquireLease, writeStateFenced, releaseLease, isNewerHistoryId, stateKey } from './gmailSyncState';
 
 beforeEach(() => { send.mockReset(); send.mockResolvedValue({}); });
 
