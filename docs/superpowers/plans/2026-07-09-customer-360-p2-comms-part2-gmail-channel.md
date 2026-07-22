@@ -970,15 +970,9 @@ npx tsc --noEmit -p amplify/tsconfig.json
 ```
 Expected: no output, exit 0.
 ```bash
-npx tsc --noEmit > .tsc-app.out 2>&1; echo "tsc exit: $?"
+OUT=$(npx tsc --noEmit 2>&1); NEW=$(printf '%s\n' "$OUT" | grep -v "main.tsx" | grep "error TS"); if [ -n "$NEW" ]; then printf 'NEW TS ERRORS:\n%s\n' "$NEW"; false; else echo "PASS: only pre-existing main.tsx diagnostics"; fi
 ```
-```bash
-grep -v "main.tsx" .tsc-app.out | grep "error TS"; echo "new-error grep exit: $? (1 = PASS: no new errors)"
-```
-```bash
-rm .tsc-app.out
-```
-(Three separate commands — a trailing `rm` in a compound line would exit 0 and mask the verdict.) `tsc exit` is expected nonzero (pre-existing `main.tsx` error); the gate is `new-error grep exit: 1` (no `error TS` lines outside `main.tsx`; `0` = new errors printed above — fix them).
+(Self-gating — exits nonzero automatically on any `error TS` outside `main.tsx`, printing the offending lines; exits 0 with an explicit PASS otherwise. Same form as Part 1 Task 15.)
 eslint clean on all touched files.
 - [ ] **Step 4:** Re-verify the 10 header invariants against the full Part-2 diff.
 - [ ] **Step 5:** Commit fixups scoped to touched files; report counts + invariant confirmation. Post-merge activation (PR body): runbook execution → first `gmail.sync.summary` (backfill) → spot-check an org timeline shows email rows → verify a Sent item produced outbound (spec R1/M4 spike note).

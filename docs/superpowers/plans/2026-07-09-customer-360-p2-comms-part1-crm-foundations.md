@@ -17,7 +17,7 @@
 4. First move + marker in ONE `TransactWriteItems`; marker `attribute_not_exists(PK)`; a loser's transaction aborts → no marker.
 5. Marker lifecycle `building → pending`; drainer sees `pending` only; abandoned `building` ages in; ALL transitions version-fenced; CCFE on a transition = another actor won = skip.
 6. Generations are plain ULIDs (spec R10 final — honest monotonic LWW, R9-accepted for true concurrency); older generation ⇒ `superseded` SUCCESS no-op on Contact + source; `linkLocked` never re-orged (`locked` = success).
-7. **Merge never touches stamps** (re-points org only); replays resolve their target through the merge chain — active ⇒ apply, archived+`mergedIntoOrgId` ⇒ apply to the canonical successor (depth ≤5, cycle-checked), no valid successor ⇒ `target_unavailable` and the marker stays blocked/actionable (NEVER false success); audits carry requested + effective target; non-generational writers preserve `lastLinkGeneration`; creation-time resolution is generation-absent; **every delayed `matchedOrgId` writer is guarded against overwriting a stamped decision** (Task 8b).
+7. **Merge never touches stamps** (re-points org only); replays resolve their target through the merge chain — active ⇒ apply, archived+`mergedInto` ⇒ apply to the canonical successor (depth ≤5, cycle-checked), no valid successor ⇒ `target_unavailable` and the marker stays blocked/actionable (NEVER false success); audits carry requested + effective target; non-generational writers preserve `lastLinkGeneration`; creation-time resolution is generation-absent; **every delayed `matchedOrgId` writer is guarded against overwriting a stamped decision** (Task 8b).
 8. Admin-group authorization before ANY DynamoDB access on the guarded resolvers; both `claims['cognito:groups']` (string or array) and `identity.groups` shapes.
 9. Markers/audits bounded: `movedCount` + ≤100-id sample, never full lists.
 10. Post-commit effects never throw out of an orchestrator; failure ⇒ marker survives + `postCommitStatus:'post_commit_failed'`.
@@ -493,6 +493,7 @@ export async function upsertContact(args: {
 ```
 **Additional required tests (R2 Critical):** (a) after a raced CCFE, the retry's item reflects the FRESH read's org+lock+stamp **as a pair** (assert the final Put's `Item.orgId` AND `Item.lastLinkGeneration` both come from the re-read); (b) a contact that became `linkLocked` between read and write → generational retry returns `locked` (not a write); (c) null→absent stamp transitions in both directions; (d) three consecutive CCFEs → throws the bounded-contention error.
 **Stamp format note:** `upsertContact` treats `linkGeneration` as an OPAQUE ordered string; generational fixtures use plain ULIDs (spec R10 final).
+**Write-time active-org fence (R5, used by Task 8's replay):** args gain `activeOrgFence?: boolean`. When true, the final Put is issued as `TransactWriteItems([ConditionCheck(orgKey(item.orgId), '#s = :active'), { Put: <the item with its EXISTING ConditionExpression> }])`. Cancellation mapping: org-check failed ⇒ return new outcome `'org_inactive'` (the caller — replay — re-resolves the successor and calls again with the new orgId); contact-condition failed ⇒ feed the existing CCFE retry loop unchanged; both `false`/absent ⇒ today's plain PutCommand, byte-identical. Tests: (e) fence=true issues the transaction with both elements and the contact Put's condition preserved inside it; (f) org-check cancellation ⇒ `org_inactive`, no retry loop consumed; (g) fence absent ⇒ plain PutCommand (snapshot-pin).
 **Add the race test:**
 ```ts
 it('non-generational write CASes on the observed generation and retries after a racing generational update', async () => {
@@ -548,8 +549,8 @@ it('genuine non-generational real-org mismatch is still conflict', async () => {
   expect(r).toMatchObject({ ok: false, errorType: 'source_conflict' });
 });
 // ---- spec R10 final: canonical-successor resolution -------------------------
-it('MERGE-BEFORE-REPLAY: archived target with mergedIntoOrgId → replay applies to the successor; audit carries both', async () => {
-  mockOrg('a.com', { status: 'archived', mergedIntoOrgId: 'b.com' });
+it('MERGE-BEFORE-REPLAY: archived target with mergedInto → replay applies to the successor; audit carries both', async () => {
+  mockOrg('a.com', { status: 'archived', mergedInto: 'b.com' });
   mockOrg('b.com', { status: 'active' });
   send.mockResolvedValueOnce({});                                  // the backfill write
   const r = await replayStructuredSideEffects({ ...base, targetOrgId: 'a.com', generation: '01J0AAAA…' });
@@ -558,26 +559,67 @@ it('MERGE-BEFORE-REPLAY: archived target with mergedIntoOrgId → replay applies
   expect(auditCallDetails()).toMatchObject({ requestedTargetOrgId: 'a.com', effectiveTargetOrgId: 'b.com' });
 });
 it('MULTI-HOP: a→b→c chain resolves to the final active org', async () => {
-  mockOrg('a.com', { status: 'archived', mergedIntoOrgId: 'b.com' });
-  mockOrg('b.com', { status: 'archived', mergedIntoOrgId: 'c.com' });
+  mockOrg('a.com', { status: 'archived', mergedInto: 'b.com' });
+  mockOrg('b.com', { status: 'archived', mergedInto: 'c.com' });
   mockOrg('c.com', { status: 'active' });
   send.mockResolvedValueOnce({});
   const r = await replayStructuredSideEffects({ ...base, targetOrgId: 'a.com', generation: '01J0AAAA…' });
   expect(r.ok).toBe(true);
   expect(backfillWriteInput().ExpressionAttributeValues[':o']).toBe('c.com');
 });
-it('MISSING SUCCESSOR: archived without mergedIntoOrgId → target_unavailable, ok:false, NO writes', async () => {
+it('MISSING SUCCESSOR: archived without mergedInto → target_unavailable, ok:false, NO writes', async () => {
   mockOrg('a.com', { status: 'archived' });
   const r = await replayStructuredSideEffects({ ...base, targetOrgId: 'a.com', generation: '01J0AAAA…' });
   expect(r).toMatchObject({ ok: false, errorType: 'target_unavailable' });
   expect(writesTo('RFQ#')).toHaveLength(0);                        // nothing half-applied
 });
 it('CYCLE + DEPTH LIMIT: a→b→a and chains >5 hops → target_unavailable, no infinite walk', async () => {
-  mockOrg('a.com', { status: 'archived', mergedIntoOrgId: 'b.com' });
-  mockOrg('b.com', { status: 'archived', mergedIntoOrgId: 'a.com' });
+  mockOrg('a.com', { status: 'archived', mergedInto: 'b.com' });
+  mockOrg('b.com', { status: 'archived', mergedInto: 'a.com' });
   const r = await replayStructuredSideEffects({ ...base, targetOrgId: 'a.com', generation: '01J0AAAA…' });
   expect(r).toMatchObject({ ok: false, errorType: 'target_unavailable' });
   expect(orgReads()).toHaveLength(2);                               // visited-set stopped it, not a timeout
+});
+it('STATUS DISCIPLINE: only exact active applies; non-navigable status is structural; reads are ConsistentRead', async () => {
+  mockOrg('a.com', { status: 'pending_review' });                   // neither active nor archived
+  const r = await replayStructuredSideEffects({ ...base, targetOrgId: 'a.com', generation: '01J0AAAA…' });
+  expect(r).toMatchObject({ ok: false, errorType: 'target_unavailable' });
+  expect(orgReads()[0].ConsistentRead).toBe(true);
+});
+it('TRANSIENT vs STRUCTURAL: an org-read THROW is transient (retryable), never target_unavailable', async () => {
+  rejectOrgReadOnce(new Error('throttled'));
+  const r = await replayStructuredSideEffects({ ...base, targetOrgId: 'a.com', generation: '01J0AAAA…' });
+  expect(r).toMatchObject({ ok: false, errorType: 'transient' });
+});
+it('WRITE-TIME FENCE: backfill rides a TransactWriteItems with an org-active ConditionCheck', async () => {
+  mockOrg('a.com', { status: 'active' });
+  transactSucceeds();
+  await replayStructuredSideEffects({ ...base, targetOrgId: 'a.com', generation: '01J0AAAA…' });
+  const tx = lastTransactInput().TransactItems;
+  expect(tx[0].ConditionCheck.ConditionExpression).toBe('#s = :active');
+  expect(tx[1].Update.UpdateExpression).toContain('matchedOrgId');
+});
+it('FENCE CANCELLATION → re-resolve ONCE and apply to the successor; second cancellation → transient', async () => {
+  mockOrg('a.com', { status: 'active' });                            // preflight read says active…
+  rejectTransactWithCancellation(['ConditionalCheckFailed', 'None']); // …but the org check fails at write time (archived meanwhile)
+  mockOrg('a.com', { status: 'archived', mergedInto: 'b.com' });      // re-resolve now sees the merge
+  mockOrg('b.com', { status: 'active' });
+  transactSucceeds();
+  const r = await replayStructuredSideEffects({ ...base, targetOrgId: 'a.com', generation: '01J0AAAA…' });
+  expect(r.ok).toBe(true);
+  expect(lastTransactInput().TransactItems[1].Update.ExpressionAttributeValues[':o']).toBe('b.com');
+});
+it('REDIRECT MOVES THE UNIT EVENTS: effective≠requested pages linkGeneration-stamped events to the successor and dirties both rollups', async () => {
+  mockOrg('a.com', { status: 'archived', mergedInto: 'b.com' });
+  mockOrg('b.com', { status: 'active' });
+  mockTimelinePage('a.com', [evStamped('tev-1', '01J0AAAA…'), evStamped('tev-2', '01J0AAAA…')]);
+  transactSucceeds();
+  const r = await replayStructuredSideEffects({ ...base, targetOrgId: 'a.com', generation: '01J0AAAA…' });
+  expect(r.ok).toBe(true);
+  const moves = updatesTo('TLEVENT#');
+  expect(moves).toHaveLength(2);
+  expect(moves[0].ConditionExpression).toContain('linkGeneration = :gen');   // only THIS unit's events
+  expect(dirtyRollupCalls().map((c) => c.orgId).sort()).toEqual(['a.com', 'b.com']);
 });
 ```
 (`base` gains `generation`; add it to the shared fixture. `mockOrg`/`backfillWriteInput`/`auditCallDetails`/`writesTo`/`orgReads` are small helpers over the send mock.)
@@ -599,22 +641,41 @@ export interface ReplayStructuredArgs {
 ```ts
 type EffectiveTarget = { status: 'active'; orgId: string } | { status: 'unavailable'; reason: string };
 
+// R5: reads are STRONGLY CONSISTENT; only exact 'active' is applicable; successors are followed
+// ONLY from exact 'archived'. Any other/missing status is STRUCTURAL unavailability. Read FAILURES
+// (network/throttle) are deliberately NOT caught here — they propagate and the caller classifies
+// them 'transient' (retryable), so a wobbly read can never park a marker as blocked.
 export async function resolveEffectiveTarget(requestedOrgId: string): Promise<EffectiveTarget> {
   const visited = new Set<string>();
   let cur = requestedOrgId;
   for (let hop = 0; hop <= 5; hop++) {
     if (visited.has(cur)) return { status: 'unavailable', reason: `merge-chain cycle at ${cur}` };
     visited.add(cur);
-    const org = await readOrg(cur);                       // GetCommand on the org item (locate the exact key shape via git grep in organization-api)
+    const org = await readOrg(cur);                       // GetCommand, ConsistentRead: true (locate the exact org key shape via git grep in organization-api)
     if (!org) return { status: 'unavailable', reason: `org ${cur} not found` };
-    if (org.status !== 'archived') return { status: 'active', orgId: cur };
-    if (!org.mergedIntoOrgId) return { status: 'unavailable', reason: `org ${cur} archived without successor` };
-    cur = org.mergedIntoOrgId as string;
+    if (org.status === 'active') return { status: 'active', orgId: cur };
+    if (org.status !== 'archived') return { status: 'unavailable', reason: `org ${cur} has non-navigable status '${String(org.status)}'` };
+    if (!org.mergedInto) return { status: 'unavailable', reason: `org ${cur} archived without successor` };
+    cur = org.mergedInto as string;
   }
   return { status: 'unavailable', reason: 'merge-chain depth limit (5) exceeded' };
 }
 ```
-`replayStructuredSideEffects` (generational path only — the legacy path keeps its existing behavior byte-identical): resolve first; `unavailable` ⇒ return `{ ok: false, errorType: 'target_unavailable', reason }` BEFORE any write (the marker survives as blocked/actionable — a potentially-unfinished repair is never a false success). `active` ⇒ every subsequent effect (backfill, Contact, audit) uses the EFFECTIVE org id; when it differs from the requested one, audit `details` records `{ requestedTargetOrgId, effectiveTargetOrgId }`.
+(If the production org item uses a different attribute/value for "active" — locate first; adjust the two comparisons, never invent parallel fields.)
+`replayStructuredSideEffects` (generational path only — the legacy path keeps its existing behavior byte-identical): resolve first; `unavailable` ⇒ return `{ ok: false, errorType: 'target_unavailable', reason }` BEFORE any write (the marker survives as blocked/actionable — a potentially-unfinished repair is never a false success); a THROW from `readOrg` ⇒ `{ ok: false, errorType: 'transient' }` (marker stays pending, retried next drain). `active` ⇒ every subsequent effect uses the EFFECTIVE org id; when it differs from the requested one, audit `details` records `{ requestedTargetOrgId, effectiveTargetOrgId }`.
+
+**Write-time active fence (R5 blocker 1 — the resolve read alone is a TOCTOU):** each generational side-effect write is issued as a `TransactWriteItems` pairing the write with a `ConditionCheck` on the effective org:
+```ts
+const orgActiveCheck = (orgId: string) => ({ ConditionCheck: {
+  TableName: TABLE_NAME(), Key: orgKey(orgId),
+  ConditionExpression: '#s = :active', ExpressionAttributeNames: { '#s': 'status' }, ExpressionAttributeValues: { ':active': 'active' },
+}});
+// source backfill: TransactWriteItems([orgActiveCheck(effectiveOrgId), { Update: <the backfillByPk update, unchanged expressions> }])
+// contact:        upsertContact({ ..., orgId: effectiveOrgId, linkGeneration: generation, activeOrgFence: true })  (Task 7's fence param)
+```
+On `TransactionCanceledException` where the ORG check failed: **re-run `resolveEffectiveTarget` once** (the org was archived between resolve and write — its successor is now visible) and retry the write against the new effective org (fresh fence). A second org-check cancellation ⇒ `transient` (retryable — a merge storm is in progress). A cancellation where the WRITE's own condition failed maps to the existing outcomes (`superseded`/`already_set`/`conflict`) exactly as before.
+
+**Timeline-event convergence on redirect (R5 blocker 2 — production merge does NOT move TimelineEvents):** when `effectiveOrgId !== requestedOrgId`, the unit's events may already sit under the archived requested org (the foreground link moved them there). After the source+contact effects, replay runs a **redirect-move pass**: page the requested org's timeline partition (the 3A `timelineByOrg` query shape) filtered `linkGeneration = :gen`, and for each event issue a conditional move to the effective org (`ConditionExpression: 'orgId = :requested AND linkGeneration = :gen'`) — paginated, any unit size; then mark BOTH orgs' rollups dirty (reuse the 3C dirty-rollup helper). Only events stamped with THIS generation move — nothing else in the archived org is touched. Failures in this pass ⇒ `ok:false, errorType:'transient'` (marker retries; moves already made are conditional ⇒ idempotent). Requires Task 10's `linkGeneration` attribute on moved events (queryable membership).
 `backfillByPk` — BOTH branches executable, the legacy branch is the verbatim pre-existing 3C code:
 ```ts
 async function backfillByPk(pk: string, targetOrgId: string, generation?: string): Promise<BackfillStatus> {
@@ -644,11 +705,14 @@ async function backfillByPk(pk: string, targetOrgId: string, generation?: string
 ```
 (`targetOrgId` here is the EFFECTIVE org id from `resolveEffectiveTarget`.) Decision logic: `superseded` counts as ok (like `already_set`); `conflict` unchanged; `target_unavailable` is NOT ok (marker retained). When `generation` is present the audit call passes it to `deterministicAuditId(..., generation)` and includes it in `details` (plus requested/effective target when they differ); when absent, the audit id is computed exactly as today (add a regression test pinning the legacy id for a fixed input). Contact step (Task 7's API): call `upsertContact({..., orgId: effectiveOrgId, linkGeneration: generation})`; `locked`/`superseded` outcomes are SUCCESS for the contact effect. Add a test that a NO-generation call produces the identical UpdateCommand input as the current 3C code (snapshot the `.input`).
 
-- [ ] **Step 4: Merge side — spec R10 FINAL: the merge flow is left almost untouched.** Read the located `mergeOrganization` flow, then make exactly two changes:
-  1. **`mergedIntoOrgId` on the archived source org.** Locate where the merge archives the source org (`git grep -n "archived\|mergedInto" amplify/functions/organization-api/`). If the flow already persists a merged-into pointer, note its exact attribute name and use IT in `resolveEffectiveTarget` (adjust Step 3's `readOrg` mapping — do not invent a second attribute). If it does not, extend that archive write with `mergedIntoOrgId: toOrgId` (one attribute, same UpdateExpression).
-  2. **A regression guard proving merge NEVER touches stamps:** add a test to the organization-api merge test file asserting the record re-point write's `UpdateExpression` does NOT contain `matchedOrgLinkGeneration` and the contact re-point does NOT contain `lastLinkGeneration` (this is the R10 boundary: merge re-points orgs; stamp semantics live entirely in crm-api replay/link code).
-  **Why this is safe (document in the merge test file header):** an already-applied action's leftover replay supersedes on its own stamp (`curGen >= gen`); a not-yet-applied action targeting the merged-away org is redirected (or blocked, never falsely completed) by `resolveEffectiveTarget` at replay time; the archive step itself is the assignment fence — `orgExists`/active checks already refuse NEW links to an archived org. Clock skew never decides a merge outcome because no stamp comparison is involved.
-  Also add merge-side tests: (a) archive write persists `mergedIntoOrgId`; (b) merging into an ALREADY-archived target is rejected by the existing early-return (regression-pin the current behavior — no change).
+- [ ] **Step 4: Merge side — spec R10 FINAL (R5-hardened): four bounded changes to the located `mergeOrganization` flow.**
+  1. **`mergedInto` on the archived source org.** Locate the archive write (`git grep -n "archived\|mergedInto" amplify/functions/organization-api/`) — the production field is **`mergedInto`**; verify it is persisted at archive time with the target org id (add it to that same UpdateExpression only if genuinely absent — never invent a second attribute).
+  2. **Archive FIRST (R5 blocker 1, merge half of the fence).** Reorder so the source org is archived (status + `mergedInto`) BEFORE record/contact re-pointing begins. From that instant, every replay's write-time `ConditionCheck(status = active)` on the source org cancels ⇒ replays redirect to the successor. Any replay write that PASSED the fence committed before the archive — caught by change 3.
+  3. **Re-drain until empty.** After the re-pointing pass, re-run the from-org enumeration (records AND contacts) in a bounded loop until a full pass returns zero items (cap ~5 passes; log a `crm.merge.residual` warning with the residual count if the cap trips — the 3C sweep remains the final net for GSI-lag stragglers). This durably drains fenced-in-flight writes and eventually-consistent GSI late arrivals.
+  4. **Reject non-active merge TARGETS (R5).** Production currently accepts an archived target — that would mint chains ending in an archived org. Validate `to` is exactly `status === 'active'` (strong read) at the top; throw otherwise.
+  **A regression guard proving merge NEVER touches stamps:** assert the record re-point write's `UpdateExpression` does NOT contain `matchedOrgLinkGeneration` and the contact re-point does NOT contain `lastLinkGeneration` (the R10 boundary: merge re-points orgs; stamp semantics live entirely in crm-api replay/link code).
+  **Why this is safe (document in the merge test file header):** already-applied replays supersede on their own stamp; not-yet-applied replays are fenced at write time and redirected (or blocked, never falsely completed); archive-first makes the fence airtight and the re-drain catches the fenced-in-flight window. Clock skew never decides a merge outcome because no stamp comparison is involved.
+  Merge-side tests: (a) archive write persists `mergedInto`; (b) archive happens BEFORE the first re-point write (assert call order); (c) re-drain loops until an empty pass (seed a record that only appears on the second pass); (d) merging INTO an archived target throws; (e) the stamp-untouched regression guard.
 
 - [ ] **Step 5: Run** replay tests + merge tests + tsc — PASS/clean.
 
@@ -674,6 +738,7 @@ A writer that sets `matchedOrgId` OUTSIDE link/replay/merge (creation-time resol
 it('creation/conversion matchedOrgId write cannot overwrite a stamped or real-org record', async () => {
   const call = captureMatchedOrgWrite();                 // helper over the writer's send mock
   expect(call.ConditionExpression).toContain('attribute_not_exists(matchedOrgLinkGeneration)');
+  expect(call.ConditionExpression).toContain('attribute_type(matchedOrgId, :nullType)');   // R5: DynamoDB NULL-typed value counts as unset
   expect(call.ConditionExpression).toMatch(/attribute_not_exists\(matchedOrgId\)|matchedOrgId = :empty|begins_with\(matchedOrgId, :unres\)/);
 });
 it('a CCFE on that write is swallowed as a no-op (the admin decision stands; submission itself still succeeds)', async () => {
@@ -682,7 +747,7 @@ it('a CCFE on that write is swallowed as a no-op (the admin decision stands; sub
 });
 ```
 - [ ] **Step 2: Run** — FAIL (writers currently write unconditionally or with weaker guards).
-- [ ] **Step 3: Implement.** For each writer: if it CREATES the record (fresh PK, `attribute_not_exists(PK)` semantics), it cannot collide — pin that with a test and leave it. If it UPDATES an existing record, add `attribute_not_exists(matchedOrgLinkGeneration) AND (attribute_not_exists(matchedOrgId) OR matchedOrgId = :empty OR begins_with(matchedOrgId, :unres))` to its ConditionExpression and catch CCFE as a logged no-op (`console.log('crm.writer.superseded', …)`).
+- [ ] **Step 3: Implement.** For each writer: if it CREATES the record (fresh PK, `attribute_not_exists(PK)` semantics), it cannot collide — pin that with a test and leave it. If it UPDATES an existing record, add `attribute_not_exists(matchedOrgLinkGeneration) AND (attribute_not_exists(matchedOrgId) OR attribute_type(matchedOrgId, :nullType) OR matchedOrgId = :empty OR begins_with(matchedOrgId, :unres))` to its ConditionExpression (the NULL-typed branch matters — R5: some records carry `matchedOrgId: NULL`, which is neither absent nor empty-string) and catch CCFE as a logged no-op (`console.log('crm.writer.superseded', …)`).
 - [ ] **Step 4: Interleaving test (harness from Task 14):** seed a record; run the REAL link+replay to stamp it (`org=a.com, gen=G`); then run the writer's delayed update targeting `b.com` → store still shows `{a.com, G}`; writer resolved without throwing.
 - [ ] **Step 5: Run** all touched writer suites + tsc — PASS/clean.
 - [ ] **Step 6: Commit**
@@ -737,6 +802,28 @@ it('queryBuildingOlderThan returns aged building markers (bounded Limit)', async
   expect(q.ExpressionAttributeValues[':pk']).toBe('CRM_REPAIR#building');
   expect(q.Limit).toBe(25);
 });
+// R5 blocker 3 — blocked markers must be discoverable and recoverable:
+it('markStuck records stuckReason and moves the marker into the stuck partition (queryable)', async () => {
+  await markStuckV2(markerAt(2), 'org a.com archived without successor', 'tNow');
+  const u = send.mock.calls[0][0].input;
+  expect(u.ExpressionAttributeValues[':g']).toBe('CRM_REPAIR#stuck');
+  expect(u.ExpressionAttributeValues[':reason']).toMatch(/without successor/);
+  expect(u.ConditionExpression).toContain('version = :v');
+});
+it('queryStuckByReason returns only target_unavailable-class stuck markers (bounded Limit)', async () => {
+  send.mockResolvedValueOnce({ Items: [{ unitKey: 'u', stuckReasonClass: 'target_unavailable' }] });
+  await queryStuckByReason('target_unavailable', 25);
+  const q = send.mock.calls[0][0].input;
+  expect(q.ExpressionAttributeValues[':pk']).toBe('CRM_REPAIR#stuck');
+  expect(q.FilterExpression).toContain('stuckReasonClass = :rc');
+  expect(q.Limit).toBe(25);
+});
+it('republishStuckFenced: stuck→pending is version-fenced; CCFE surfaces as lost=true', async () => {
+  await republishStuckFenced(markerAt(3), 'tNow');
+  const u = send.mock.calls[0][0].input;
+  expect(u.ExpressionAttributeValues[':g']).toBe('CRM_REPAIR#pending');
+  expect(u.ConditionExpression).toContain('version = :v');
+});
 ```
 (Write `markerAt(version)` / `manyIds(n)` helpers in the test. Analytics markers keep the 3C shape — add one regression test that `putRepairMarker` for analytics is unchanged.)
 
@@ -747,8 +834,12 @@ it('queryBuildingOlderThan returns aged building markers (bounded Limit)', async
 export interface StructuredMarkerV2 extends Omit<RepairMarkerItem, 'status'> {
   generation: string; version: number;
   status: 'building' | 'pending' | 'stuck';
+  stuckReason?: string; stuckReasonClass?: 'target_unavailable' | 'other';   // R5: recovery pass queries by class
   customerEmail: string | null; movedCount: number; affectedEventIdsSample: string[];
 }
+// Stuck markers live in GSI1PK 'CRM_REPAIR#stuck' (like building/pending partitions) so
+// queryStuckByReason can find them; markStuckV2 sets stuckReason + stuckReasonClass;
+// republishStuckFenced flips stuck→pending (version-fenced) for normal draining.
 export const SAMPLE_CAP = 100;
 
 export function structuredMarkerKey(unitKey: string, generation: string) {
@@ -993,7 +1084,8 @@ export async function linkStructuredUnit(args: { representativeEventId: string; 
   return { affected: events.length, moved, skipped, errors, sourceBackfillStatus: replay.backfillStatus ?? 'not_attempted', contactStatus: markerHandle.contactStatus, postCommitStatus };
 }
 ```
-Include the two small helpers in the same file: `buildMoveTransactPut` (the movedItem exactly as `manualMoveTimelineEvent` constructs it, wrapped as a `Put` with the R7 eligibility condition — extract the shared item-construction into an exported `buildMovedItem(event, targetOrgId, email, nowIso)` in `manualMoveTimelineEvent.ts` so the two paths cannot drift) and `isConditionalCancellation` (inspects `err.name === 'TransactionCanceledException'` and `err.CancellationReasons?.some(r => r.Code === 'ConditionalCheckFailed')` — the R7-deferred cancellation mapping).
+Include the two small helpers in the same file: `buildMoveTransactPut` (the movedItem exactly as `manualMoveTimelineEvent` constructs it, wrapped as a `Put` with the R7 eligibility condition — extract the shared item-construction into an exported `buildMovedItem(event, targetOrgId, email, nowIso, linkGeneration)` in `manualMoveTimelineEvent.ts` so the two paths cannot drift) and `isConditionalCancellation` (inspects `err.name === 'TransactionCanceledException'` and `err.CancellationReasons?.some(r => r.Code === 'ConditionalCheckFailed')` — the R7-deferred cancellation mapping).
+**Queryable unit membership (R5 blocker 2):** `buildMovedItem` stamps every moved event with **`linkGeneration: <this action's generation>`** — the attribute Task 8's redirect-move pass queries by when a later merge strands the unit's events under an archived org. Both move paths (transact first-move AND `manualMoveTimelineEvent`) carry it — that is exactly why the item construction is extracted into one function. Add a test asserting the moved item (both paths) contains `linkGeneration` matching the action's generation.
 
 - [ ] **Step 4 (plan-review R2 fix — SECURE TRANSITIONAL ADAPTER, every commit deployable).** `handler.ts` calls `linkStructuredUnit` with the old args and would break this checkpoint; and the GraphQL schema keeps the LEGACY argument shape until Task 13 — so the handler must serve BOTH shapes in the window, or any deploy of an intermediate commit breaks the live admin UI. Add to `handler.ts`:
 ```ts
@@ -1104,7 +1196,9 @@ it('contact retry: marker with contactStatus!=="linked" and customerEmail → re
 
 - [ ] **Step 2: Run** — FAIL.
 
-- [ ] **Step 3: Implement** in `reconcileRepair.ts`: before draining, run the aging pass — loop `queryBuildingOlderThan(cutoffIso, 25, lastKey)` pages until `lastKey` is undefined (cutoff = `new Date(Date.now() - 2 * LINK_LAMBDA_TIMEOUT_MS).toISOString()`, `LINK_LAMBDA_TIMEOUT_MS = 120_000` with a keep-in-sync comment), calling `promoteAbandonedBuilding(m, cutoffIso, nowIso)` per marker; `{lost:true}` = fresh foreground activity → skip silently. Extend `replayFor` to pass `generation`, `customerEmail`, `contactStatus`, `affectedEventIdsSample`. **`target_unavailable` outcome mapping (spec R10 final):** it is NOT ok and NOT transient — the drainer marks the marker **stuck with the resolver's reason string** (blocked/actionable; surfaces in CRM Health), never deletes it, and does not burn retries on it; add tests: (a) replay returning `{ok:false, errorType:'target_unavailable', reason}` ⇒ `markStuck` called with the reason, marker retained; (b) a later drain of a stuck-for-this-reason marker after the org chain is fixed (resolver now returns active) ⇒ repairs and deletes normally. Transition calls switch to the fenced v2 fns; a `{lost:true}` on a drain transition increments a new `raced` counter (not `errors`). `superseded`/`locked` replay outcomes are OK-path (delete). Summary gains `aged` + `raced`.
+- [ ] **Step 3: Implement** in `reconcileRepair.ts`: before draining, run the aging pass — loop `queryBuildingOlderThan(cutoffIso, 25, lastKey)` pages until `lastKey` is undefined (cutoff = `new Date(Date.now() - 2 * LINK_LAMBDA_TIMEOUT_MS).toISOString()`, `LINK_LAMBDA_TIMEOUT_MS = 120_000` with a keep-in-sync comment), calling `promoteAbandonedBuilding(m, cutoffIso, nowIso)` per marker; `{lost:true}` = fresh foreground activity → skip silently. Extend `replayFor` to pass `generation`, `customerEmail`, `contactStatus`, `affectedEventIdsSample`. **`target_unavailable` outcome mapping (spec R10 final):** it is NOT ok and NOT transient — the drainer calls `markStuckV2(marker, reason, now)` with `stuckReasonClass: 'target_unavailable'` (blocked/actionable; surfaces in CRM Health), never deletes it, and does not burn retries on it.
+**Recovery pass (R5 blocker 3 — `markStuck` removes the marker from the pending query, so a fixed org chain must be actively re-checked):** each drain cycle ALSO runs `queryStuckByReason('target_unavailable', 25)`; for each hit, call `resolveEffectiveTarget(marker.targetOrgId)` — if it now resolves `active`, `republishStuckFenced` (stuck→pending; `{lost:true}` ⇒ skip) so the NEXT drain repairs it normally; if still unavailable, leave it (no retry burn). Bounded (25/cycle), so a mass-blocked backlog recovers incrementally without starving the pending drain. Summary gains `recovered`.
+Tests: (a) replay returning `{ok:false, errorType:'target_unavailable', reason}` ⇒ `markStuckV2` called with the reason + class, marker retained; (b) recovery pass: a stuck marker whose chain NOW resolves ⇒ `republishStuckFenced` called, summary.recovered=1, and a subsequent drain cycle repairs + deletes it; (c) a stuck marker whose chain still fails ⇒ untouched, zero replay attempts; (d) `transient` from the resolver (org-read throw) during recovery ⇒ marker left stuck, retried next cycle (not misclassified). Transition calls switch to the fenced v2 fns; a `{lost:true}` on a drain transition increments a new `raced` counter (not `errors`). `superseded`/`locked` replay outcomes are OK-path (delete). Summary gains `aged` + `raced`.
 
 - [ ] **Step 4: Run** the repair dir + tsc — PASS/clean.
 
@@ -1208,26 +1302,33 @@ it('130-event unit: full move, bounded sample, marker-driven replay converges', 
   expect(m.affectedEventIdsSample.length).toBeLessThanOrEqual(100);
 });
 // Scenario 6 — MERGE-BEFORE-REPLAY with successor: the unapplied action's target was merged away;
-// the replay follows mergedIntoOrgId and completes Contact + source AT THE SUCCESSOR.
-it('replay after merge applies to the canonical successor; nothing silently unfinished', async () => {
+// the replay follows mergedInto and completes Contact + source AT THE SUCCESSOR.
+it('replay after merge applies to the canonical successor; events + rollups converge too', async () => {
   const store = seedStore([rfqRecord('RFQ#1', { matchedOrgId: '' }),
-    orgItem('a.com', { status: 'archived', mergedIntoOrgId: 'b.com' }), orgItem('b.com', { status: 'active' })]);
+    orgItem('a.com', { status: 'archived', mergedInto: 'b.com' }), orgItem('b.com', { status: 'active' }),
+    movedEvent('tev-1', { orgId: 'a.com', linkGeneration: GEN_1 }),   // the foreground link had moved these to (now-archived) A
+    movedEvent('tev-2', { orgId: 'a.com', linkGeneration: GEN_1 }),
+    movedEvent('tev-x', { orgId: 'a.com', linkGeneration: GEN_2 })]); // ANOTHER unit's event — must NOT move
   const r = await replayStructuredSideEffects({ ...rfqBase, targetOrgId: 'a.com', generation: GEN_1, customerEmail: 'b@x.com', backfillPk: 'RFQ#1' });
   expect(r.ok).toBe(true);
   expect(store.get('RFQ#1').matchedOrgId).toBe('b.com');           // source completed at the successor
   expect(store.contactByEmail('b@x.com').orgId).toBe('b.com');     // Contact completed at the successor
+  expect(store.get('TLEVENT#tev-1').orgId).toBe('b.com');          // R5: the unit's EVENTS follow the redirect
+  expect(store.get('TLEVENT#tev-2').orgId).toBe('b.com');
+  expect(store.get('TLEVENT#tev-x').orgId).toBe('a.com');          // foreign-generation event untouched
+  expect(store.dirtyRollups()).toEqual(expect.arrayContaining(['a.com', 'b.com']));
   expect(store.auditFor(GEN_1).details).toMatchObject({ requestedTargetOrgId: 'a.com', effectiveTargetOrgId: 'b.com' });
 });
 // Scenario 7 — MULTI-HOP chain a→b→c resolves to the final active org.
 it('multi-hop merge chain resolves through archived intermediates', async () => {
   const store = seedStore([rfqRecord('RFQ#1', { matchedOrgId: '' }),
-    orgItem('a.com', { status: 'archived', mergedIntoOrgId: 'b.com' }),
-    orgItem('b.com', { status: 'archived', mergedIntoOrgId: 'c.com' }), orgItem('c.com', { status: 'active' })]);
+    orgItem('a.com', { status: 'archived', mergedInto: 'b.com' }),
+    orgItem('b.com', { status: 'archived', mergedInto: 'c.com' }), orgItem('c.com', { status: 'active' })]);
   const r = await replayStructuredSideEffects({ ...rfqBase, targetOrgId: 'a.com', generation: GEN_1, backfillPk: 'RFQ#1' });
   expect(r.ok).toBe(true);
   expect(store.get('RFQ#1').matchedOrgId).toBe('c.com');
 });
-// Scenario 8 — MISSING SUCCESSOR: archived, no mergedIntoOrgId → blocked, marker retained, no writes.
+// Scenario 8 — MISSING SUCCESSOR: archived, no mergedInto → blocked, marker retained, no writes.
 it('archived target without successor blocks the repair instead of faking success', async () => {
   const store = seedStore([rfqRecord('RFQ#1', { matchedOrgId: '' }), orgItem('a.com', { status: 'archived' })]);
   const marker = putPendingMarker(store, { unitKey: 'unresolved-rfq-r1', generation: GEN_1, targetOrgId: 'a.com' });
@@ -1263,12 +1364,50 @@ it('interleaved non-generational contact write preserves the newest generation+o
   expect(c.lastLinkGeneration).toBe(GEN_2);                                        // newest stamp survives
 });
 // Scenario 11 — DELAYED SOURCE WRITER (Task 8b, store-level): a late creation-path matchedOrgId
-// write cannot overwrite a stamped admin decision.
+// write cannot overwrite a stamped admin decision (incl. the NULL-typed org case).
 it('delayed writer update against a stamped record is a guarded no-op', async () => {
   const store = seedStore([rfqRecord('RFQ#1', { matchedOrgId: 'a.com', matchedOrgLinkGeneration: GEN_1 })]);
   await runDelayedWriterUpdate(store, { pk: 'RFQ#1', resolvedOrgId: 'late.com' });   // the REAL guarded writer helper from Task 8b
   expect(store.get('RFQ#1').matchedOrgId).toBe('a.com');           // admin decision stands
   expect(store.get('RFQ#1').matchedOrgLinkGeneration).toBe(GEN_1);
+});
+// Scenario 12 — RESOLVE-vs-ARCHIVE interleaving (R5 blocker 1): replay resolves A as active,
+// parks before its transact; merge archives A and re-points; released replay's fence cancels,
+// re-resolve applies everything to B.
+it('org archived between resolve and write: the fence cancels and the retry lands on the successor', async () => {
+  const store = seedStore([rfqRecord('RFQ#1', { matchedOrgId: '' }), orgItem('a.com', { status: 'active' }), orgItem('b.com', { status: 'active' })]);
+  const gate = store.gateOn((cmd) => cmd.constructor.name === 'TransactWriteCommand');
+  const pReplay = replayStructuredSideEffects({ ...rfqBase, targetOrgId: 'a.com', generation: GEN_1, backfillPk: 'RFQ#1' });
+  await store.idle();                                               // replay parked at its fenced write; resolve already saw A active
+  archiveOrgInStore(store, 'a.com', { mergedInto: 'b.com' });       // merge archives A first (its half of the fence)
+  gate.release();
+  const r = await pReplay;
+  expect(r.ok).toBe(true);
+  expect(store.get('RFQ#1').matchedOrgId).toBe('b.com');            // fence cancelled → re-resolved → successor
+});
+// Scenario 13 — >100-event unit REDIRECT: the paginated redirect pass moves all 130, rollups dirty.
+it('130-event unit redirect converges fully via pagination', async () => {
+  const events = Array.from({ length: 130 }, (_, i) => movedEvent(`tev-${i}`, { orgId: 'a.com', linkGeneration: GEN_1 }));
+  const store = seedStore([rfqRecord('RFQ#1', { matchedOrgId: '' }),
+    orgItem('a.com', { status: 'archived', mergedInto: 'b.com' }), orgItem('b.com', { status: 'active' }), ...events]);
+  store.pageSize = 25;                                              // force multiple pages
+  const r = await replayStructuredSideEffects({ ...rfqBase, targetOrgId: 'a.com', generation: GEN_1, backfillPk: 'RFQ#1' });
+  expect(r.ok).toBe(true);
+  expect(events.filter((e) => store.get(`TLEVENT#${e.id}`).orgId === 'b.com')).toHaveLength(130);
+});
+// Scenario 14 — STUCK RECOVERY end-to-end: blocked marker heals automatically once the chain is fixed.
+it('target_unavailable marker recovers via the reason-specific republish pass', async () => {
+  const store = seedStore([rfqRecord('RFQ#1', { matchedOrgId: '' }), orgItem('a.com', { status: 'archived' })]);
+  putPendingMarker(store, { unitKey: 'unresolved-rfq-r1', generation: GEN_1, targetOrgId: 'a.com' });
+  await reconcileRepair();                                          // drain 1: blocks it (stuck, target_unavailable)
+  expect(store.markersFor('unresolved-rfq-r1')[0].status).toBe('stuck');
+  archiveOrgInStore(store, 'a.com', { mergedInto: 'b.com' });       // admin fixes the chain
+  store.put(orgKeyOf('b.com'), orgItem('b.com', { status: 'active' }).item);
+  const s2 = await reconcileRepair();                               // drain 2: recovery pass republishes
+  expect(s2.recovered).toBe(1);
+  const s3 = await reconcileRepair();                               // drain 3: normal drain repairs at the successor
+  expect(store.markersFor('unresolved-rfq-r1')).toHaveLength(0);    // repaired + deleted
+  expect(store.get('RFQ#1').matchedOrgId).toBe('b.com');
 });
 ```
 (`GEN_1 < GEN_2` are fixed ULID literals, e.g. `'01J0AAAAAAAAAAAAAAAAAAAAAA'` / `'01J0BBBBBBBBBBBBBBBBBBBBBB'`; `orgItem(id, fields)` seeds an organization item in the harness's org keyspace.)
@@ -1294,15 +1433,9 @@ npx tsc --noEmit -p amplify/tsconfig.json
 ```
 Expected: no output, exit 0. Any diagnostic = a failure this plan introduced — fix it.
 ```bash
-npx tsc --noEmit > .tsc-app.out 2>&1; echo "tsc exit: $?"
+OUT=$(npx tsc --noEmit 2>&1); NEW=$(printf '%s\n' "$OUT" | grep -v "main.tsx" | grep "error TS"); if [ -n "$NEW" ]; then printf 'NEW TS ERRORS:\n%s\n' "$NEW"; false; else echo "PASS: only pre-existing main.tsx diagnostics"; fi
 ```
-```bash
-grep -v "main.tsx" .tsc-app.out | grep "error TS"; echo "new-error grep exit: $? (1 = PASS: no new errors)"
-```
-```bash
-rm .tsc-app.out
-```
-Three SEPARATE commands (plan-review R4: a trailing `rm` in a compound line would exit 0 and mask the verdict). Read both echoed statuses explicitly: `tsc exit` is EXPECTED nonzero (the pre-existing `main.tsx` error — record the number); the gate is the second command — `new-error grep exit: 1` means zero `error TS` lines outside `main.tsx` (grep "no match" = 1 = PASS here; `0` means NEW errors were printed above — fix them). The `rm` runs last, alone, and carries no verdict.
+This command **exits nonzero by itself** when any `error TS` line exists outside `main.tsx` (plan-review R5: the gate must fail automatically, not rely on a human reading echoed statuses), prints exactly the offending lines when it does, and exits 0 with an explicit PASS line otherwise. No temp file, nothing to clean up.
 - [ ] **Step 4:** `npx eslint` across every file this plan touched — clean.
 - [ ] **Step 5:** Re-check the 10 header invariants against the diff. If (and only if) fixups were needed, stage the specific touched files and commit:
 ```bash
