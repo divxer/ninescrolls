@@ -5,7 +5,7 @@ import {
   putRepairMarker, deleteRepairMarker, markStuck, bumpAttempt, touchInProgress, queryPendingMarkers, repairMarkerKeys,
   buildStructuredMarkerPut, structuredMarkerKey, accumulateMarker, sealMarker, deleteRepairMarkerFenced,
   queryBuildingOlderThan, promoteAbandonedBuilding, markStuckV2, queryStuckByReason, republishStuckFenced,
-  SAMPLE_CAP, type StructuredMarkerV2,
+  bumpAttemptFenced, SAMPLE_CAP, type StructuredMarkerV2,
 } from './repairMarker';
 
 beforeEach(() => { send.mockReset(); send.mockResolvedValue({}); });
@@ -194,6 +194,19 @@ describe('repairMarker v2 (structured)', () => {
   it('republishStuckFenced: CCFE surfaces as lost=true', async () => {
     send.mockRejectedValueOnce(Object.assign(new Error('ccfe'), { name: 'ConditionalCheckFailedException' }));
     const r = await republishStuckFenced(markerAt(3), 'tNow');
+    expect(r.lost).toBe(true);
+  });
+  // Task 12 — the drainer's v2 transient bump: v1 bumpAttempt targets the un-suffixed v1 PK, so
+  // v2 markers need the generation-suffixed key + version fence.
+  it('bumpAttemptFenced counts the attempt on the GENERATION-SUFFIXED key, version-fenced; CCFE = lost', async () => {
+    await bumpAttemptFenced(markerAt(2), 'boom', 'tNow');
+    const u = send.mock.calls[0][0].input;
+    expect(u.Key).toEqual(structuredMarkerKey('u1', 'gen1'));
+    expect(u.ConditionExpression).toContain('version = :v');
+    expect(u.ExpressionAttributeValues[':a']).toBe(1);
+    expect(u.ExpressionAttributeValues[':e']).toBe('boom');
+    send.mockRejectedValueOnce(Object.assign(new Error('ccfe'), { name: 'ConditionalCheckFailedException' }));
+    const r = await bumpAttemptFenced(markerAt(2), 'boom', 'tNow');
     expect(r.lost).toBe(true);
   });
 });

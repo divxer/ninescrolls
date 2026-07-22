@@ -10,6 +10,10 @@ beforeEach(() => {
   send.mockImplementation((cmd: { input: { ExpressionAttributeValues: Record<string, string> } }) => {
     const pk = cmd.input.ExpressionAttributeValues[':pk'];
     if (pk === 'CRM_REPAIR#pending') return Promise.resolve({ Items: [{ unitType: 'structured', unitKey: 'u1', targetOrgId: 'acme.com', attemptCount: 1, lastError: 'x', createdAt: 't' }], LastEvaluatedKey: undefined });
+    if (pk === 'MERGE_RECON#needs_review') return Promise.resolve({ Items: [
+      { fromOrgId: 'src.com', toOrgId: 'tgt.com', version: 3, residualsDetected: true, residualSamples: ['RFQ#1'], probedAt: 'p1', extraneous: 'never-mapped' },
+      { fromOrgId: 'old.com', toOrgId: 'tgt.com', version: 5, residualsDetected: false, residualSamples: [], probedAt: 'p2' },
+    ], LastEvaluatedKey: undefined });
     return Promise.resolve({ Items: [{ unitType: 'analytics', unitKey: 'v1', targetOrgId: 'b.com', stuckReason: 'source_conflict', lastError: 'c', createdAt: 't2' }], LastEvaluatedKey: { z: 1 } });
   });
   readState.mockImplementation((mode: string, pass: string) => {
@@ -34,6 +38,19 @@ describe('crmHealth', () => {
   });
   it('caps the Query Limit at the sample size', async () => {
     await crmHealth();
-    for (const c of send.mock.calls) expect(c[0].input.Limit).toBe(25);
+    // repair buckets query 25; the merge-review list is bounded at 20 — every query stays bounded
+    for (const c of send.mock.calls) expect(c[0].input.Limit).toBeLessThanOrEqual(25);
+  });
+  it('mergeNeedsReviewCount + bounded mergeReviewMarkers from ONE GSI1 query on MERGE_RECON#needs_review', async () => {
+    const h = await crmHealth();
+    const reviewQs = send.mock.calls.filter((c) => c[0].input.ExpressionAttributeValues[':pk'] === 'MERGE_RECON#needs_review');
+    expect(reviewQs).toHaveLength(1);
+    expect(reviewQs[0][0].input.Limit).toBe(20);
+    expect(reviewQs[0][0].input.ScanIndexForward).toBe(true);   // GSI1SK = mergedAt ⇒ oldest first
+    expect(h.mergeNeedsReviewCount).toBe(2);
+    expect(h.mergeReviewMarkers).toEqual([
+      { fromOrgId: 'src.com', toOrgId: 'tgt.com', version: 3, residualsDetected: true, residualSamples: ['RFQ#1'], probedAt: 'p1' },
+      { fromOrgId: 'old.com', toOrgId: 'tgt.com', version: 5, residualsDetected: false, residualSamples: [], probedAt: 'p2' },
+    ]);
   });
 });

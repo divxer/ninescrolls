@@ -222,6 +222,13 @@ export async function queryStuckByReason(reasonClass: string, limit: number, sta
   return { markers: (res.Items ?? []) as StructuredMarkerV2[], lastKey: res.LastEvaluatedKey as Record<string, unknown> | undefined };
 }
 
+// Task 12: transient failure on a v2 marker — stay pending, count the attempt. The v1 bumpAttempt
+// targets the un-suffixed v1 PK and is unfenced; v2 markers need the generation-suffixed key + fence.
+export async function bumpAttemptFenced(m: StructuredMarkerV2, lastError: string, nowIso: string): Promise<{ lost: boolean }> {
+  return fencedUpdate(m, 'SET attemptCount = :a, lastError = :e, version = :nv, lastAttemptAt = :now',
+    { ':a': (m.attemptCount ?? 0) + 1, ':e': lastError, ':now': nowIso });
+}
+
 // Recovery: flip a stuck marker back into normal draining (stuck→pending), version-fenced.
 export async function republishStuckFenced(m: StructuredMarkerV2, nowIso: string): Promise<{ lost: boolean }> {
   return fencedUpdate(m, 'SET GSI1PK = :g, #s = :st, version = :nv, lastAttemptAt = :now',
