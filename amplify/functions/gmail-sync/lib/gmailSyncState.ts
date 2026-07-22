@@ -8,6 +8,9 @@ export interface GmailSyncState {
   phase?: 'backfill' | 'incremental';
   historyId?: string | null;
   anchorHistoryId?: string | null; pageToken?: string | null; window?: string | null; configId?: string | null;
+  // Poison-message diagnostics (runbook "Poison-mailbox alarm response"): consecutive cycles
+  // blocked on the SAME message. Written ONLY through the fenced releaseLease in handler.ts.
+  blockedMessageId?: string | null; blockedStreak?: number | null;
   lease?: string; leaseExpiresAt?: number;   // epoch ms
   lastRunAt?: number; lastSummary?: Record<string, unknown> | null;
 }

@@ -1,4 +1,4 @@
-import { readState, acquireLease, releaseLease, writeStateFenced } from './lib/gmailSyncState';
+import { readState, acquireLease, releaseLease, writeStateFenced, type GmailSyncState } from './lib/gmailSyncState';
 import { createGmailClient } from './lib/gmailClient';
 import { runIncremental } from './lib/incrementalSync';
 import { runBackfill } from './lib/backfill';
@@ -10,6 +10,11 @@ import type { MapResult } from './lib/mapMessage';
 const LAMBDA_TIMEOUT_SEC = 120;
 const BACKFILL_WINDOW_DAYS = 90;
 const DEFAULT_MAILBOXES = 'info@ninescrolls.com';
+// Runbook "Poison-mailbox alarm response": after this many CONSECUTIVE cycles blocked on the
+// same message, emit the metric-filterable `gmail.sync.poison` event (3 cycles = 30 min at the
+// */10 cron). The streak lives durably on the state item (blockedMessageId/blockedStreak),
+// written only through the fenced releaseLease below.
+const POISON_STREAK_THRESHOLD = 3;
 
 // Both engines (runIncremental/runBackfill) already filter out kind:'skip' before calling
 // ctx.project — this adapter only exists to narrow their shared MapResult param down to the
@@ -33,8 +38,9 @@ async function syncMailbox(mailbox: string, nowMs: number): Promise<Record<strin
   if (!lease) return { mailbox, skippedLeaseHeld: true };
 
   let outcome: Record<string, unknown>;
+  let state: GmailSyncState = {};
   try {
-    const state = await readState(mailbox);
+    state = await readState(mailbox);
     const client = await createGmailClient(mailbox);
 
     if (state.phase === 'incremental' && state.historyId) {
@@ -84,7 +90,29 @@ async function syncMailbox(mailbox: string, nowMs: number): Promise<Record<strin
     return { mailbox, status: 'error', error };
   }
 
-  const rel = await releaseLease(mailbox, lease, Date.now(), { lastSummary: outcome });
+  // Poison-mailbox diagnostics: fold this run's blocked-message diagnostics into a durable
+  // consecutive-blocked streak. The streak fields ride the SAME fenced releaseLease write as
+  // lastSummary — no extra write, full fence discipline (a lost lease skips them entirely).
+  const blockedMessageId = typeof outcome.blockedMessageId === 'string' ? outcome.blockedMessageId : null;
+  const blockedFields: Partial<GmailSyncState> = {};
+  if (blockedMessageId) {
+    const blockedStreak = state.blockedMessageId === blockedMessageId ? (state.blockedStreak ?? 0) + 1 : 1;
+    blockedFields.blockedMessageId = blockedMessageId;
+    blockedFields.blockedStreak = blockedStreak;
+    console.log(JSON.stringify({
+      event: 'gmail.sync.blocked', mailbox, blockedMessageId,
+      blockedError: typeof outcome.blockedError === 'string' ? outcome.blockedError : null, blockedStreak,
+    }));
+    if (blockedStreak >= POISON_STREAK_THRESHOLD) {
+      // Stable, metric-filterable event name — the runbook's poison-mailbox alarm keys on it.
+      console.log(JSON.stringify({ event: 'gmail.sync.poison', mailbox, blockedMessageId, blockedStreak }));
+    }
+  } else if (state.blockedMessageId != null || state.blockedStreak != null) {
+    blockedFields.blockedMessageId = null;      // clean run: clear the streak
+    blockedFields.blockedStreak = null;
+  }
+
+  const rel = await releaseLease(mailbox, lease, Date.now(), { ...blockedFields, lastSummary: outcome });
   if (rel.lost) console.log(JSON.stringify({ event: 'gmail.sync.lease_lost', mailbox, stage: 'release' }));
   return outcome;
 }

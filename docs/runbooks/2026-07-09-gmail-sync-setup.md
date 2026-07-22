@@ -143,9 +143,13 @@ interval; the lease is the correctness mechanism, the reservation was defense-in
 ### Backfill window
 
 First-ever run per mailbox seeds a backfill of `newer_than:90d`
-(`BACKFILL_WINDOW_DAYS = 90` in `amplify/functions/gmail-sync/handler.ts`). To change the
-window, edit that constant **before** the first configured run — once the state item exists
-the window is pinned in state; changing it later requires a state reset (below).
+(`BACKFILL_WINDOW_DAYS = 90` in `amplify/functions/gmail-sync/handler.ts`). A stable
+`configId` (hash of the paging-affecting inputs: mailbox + window; spec §7) is persisted
+atomically with the backfill anchor. If the window (or mailbox identity) changes **while a
+backfill is still in flight**, the next run detects the configId mismatch and deliberately
+RESTARTS the backfill anchor-first (stale cursor discarded — safe, emits are idempotent).
+Once the backfill has completed (phase `incremental`) the window no longer applies; to
+re-run with a different window, reset the state item (below).
 
 ### Watermark / backfill-state reset
 
@@ -166,10 +170,20 @@ already-emitted messages is safe — duplicates collapse.
 
 A `retryable_failure` that persists across cycles blocks that record's — and therefore the
 mailbox's — advancement (the watermark never passes an unresolved record; spec §4/§7b).
-After N stuck cycles this is logged + alarmed. Response:
+Every blocked run logs a structured
+`{"event":"gmail.sync.blocked", mailbox, blockedMessageId, blockedError, blockedStreak}`
+line; after **3 consecutive cycles** blocked on the same message
+(`POISON_STREAK_THRESHOLD` in `amplify/functions/gmail-sync/handler.ts`, ≈30 min at the
+`*/10` cron) the run additionally logs
+`{"event":"gmail.sync.poison", mailbox, blockedMessageId, blockedStreak}` — create the
+CloudWatch metric filter/alarm on the stable string `gmail.sync.poison`. The streak is
+durable (fields `blockedMessageId`/`blockedStreak` on the `GMAIL_SYNC#<mailbox>` state
+item, written only via the fenced release write) and clears on the first clean run.
+Response:
 
-1. Read the run summary in the gmail-sync CloudWatch logs — identify the stuck message ID
-   and the error class.
+1. Read the `gmail.sync.blocked` / `gmail.sync.poison` lines in the gmail-sync CloudWatch
+   logs — they carry the stuck Gmail message ID (`blockedMessageId`) and the projection
+   error (`blockedError`) directly.
 2. Transient upstream (Gmail 5xx/429): usually self-heals; verify the watermark advances on
    a later cycle.
 3. Genuinely poisonous message (malformed beyond mapping, permanent API error): there is NO

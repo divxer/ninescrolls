@@ -198,3 +198,84 @@ describe('gmail-sync handler', () => {
     expect(res.results).toEqual([expect.objectContaining({ mailbox: 'info@ninescrolls.com' })]);
   });
 });
+
+// Poison-mailbox diagnostics (runbook "Poison-mailbox alarm response"): the consecutive-blocked
+// streak is tracked DURABLY on the state item via the fenced releaseLease write.
+describe('gmail-sync handler poison diagnostics', () => {
+  function logs(spy: ReturnType<typeof vi.spyOn>, event: string) {
+    return spy.mock.calls
+      .map((c) => c[0]).filter((l): l is string => typeof l === 'string' && l.includes(`"${event}"`))
+      .map((l) => JSON.parse(l));
+  }
+
+  it('a blocked incremental run logs gmail.sync.blocked and persists {blockedMessageId, blockedStreak:1} via releaseLease', async () => {
+    readState.mockResolvedValue({ phase: 'incremental', historyId: '999' });
+    runIncremental.mockResolvedValue({ checkpoint: '999', counters: {}, hasMore: false, blockedMessageId: 'm1', blockedError: 'projection 500' });
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    await handler();
+    const blocked = logs(logSpy, 'gmail.sync.blocked');
+    expect(blocked).toHaveLength(1);
+    expect(blocked[0]).toMatchObject({ mailbox: 'info@ninescrolls.com', blockedMessageId: 'm1', blockedError: 'projection 500', blockedStreak: 1 });
+    const [, , , fields] = releaseLease.mock.calls[0];
+    expect(fields).toMatchObject({ blockedMessageId: 'm1', blockedStreak: 1 });
+    expect(logs(logSpy, 'gmail.sync.poison')).toHaveLength(0);   // below threshold
+    logSpy.mockRestore();
+  });
+
+  it('the streak increments across runs when the SAME message blocks again (read from durable state)', async () => {
+    readState.mockResolvedValue({ phase: 'incremental', historyId: '999', blockedMessageId: 'm1', blockedStreak: 1 });
+    runIncremental.mockResolvedValue({ checkpoint: '999', counters: {}, hasMore: false, blockedMessageId: 'm1', blockedError: 'projection 500' });
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    await handler();
+    const [, , , fields] = releaseLease.mock.calls[0];
+    expect(fields).toMatchObject({ blockedMessageId: 'm1', blockedStreak: 2 });
+    expect(logs(logSpy, 'gmail.sync.blocked')[0]).toMatchObject({ blockedStreak: 2 });
+    logSpy.mockRestore();
+  });
+
+  it('a DIFFERENT blocked message resets the streak to 1', async () => {
+    readState.mockResolvedValue({ phase: 'incremental', historyId: '999', blockedMessageId: 'm1', blockedStreak: 2 });
+    runIncremental.mockResolvedValue({ checkpoint: '999', counters: {}, hasMore: false, blockedMessageId: 'm2', blockedError: 'projection 500' });
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    await handler();
+    const [, , , fields] = releaseLease.mock.calls[0];
+    expect(fields).toMatchObject({ blockedMessageId: 'm2', blockedStreak: 1 });
+    expect(logs(logSpy, 'gmail.sync.poison')).toHaveLength(0);
+    logSpy.mockRestore();
+  });
+
+  it('a clean run clears previously-stored blocked fields in the releaseLease write', async () => {
+    readState.mockResolvedValue({ phase: 'incremental', historyId: '999', blockedMessageId: 'm1', blockedStreak: 2 });
+    runIncremental.mockResolvedValue({ checkpoint: '1000', counters: {}, hasMore: false });
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    await handler();
+    const [, , , fields] = releaseLease.mock.calls[0];
+    expect(fields).toMatchObject({ blockedMessageId: null, blockedStreak: null });
+    expect(logs(logSpy, 'gmail.sync.blocked')).toHaveLength(0);
+    logSpy.mockRestore();
+  });
+
+  it('at the 3rd consecutive cycle blocked on the same message, gmail.sync.poison is logged (runbook threshold)', async () => {
+    readState.mockResolvedValue({ phase: 'incremental', historyId: '999', blockedMessageId: 'm1', blockedStreak: 2 });
+    runIncremental.mockResolvedValue({ checkpoint: '999', counters: {}, hasMore: false, blockedMessageId: 'm1', blockedError: 'projection 500' });
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    await handler();
+    const poison = logs(logSpy, 'gmail.sync.poison');
+    expect(poison).toHaveLength(1);
+    expect(poison[0]).toMatchObject({ event: 'gmail.sync.poison', mailbox: 'info@ninescrolls.com', blockedMessageId: 'm1', blockedStreak: 3 });
+    const [, , , fields] = releaseLease.mock.calls[0];
+    expect(fields).toMatchObject({ blockedMessageId: 'm1', blockedStreak: 3 });
+    logSpy.mockRestore();
+  });
+
+  it('a blocked BACKFILL run also tracks the streak (phase-agnostic)', async () => {
+    readState.mockResolvedValue({});
+    runBackfill.mockResolvedValue({ completed: false, counters: {}, blockedMessageId: 'b1', blockedError: 'projection 500' });
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    await handler();
+    const [, , , fields] = releaseLease.mock.calls[0];
+    expect(fields).toMatchObject({ blockedMessageId: 'b1', blockedStreak: 1 });
+    expect(logs(logSpy, 'gmail.sync.blocked')).toHaveLength(1);
+    logSpy.mockRestore();
+  });
+});

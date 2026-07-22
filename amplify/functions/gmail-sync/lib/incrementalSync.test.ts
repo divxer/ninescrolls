@@ -218,4 +218,34 @@ describe('runIncremental', () => {
     expect(s.checkpoint).toBe('120');
     expect(checkpointWrites).toEqual(['120']);  // neither '110' nor a same-value '120' re-write
   });
+
+  // Poison-message diagnostics (runbook "Poison-mailbox alarm response"): a blocked run must
+  // surface WHICH message blocked it, or the operator cannot follow the runbook procedure.
+  it('a blocked run surfaces the FIRST blocked message id + projection error in the summary', async () => {
+    historyPages([{ id: '100', messages: ['a'] }, { id: '110', messages: ['b', 'c'] }, { id: '120', messages: ['d'] }]);
+    outcomes({ a: 'persisted', b: 'retryable_failure', c: 'retryable_failure', d: 'persisted' });
+    const s = await runIncremental(ctx);
+    expect(s.blockedMessageId).toBe('b');          // first blocked message of the run
+    expect(s.blockedError).toBe('test failure');
+  });
+
+  it('a clean run carries no blockedMessageId/blockedError', async () => {
+    historyPages([{ id: '100', messages: ['a'] }], { responseHistoryId: '200' });
+    outcomes({ a: 'persisted' });
+    const s = await runIncremental(ctx);
+    expect(s.blockedMessageId).toBeUndefined();
+    expect(s.blockedError).toBeUndefined();
+  });
+
+  it('a transient mid-run abort still carries the blocked diagnostics gathered so far', async () => {
+    historyPagesMulti([
+      { records: [{ id: '100', messages: ['a'] }] },
+      { records: [{ id: '110', messages: ['b'] }] },
+    ]);
+    outcomes({ a: 'retryable_failure' });
+    messagesGetErrors.b = new GmailApiError('messagesGet', 429, 'rate_limited', {});
+    const s = await runIncremental(ctx);
+    expect(s.hasMore).toBe(true);
+    expect(s.blockedMessageId).toBe('a');
+  });
 });
