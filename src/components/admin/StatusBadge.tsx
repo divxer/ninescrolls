@@ -1,8 +1,10 @@
-import { STATUS_LABELS, type OrderStatus } from '../../types/admin';
+import { STATUS_LABELS, statusLabelFor, type OrderStatus } from '../../types/admin';
 
 interface StatusBadgeProps {
   status: string;
   size?: 'sm' | 'md' | 'lg';
+  /** Order source — Stripe checkout orders render PO_RECEIVED as "Paid" */
+  source?: string | null;
 }
 
 const ORDER_STATUS_STYLES: Record<string, { badge: string; dot: string }> = {
@@ -26,10 +28,10 @@ const RFQ_STATUS_STYLES: Record<string, { badge: string; dot: string }> = {
 
 const DEFAULT_STYLE = { badge: 'bg-surface-container-high text-on-surface-variant', dot: 'bg-on-surface-variant' };
 
-export function StatusBadge({ status, size = 'sm' }: StatusBadgeProps) {
+export function StatusBadge({ status, size = 'sm', source }: StatusBadgeProps) {
   const isOrderStatus = status in STATUS_LABELS;
   const label = isOrderStatus
-    ? STATUS_LABELS[status as OrderStatus]
+    ? statusLabelFor(status as OrderStatus, source)
     : status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
 
   const style =
