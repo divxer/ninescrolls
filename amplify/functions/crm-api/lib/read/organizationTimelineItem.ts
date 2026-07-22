@@ -1,5 +1,5 @@
 export type ResolutionTone = 'confirmed' | 'domain-match' | 'inferred' | 'unknown';
-export type TimelineChipGroup = 'rfq' | 'lead' | 'order' | 'quote' | 'logistics' | 'site_visits' | 'other';
+export type TimelineChipGroup = 'rfq' | 'lead' | 'order' | 'quote' | 'logistics' | 'site_visits' | 'email' | 'other';
 
 export interface OrganizationTimelineItem {
   id: string; occurredAt: string; source: string; kind: string;
@@ -9,6 +9,7 @@ export interface OrganizationTimelineItem {
   productModel: string | null; specificModel: string | null; equipmentCategory: string | null;
   leadType: string | null; productName: string | null; stageFrom: string | null; stageTo: string | null;
   fileName: string | null; pageCount: number | null; activeSeconds: number | null; topPaths: string[] | null;
+  direction: string | null; bodySnippet: string | null; externalUrl: string | null;
   sourceEntityType: string; sourceEntityId: string; payload: Record<string, unknown> | null;
 }
 
@@ -16,11 +17,12 @@ export interface StoredTimelineEvent {
   id: string; occurredAt: string; source: string; kind: string; summary: string;
   resolutionStatus: string; resolutionReason: string; confidence: number;
   isInternalOnly: boolean; sourceEntityType: string; sourceEntityId: string;
+  direction?: 'inbound' | 'outbound' | null; subject?: string | null; bodySnippet?: string | null;
   payload: Record<string, unknown> | null;
 }
 
 const GROUP_BY_SOURCE: Record<string, TimelineChipGroup> = {
-  rfq: 'rfq', lead: 'lead', order: 'order', quote: 'quote', logistics: 'logistics', analytics: 'site_visits',
+  rfq: 'rfq', lead: 'lead', order: 'order', quote: 'quote', logistics: 'logistics', analytics: 'site_visits', gmail: 'email',
 };
 const ICON_BY_SOURCE: Record<string, string> = {
   rfq: 'rfq', lead: 'lead', order: 'order', quote: 'quote', logistics: 'logistics', analytics: 'site_visit',
@@ -48,12 +50,13 @@ const strArr = (v: unknown): string[] | null =>
 export function toOrganizationTimelineItem(e: StoredTimelineEvent): OrganizationTimelineItem {
   const p = (e.payload ?? {}) as Record<string, unknown>;
   const tone = toTone(e.resolutionReason, e.resolutionStatus);
+  const isGmail = e.source === 'gmail';
   return {
     id: e.id, occurredAt: e.occurredAt, source: e.source, kind: e.kind,
     sourceFilterGroup: GROUP_BY_SOURCE[e.source] ?? 'other',
-    icon: ICON_BY_SOURCE[e.source] ?? 'event',
+    icon: isGmail ? (e.direction === 'outbound' ? 'send' : 'mail') : (ICON_BY_SOURCE[e.source] ?? 'event'),
     tone,
-    primaryLabel: e.summary,
+    primaryLabel: isGmail ? (e.subject || '(no subject)') : e.summary,
     resolutionStatus: e.resolutionStatus, resolutionReason: e.resolutionReason,
     confidence: tone === 'inferred' || tone === 'unknown' ? e.confidence : null,
     isInternalOnly: e.isInternalOnly,
@@ -61,6 +64,9 @@ export function toOrganizationTimelineItem(e: StoredTimelineEvent): Organization
     leadType: str(p.type), productName: str(p.productName),
     stageFrom: str(p.fromStatus) ?? str(p.fromStage), stageTo: str(p.toStatus) ?? str(p.toStage),
     fileName: str(p.fileName), pageCount: num(p.pageCount), activeSeconds: num(p.activeSeconds), topPaths: strArr(p.topPaths),
+    direction: isGmail ? (e.direction ?? null) : null,
+    bodySnippet: isGmail ? (e.bodySnippet ?? null) : null,
+    externalUrl: isGmail ? str(p.gmailLink) : null,
     sourceEntityType: e.sourceEntityType, sourceEntityId: e.sourceEntityId,
     payload: e.payload,
   };
