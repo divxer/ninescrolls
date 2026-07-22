@@ -9,7 +9,7 @@ import { recomputeRollupsForOrg } from '../orgStore';
 import { markRollupApplied } from '../timelineStore';
 import { reResolveVisitorSessions } from '../analytics/reResolveVisitorSessions';
 
-export type BackfillStatus = 'written' | 'already_set' | 'superseded' | 'conflict' | 'no_source';
+export type BackfillStatus = 'written' | 'migrated' | 'already_set' | 'superseded' | 'conflict' | 'no_source';
 
 // Contract: NEVER throws out. transient dominates conflict/in_progress. Extra fields feed the
 // happy-path orchestrators' return values; the drainer reads ok + errorType (+ churning on in_progress).
@@ -94,9 +94,38 @@ class FenceLostError extends Error {
   constructor(orgId: string) { super(`org ${orgId} fence lost at write time`); this.name = 'FenceLostError'; }
 }
 
+// Same-generation successor migration (round-3 review fix): the source already carries THIS
+// generation's stamp, but at an org that has since merged away (an archived predecessor on the
+// chain to the effective target) — that is this replay's OWN earlier commit, not a supersession.
+// Re-point matchedOrgId to the effective org; the stamp is NOT touched (it is already correct).
+async function migrateBackfillToSuccessor(pk: string, fromOrgId: string, effectiveOrgId: string, generation: string): Promise<BackfillStatus> {
+  try {
+    await docClient.send(new TransactWriteCommand({ TransactItems: [
+      orgActiveCheck(effectiveOrgId),
+      { Update: {
+        TableName: TABLE_NAME(), Key: { PK: pk, SK: 'META' },
+        UpdateExpression: 'SET matchedOrgId = :o',
+        ConditionExpression: 'matchedOrgId = :cur AND matchedOrgLinkGeneration = :gen',
+        ExpressionAttributeValues: { ':o': effectiveOrgId, ':cur': fromOrgId, ':gen': generation },
+      } },
+    ] }));
+    return 'migrated';
+  } catch (err) {
+    const cls = classifyLinkCancellation(err, 1);
+    if (cls === 'org_fence') throw new FenceLostError(effectiveOrgId);
+    if (cls === 'other') throw err;                          // malformed/absent reasons: propagate (transient)
+    // move_condition: another actor may have converged it — re-read ONCE
+    const cur = (await docClient.send(new GetCommand({ TableName: TABLE_NAME(), Key: { PK: pk, SK: 'META' } }))).Item as Record<string, unknown> | undefined;
+    if ((cur?.matchedOrgId as string | undefined) === effectiveOrgId) return 'already_set';
+    throw new Error(`backfill migration raced: ${pk} now at ${String(cur?.matchedOrgId)} — retry next drain`);   // transient
+  }
+}
+
 // BOTH branches executable: the legacy branch is the verbatim pre-existing 3C code (invariant #1);
 // the generational branch stamps org+generation atomically (R9) behind the org-active fence (R5).
-async function backfillByPk(pk: string, targetOrgId: string, generation?: string): Promise<BackfillStatus> {
+// `archivedPredecessors` (generational callers): archived orgs on the merge chain to targetOrgId —
+// a same-generation stamp sitting at one of them is MIGRATED to targetOrgId, never 'superseded'.
+async function backfillByPk(pk: string, targetOrgId: string, generation?: string, archivedPredecessors: string[] = []): Promise<BackfillStatus> {
   const generational = generation !== undefined;
   try {
     if (generational) {
@@ -129,8 +158,12 @@ async function backfillByPk(pk: string, targetOrgId: string, generation?: string
     }
     const cur = (await docClient.send(new GetCommand({ TableName: TABLE_NAME(), Key: { PK: pk, SK: 'META' } }))).Item as Record<string, unknown> | undefined;
     const curGen = cur?.matchedOrgLinkGeneration as string | undefined;
+    const curOrg = cur?.matchedOrgId as string | undefined;
+    if (generational && curGen === generation && curOrg && archivedPredecessors.includes(curOrg)) {
+      return migrateBackfillToSuccessor(pk, curOrg, targetOrgId, generation);       // our own stamp at a merged-away org → converge
+    }
     if (generational && curGen && curGen >= generation!) return 'superseded';       // R8: a later generation already ruled
-    return (cur?.matchedOrgId as string | undefined) === targetOrgId ? 'already_set' : 'conflict';
+    return curOrg === targetOrgId ? 'already_set' : 'conflict';
   }
 }
 
@@ -267,21 +300,24 @@ async function replayStructuredGenerational(args: ReplayStructuredArgs, generati
   // INVOCATION moved events to an intermediate that merged away before this drain. A mid-invocation
   // fence retry re-resolves and naturally picks up the newly archived org on the fresh walk.
   let redirectSources = [...new Set([args.targetOrgId, ...resolved.visitedArchived])];
+  // The same list, excluding the current effective target: archived merge-chain predecessors. A
+  // same-generation stamp found at one of them is THIS unit's own earlier commit at a merged-away
+  // org — backfill and contact MIGRATE it to the effective org instead of no-oping 'superseded'.
+  const archivedPredecessors = () => redirectSources.filter((s) => s !== eff);
 
-  const REDIRECT_EFFECT = 2;   // index of the redirect pass below — fence-loss retries resume at or before it
   const effects: Array<() => Promise<void>> = [
-    async () => { if (pk) state.backfillStatus = await backfillByPk(pk, eff, generation); },
+    async () => { if (pk) state.backfillStatus = await backfillByPk(pk, eff, generation, archivedPredecessors()); },
     async () => {
       if (!args.customerEmail) return;
       const res = await upsertContact({
         email: args.customerEmail, orgId: eff, source: args.sourceType, occurredAt: args.createdAt,
-        linkGeneration: generation, activeOrgFence: true,
+        linkGeneration: generation, activeOrgFence: true, migrateFromOrgs: archivedPredecessors(),
       });
       if (res.outcome === 'org_inactive') throw new FenceLostError(eff);
-      // written | superseded | locked are ALL success for the contact effect (R8)
+      // written | migrated | superseded | locked are ALL success for the contact effect (R8)
     },
     async () => {
-      const sources = redirectSources.filter((s) => s !== eff);
+      const sources = archivedPredecessors();
       if (sources.length > 0) await redirectMovePass(sources, eff, generation);
     },
     // Audit runs LAST — after redirect convergence — so the final row names the org the unit
@@ -319,10 +355,12 @@ async function replayStructuredGenerational(args: ReplayStructuredArgs, generati
         if (re.status === 'unavailable') return { ok: false, errorType: 'target_unavailable', reason: re.reason, backfillStatus: state.backfillStatus };
         redirectSources = [...new Set([args.targetOrgId, ...re.visitedArchived])];   // fresh chain walk includes the just-archived target
         eff = re.orgId;
-        // Retry from THIS effect — but never past the redirect pass: a fence loss AT THE AUDIT
-        // means events were just redirected to a now-archived org, so the redirect must re-run at
-        // the new effective target before the (idempotent) audit does.
-        i = Math.min(i, REDIRECT_EFFECT);
+        // Retry from effect 0 (round-3 invariant): EVERY org-bearing effect — backfill, contact,
+        // redirect — must converge at the FINAL effective org before the audit (last) and the
+        // marker deletion. Backfill/contact re-runs converge via same-generation successor
+        // migration (their own generation-G commits at the just-archived org are moved, not
+        // no-oped as 'superseded'); the redirect and audit are idempotent.
+        i = 0;
         continue;
       }
       return { ok: false, errorType: 'transient', error: msg(err), backfillStatus: state.backfillStatus };

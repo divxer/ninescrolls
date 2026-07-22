@@ -205,3 +205,66 @@ describe('upsertContact', () => {
     expect(transactCalls()).toHaveLength(2); // one cancelled, one succeeded — retry rebuilt from a fresh read
   });
 });
+
+// Round-3 review fix: same-generation successor migration. When a late fence retry re-runs the
+// contact effect at the merge successor, the SAME generation is already stamped at the (now
+// archived) predecessor — the `>=` check would no-op it as 'superseded' and strand the contact.
+// `migrateFromOrgs` (generational callers only) allows an explicit org move with the stamp
+// UNCHANGED, via the equality CAS branch. Absent the arg, semantics are byte-identical.
+describe('upsertContact same-generation successor migration (migrateFromOrgs)', () => {
+  const GEN = '01J0AAAAAAAAAAAAAAAAAAAAAA';
+  const NEWER = '01J0BBBBBBBBBBBBBBBBBBBBBB';
+  const existingAtB = {
+    contactId: 'ct-x', email: 'b@x.com', orgId: 'b.com', linkLocked: false,
+    lastLinkGeneration: GEN, firstSeenAt: 't0', lastSeenAt: 't0', createdAt: 't0', source: 'rfq',
+  };
+
+  it('migrates: same stamp + org listed in migrateFromOrgs → org moves, stamp UNCHANGED, equality CAS (not <)', async () => {
+    mockGetByEmail(existingAtB);
+    mockSend.mockResolvedValueOnce({});   // put
+    const r = await upsertContact({ email: 'b@x.com', orgId: 'c.com', source: 'rfq', occurredAt: 't1',
+      linkGeneration: GEN, migrateFromOrgs: ['a.com', 'b.com'] });
+    expect(r.outcome).toBe('migrated');
+    const p = putInput();
+    expect(p.Item.orgId).toBe('c.com');
+    expect(p.Item.lastLinkGeneration).toBe(GEN);                        // stamp untouched
+    expect(p.ConditionExpression).toBe('attribute_not_exists(PK) OR lastLinkGeneration = :obs');
+    expect(p.ExpressionAttributeValues).toEqual({ ':obs': GEN });
+  });
+  it('absent migrateFromOrgs: byte-identical same-generation semantics — superseded no-op, NO write', async () => {
+    mockGetByEmail(existingAtB);
+    const r = await upsertContact({ email: 'b@x.com', orgId: 'c.com', source: 'rfq', occurredAt: 't1', linkGeneration: GEN });
+    expect(r.outcome).toBe('superseded');
+    expect(noPutHappened()).toBe(true);
+  });
+  it('a linkLocked contact is NEVER migrated', async () => {
+    mockGetByEmail({ ...existingAtB, linkLocked: true });
+    const r = await upsertContact({ email: 'b@x.com', orgId: 'c.com', source: 'rfq', occurredAt: 't1',
+      linkGeneration: GEN, migrateFromOrgs: ['a.com', 'b.com'] });
+    expect(r.outcome).toBe('locked');
+    expect(noPutHappened()).toBe(true);
+  });
+  it('an org NOT listed in migrateFromOrgs is not migrated — still superseded (no write)', async () => {
+    mockGetByEmail({ ...existingAtB, orgId: 'other.com' });
+    const r = await upsertContact({ email: 'b@x.com', orgId: 'c.com', source: 'rfq', occurredAt: 't1',
+      linkGeneration: GEN, migrateFromOrgs: ['a.com', 'b.com'] });
+    expect(r.outcome).toBe('superseded');
+    expect(noPutHappened()).toBe(true);
+  });
+  it('a genuinely NEWER generation still supersedes even when its org is listed', async () => {
+    mockGetByEmail({ ...existingAtB, lastLinkGeneration: NEWER });
+    const r = await upsertContact({ email: 'b@x.com', orgId: 'c.com', source: 'rfq', occurredAt: 't1',
+      linkGeneration: GEN, migrateFromOrgs: ['a.com', 'b.com'] });
+    expect(r.outcome).toBe('superseded');
+    expect(noPutHappened()).toBe(true);
+  });
+  it('migration honors activeOrgFence: the transact fences on the NEW effective org', async () => {
+    mockGetByEmail(existingAtB);
+    mockSend.mockResolvedValueOnce({});
+    const r = await upsertContact({ email: 'b@x.com', orgId: 'c.com', source: 'rfq', occurredAt: 't1',
+      linkGeneration: GEN, migrateFromOrgs: ['b.com'], activeOrgFence: true });
+    expect(r.outcome).toBe('migrated');
+    const tx = transactCalls()[0] as { TransactItems: Array<{ ConditionCheck?: { Key?: unknown } }> };
+    expect(tx.TransactItems[0].ConditionCheck?.Key).toEqual({ PK: 'ORG#c.com', SK: 'META' });
+  });
+});

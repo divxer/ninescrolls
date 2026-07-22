@@ -297,7 +297,7 @@ describe('linkStructuredUnit adversarial suite (stateful harness, real functions
       orgItem('a.com', { status: 'archived', mergedInto: 'b.com' }), orgItem('b.com'), orgItem('c.com'),
       movedEvent('tev-1', { orgId: 'a.com', linkGeneration: GEN_1 }),
       movedEvent('tev-2', { orgId: 'a.com', linkGeneration: GEN_1 })]);
-    putPendingMarker(store, { unitKey: 'unresolved-rfq-r1', generation: GEN_1, targetOrgId: 'a.com' });
+    putPendingMarker(store, { unitKey: 'unresolved-rfq-r1', generation: GEN_1, targetOrgId: 'a.com', customerEmail: 'b@x.com' });
     const gate = store.gateOn((cmd, input) => cmd.constructor.name === 'TransactWriteCommand'
       && Boolean((input as TxInput).TransactItems?.some((t) => t.Put?.Item?.PK === 'TLEVENT#tev-2')));  // parks the SECOND redirect move
     const pDrain = reconcileRepair({});
@@ -311,12 +311,48 @@ describe('linkStructuredUnit adversarial suite (stateful harness, real functions
     expect(store.get('TLEVENT#tev-1').orgId).toBe('c.com');           // the B-stranded event converged
     expect(store.get('TLEVENT#tev-2').orgId).toBe('c.com');           // and the A-remainder followed too
     expect(store.markersFor('unresolved-rfq-r1')).toHaveLength(0);    // deleted only after full convergence
+    // Round 3: EVERY org-bearing effect converges at C — backfill and contact were committed at B
+    // with THIS generation before the fence loss; the retry must MIGRATE them, not no-op them.
+    expect(store.get('RFQ#1').matchedOrgId).toBe('c.com');
+    const contact = store.contactByEmail('b@x.com');
+    expect(contact.orgId).toBe('c.com');
+    expect(contact.lastLinkGeneration).toBe(GEN_1);                   // stamp unchanged — same-generation migration
     // ISSUE-2: the audit is written AFTER redirect convergence — the final row names the org the
     // unit actually CONVERGED on (C), never only the abandoned intermediate (B).
     const audits = store.auditsFor(GEN_1);
     expect(audits.map((a) => a.newOrgId)).toContain('c.com');
     const finalAudit = audits.find((a) => a.newOrgId === 'c.com') as Record<string, any>;
     expect(finalAudit.details).toMatchObject({ requestedTargetOrgId: 'a.com', effectiveTargetOrgId: 'c.com' });
+  });
+
+  // Scenario 12e (round-3 regression — fence loss AT THE AUDIT step): backfill, contact and the
+  // full redirect all committed at B; B merges into C while the audit transact is parked. The
+  // retry must restart from effect 0 with same-generation migration semantics so backfill+contact
+  // CONVERGE at C (instead of no-oping as 'superseded' at archived B) before the audit lands and
+  // the marker deletes.
+  it('fence loss at the audit: backfill+contact MIGRATE to the successor before the audit/marker-delete', async () => {
+    const store = seedStore([rfqRecord('RFQ#1', { matchedOrgId: '' }),
+      orgItem('a.com', { status: 'archived', mergedInto: 'b.com' }), orgItem('b.com'), orgItem('c.com'),
+      movedEvent('tev-1', { orgId: 'a.com', linkGeneration: GEN_1 })]);
+    putPendingMarker(store, { unitKey: 'unresolved-rfq-r1', generation: GEN_1, targetOrgId: 'a.com', customerEmail: 'b@x.com' });
+    const gate = store.gateOn((cmd, input) => cmd.constructor.name === 'TransactWriteCommand'
+      && Boolean((input as TxInput).TransactItems?.some((t) => String(t.Put?.Item?.PK ?? '').startsWith('AUDIT#'))));
+    const pDrain = reconcileRepair({});
+    await store.idle();                                               // parked at the audit; every other effect committed at B
+    expect(store.get('RFQ#1').matchedOrgId).toBe('b.com');
+    expect(store.contactByEmail('b@x.com').orgId).toBe('b.com');
+    expect(store.get('TLEVENT#tev-1').orgId).toBe('b.com');
+    await mergeOrganization('b.com', 'c.com');                        // B merges away under the parked audit
+    gate.release();
+    const s = await pDrain;
+    expect(s.repaired).toBe(1);
+    expect(store.get('RFQ#1').matchedOrgId).toBe('c.com');            // MIGRATED, not stranded at archived B
+    const contact = store.contactByEmail('b@x.com');
+    expect(contact.orgId).toBe('c.com');
+    expect(contact.lastLinkGeneration).toBe(GEN_1);                   // stamp unchanged — same-generation migration
+    expect(store.get('TLEVENT#tev-1').orgId).toBe('c.com');
+    expect(store.auditsFor(GEN_1).map((a) => a.newOrgId)).toEqual(['c.com']);   // the parked B-audit never committed; final audit names C
+    expect(store.markersFor('unresolved-rfq-r1')).toHaveLength(0);    // deleted only after FULL convergence
   });
 
   // Scenario 12c (ISSUE-1 regression — cross-INVOCATION durability): invocation 1's redirect moves
@@ -345,6 +381,7 @@ describe('linkStructuredUnit adversarial suite (stateful harness, real functions
     expect(s2.repaired).toBe(1);
     expect(store.get('TLEVENT#tev-1').orgId).toBe('c.com');           // recovered via the chain walk
     expect(store.get('TLEVENT#tev-2').orgId).toBe('c.com');
+    expect(store.get('RFQ#1').matchedOrgId).toBe('c.com');            // round 3: backfill migrated off archived B too
     expect(store.markersFor('unresolved-rfq-r1')).toHaveLength(0);    // deleted only after full convergence
   });
 
@@ -376,6 +413,7 @@ describe('linkStructuredUnit adversarial suite (stateful harness, real functions
     expect(new Set(audits.map((a) => a.id)).size).toBe(2);                      // distinct deterministic ids
     const cRow = audits.find((a) => a.newOrgId === 'c.com') as Record<string, any>;
     expect(cRow.details).toMatchObject({ requestedTargetOrgId: 'a.com', effectiveTargetOrgId: 'c.com' });
+    expect(store.get('RFQ#1').matchedOrgId).toBe('c.com');            // round 3: backfill migrated off archived B too
     expect(store.markersFor('unresolved-rfq-r1')).toHaveLength(0);
   });
 

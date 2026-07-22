@@ -217,6 +217,47 @@ describe('replayStructuredSideEffects (generational)', () => {
     expect(r).toMatchObject({ ok: false, errorType: 'source_conflict' });
   });
 
+  // ---- round-3: same-generation successor migration (backfill) -------------------------------
+  // A source stamped with THIS generation at an ARCHIVED PREDECESSOR on the merge chain is not
+  // "superseded" — it is this replay's own earlier commit at an org that has since merged away.
+  // It must be re-pointed to the effective org (stamp untouched) before the marker can complete.
+  it('BACKFILL MIGRATION: same-generation stamp at an archived predecessor re-points to the effective org, stamp untouched', async () => {
+    mockOrg('a.com', { status: 'archived', mergedInto: 'b.com' });
+    mockOrg('b.com', { status: 'active' });
+    rejectTransactWithCancellation(['None', 'ConditionalCheckFailed']);            // normal generational write loses its own condition
+    getBehaviors.push({ Item: { matchedOrgId: 'a.com', matchedOrgLinkGeneration: GEN_A } });  // same gen, at the archived predecessor
+    transactSucceeds();                                                            // the migration transact
+    const r = await replayStructuredSideEffects({ ...base, targetOrgId: 'a.com', generation: GEN_A });
+    expect(r.ok).toBe(true);
+    expect(r.backfillStatus).toBe('migrated');
+    const mig = transactCalls()[1][0].input.TransactItems;
+    expect(mig[0].ConditionCheck.ConditionExpression).toBe('#s = :active');        // fenced on the effective org
+    expect(mig[1].Update.UpdateExpression).toBe('SET matchedOrgId = :o');          // stamp NOT touched — already this generation
+    expect(mig[1].Update.ConditionExpression).toBe('matchedOrgId = :cur AND matchedOrgLinkGeneration = :gen');
+    expect(mig[1].Update.ExpressionAttributeValues).toEqual({ ':o': 'b.com', ':cur': 'a.com', ':gen': GEN_A });
+  });
+  it('BACKFILL MIGRATION raced: CCFE on the migration re-reads once — already at the effective org = already_set', async () => {
+    mockOrg('a.com', { status: 'archived', mergedInto: 'b.com' });
+    mockOrg('b.com', { status: 'active' });
+    rejectTransactWithCancellation(['None', 'ConditionalCheckFailed']);
+    getBehaviors.push({ Item: { matchedOrgId: 'a.com', matchedOrgLinkGeneration: GEN_A } });
+    rejectTransactWithCancellation(['None', 'ConditionalCheckFailed']);            // migration's own condition loses
+    getBehaviors.push({ Item: { matchedOrgId: 'b.com', matchedOrgLinkGeneration: GEN_A } });  // another actor converged it
+    const r = await replayStructuredSideEffects({ ...base, targetOrgId: 'a.com', generation: GEN_A });
+    expect(r.ok).toBe(true);
+    expect(r.backfillStatus).toBe('already_set');
+  });
+  it('BACKFILL MIGRATION raced to a THIRD org: transient (retry next drain), never a silent success', async () => {
+    mockOrg('a.com', { status: 'archived', mergedInto: 'b.com' });
+    mockOrg('b.com', { status: 'active' });
+    rejectTransactWithCancellation(['None', 'ConditionalCheckFailed']);
+    getBehaviors.push({ Item: { matchedOrgId: 'a.com', matchedOrgLinkGeneration: GEN_A } });
+    rejectTransactWithCancellation(['None', 'ConditionalCheckFailed']);
+    getBehaviors.push({ Item: { matchedOrgId: 'x.com', matchedOrgLinkGeneration: GEN_A } });  // re-read shows neither predecessor nor effective
+    const r = await replayStructuredSideEffects({ ...base, targetOrgId: 'a.com', generation: GEN_A });
+    expect(r).toMatchObject({ ok: false, errorType: 'transient' });
+  });
+
   // ---- spec R10 final: canonical-successor resolution ----------------------------------------
   it('MERGE-BEFORE-REPLAY: archived target with mergedInto → replay applies to the successor; audit carries both', async () => {
     mockOrg('a.com', { status: 'archived', mergedInto: 'b.com' });

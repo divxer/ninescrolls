@@ -14,7 +14,7 @@ export async function getContactByEmail(email: string): Promise<ContactItem | nu
   return (res.Items?.[0] as ContactItem | undefined) ?? null;
 }
 
-export type ContactUpsertOutcome = 'written' | 'superseded' | 'locked' | 'org_inactive';
+export type ContactUpsertOutcome = 'written' | 'migrated' | 'superseded' | 'locked' | 'org_inactive';
 
 export async function upsertContact(args: {
   email: string; orgId: string; source: string; occurredAt: string;
@@ -22,6 +22,12 @@ export async function upsertContact(args: {
   linkGeneration?: string;                       // generational (link/replay) callers only
   // R5 (Task 8's replay): wrap the write in a TransactWriteItems with an org-active ConditionCheck.
   activeOrgFence?: boolean;
+  // Same-generation successor migration (generational callers only): when the SAME generation is
+  // already stamped but the contact sits at one of these orgs (archived merge-chain predecessors
+  // of the caller's effective target), move the org to args.orgId with the stamp UNCHANGED —
+  // instead of no-oping as 'superseded' and stranding the contact at an archived org. Absent
+  // this arg, semantics are byte-identical to before.
+  migrateFromOrgs?: string[];
 }): Promise<{ contactId: string; outcome: ContactUpsertOutcome }> {
   const email = normalizeEmail(args.email);
   const nowIso = new Date().toISOString();
@@ -33,9 +39,15 @@ export async function upsertContact(args: {
     const existing = await getContactByEmail(email);
     const contactId = existing?.contactId ?? contactIdForEmail(email);
 
+    let migrate = false;
     if (args.linkGeneration) {
-      if (existing?.linkLocked) return { contactId, outcome: 'locked' };        // R8: never re-org a locked contact
-      if (existing?.lastLinkGeneration && existing.lastLinkGeneration >= args.linkGeneration) {
+      if (existing?.linkLocked) return { contactId, outcome: 'locked' };        // R8: never re-org a locked contact (never migrated either)
+      // Same-generation successor migration: THIS generation's own earlier commit at an org that
+      // has since merged away — an org move, not a supersession. Only for listed predecessors;
+      // any other org with `>=` (including a genuinely NEWER generation) still supersedes.
+      migrate = existing?.lastLinkGeneration === args.linkGeneration
+        && (args.migrateFromOrgs?.includes(existing.orgId) ?? false);
+      if (!migrate && existing?.lastLinkGeneration && existing.lastLinkGeneration >= args.linkGeneration) {
         return { contactId, outcome: 'superseded' };                            // R8: older replay = success no-op
       }
     }
@@ -58,7 +70,13 @@ export async function upsertContact(args: {
       createdAt: existing?.createdAt ?? nowIso, updatedAt: nowIso,
     };
 
-    const put = args.linkGeneration
+    const put = migrate
+      ? new PutCommand({ TableName: TABLE_NAME(), Item: item,
+          // migration CAS: EQUALITY on the exact observed stamp (not `<` — the stamp is unchanged);
+          // a racing write of any kind flips the observed stamp/state and this CCFEs into the loop.
+          ConditionExpression: 'attribute_not_exists(PK) OR lastLinkGeneration = :obs',
+          ExpressionAttributeValues: { ':obs': observed } })
+      : args.linkGeneration
       ? new PutCommand({ TableName: TABLE_NAME(), Item: item,
           // store-enforced monotonicity — a racing NEWER generation makes this CCFE.
           // A non-generational write leaves lastLinkGeneration as a typed DynamoDB NULL (attribute
@@ -101,7 +119,7 @@ export async function upsertContact(args: {
       } else {
         await docClient.send(put);
       }
-      return { contactId, outcome: 'written' };
+      return { contactId, outcome: migrate ? 'migrated' : 'written' };
     } catch (err) {
       if (args.activeOrgFence && (err as { name?: string }).name === 'TransactionCanceledException') {
         // Cancellation mapping is POSITIONAL: index 0 = org ConditionCheck, index 1 = contact Put.
