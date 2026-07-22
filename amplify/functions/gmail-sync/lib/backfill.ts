@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import type { GmailClient } from './gmailClient';
 import { GmailApiError } from './gmailClient';
 import { mapMessage, type GmailMessage } from './mapMessage';
@@ -12,19 +13,45 @@ export interface BackfillCtx {
   persist: (fields: Partial<GmailSyncState>) => Promise<{ lost: boolean }>;   // fenced
 }
 
+export interface BackfillResult {
+  completed: boolean; counters: Record<string, number>; aborted?: boolean;
+  restarted?: boolean;                                          // configId mismatch forced a deliberate restart
+  blockedMessageId?: string; blockedError?: string;             // first blocked message of the run (poison diagnostics)
+}
+
+// Spec §7 step 1: the stable configuration identity persisted with the anchor. Hashes exactly the
+// paging-affecting inputs — the mailbox being listed and the query window. (The alias set is a
+// post-fetch mapMessage filter; it does not affect `messages.list` paging, so it is NOT part of
+// the identity.) 16 hex chars of sha256 — stable across deploys, cheap to compare.
+export function computeBackfillConfigId(mailbox: string, window: string): string {
+  return crypto.createHash('sha256').update(`v1|mailbox=${mailbox}|window=${window}`).digest('hex').slice(0, 16);
+}
+
 // Spec §7 (R4/R6): anchor captured + persisted BEFORE page 1; the pageToken advances only when
 // EVERY message on the page is persisted/terminal_skip; completion is one fenced phase transition.
-export async function runBackfill(ctx: BackfillCtx): Promise<{ completed: boolean; counters: Record<string, number>; aborted?: boolean }> {
+export async function runBackfill(ctx: BackfillCtx): Promise<BackfillResult> {
   const counters = { persisted: 0, terminal_skip: 0, retryable_failure: 0, skipped_filter: 0, pages: 0 };
+  const currentWindow = `newer_than:${ctx.windowDays}d`;
+  const configId = computeBackfillConfigId(ctx.mailbox, currentWindow);
   let anchor = ctx.existing.anchorHistoryId ?? null;
   let pageToken = ctx.existing.pageToken ?? null;
-  const window = ctx.existing.window ?? `newer_than:${ctx.windowDays}d`;
+  let window = ctx.existing.window ?? currentWindow;
+  let restarted = false;
+  let diag: { blockedMessageId: string; blockedError: string } | undefined;
+
+  // Spec §7: if the paging-affecting config changed mid-backfill (or the stored anchor predates
+  // configId and is unverifiable), the stale cursor points into a DIFFERENT listing — deliberately
+  // RESTART anchor-first in this same run. The reset is carried by the fresh-anchor fenced write
+  // below, which atomically replaces anchor+cursor+window+configId in one state write.
+  if (anchor && ctx.existing.configId !== configId) {
+    anchor = null; pageToken = null; window = currentWindow; restarted = true;
+  }
 
   if (!anchor) {                                                 // fresh backfill: capture-then-persist FIRST
     const profile = await ctx.client.getProfile() as { historyId?: string };
     anchor = String(profile.historyId);
-    const w = await ctx.persist({ phase: 'backfill', anchorHistoryId: anchor, pageToken: null, window });
-    if (w.lost) return { completed: false, counters, aborted: true };
+    const w = await ctx.persist({ phase: 'backfill', anchorHistoryId: anchor, pageToken: null, window, configId });
+    if (w.lost) return { completed: false, counters, aborted: true, ...(restarted && { restarted }) };
   }
 
   for (;;) {
@@ -42,15 +69,18 @@ export async function runBackfill(ctx: BackfillCtx): Promise<{ completed: boolea
       if (mapped.kind === 'skip') { counters.skipped_filter += 1; continue; }
       const out = await ctx.project(mapped);
       counters[out.outcome] += 1;
-      if (out.outcome === 'retryable_failure') pageClean = false;
+      if (out.outcome === 'retryable_failure') {
+        pageClean = false;
+        diag ??= { blockedMessageId: ref.id, blockedError: out.error };
+      }
     }
-    if (!pageClean) return { completed: false, counters };       // R7/blocker-1: retain the INPUT cursor; page retries next run
+    if (!pageClean) return { completed: false, counters, ...(restarted && { restarted }), ...diag };  // R7/blocker-1: retain the INPUT cursor; page retries next run
     if (!page.nextPageToken) break;
     pageToken = page.nextPageToken;
     const w = await ctx.persist({ pageToken });                   // advance only after complete page success
-    if (w.lost) return { completed: false, counters, aborted: true };
+    if (w.lost) return { completed: false, counters, aborted: true, ...(restarted && { restarted }) };
   }
-  const w = await ctx.persist({ phase: 'incremental', historyId: anchor, anchorHistoryId: null, pageToken: null, window: null });
-  if (w.lost) return { completed: true, counters, aborted: true };
-  return { completed: true, counters };
+  const w = await ctx.persist({ phase: 'incremental', historyId: anchor, anchorHistoryId: null, pageToken: null, window: null, configId: null });
+  if (w.lost) return { completed: true, counters, aborted: true, ...(restarted && { restarted }) };
+  return { completed: true, counters, ...(restarted && { restarted }) };
 }

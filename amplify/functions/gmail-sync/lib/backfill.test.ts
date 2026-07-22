@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { runBackfill, type BackfillCtx } from './backfill';
+import { runBackfill, computeBackfillConfigId, type BackfillCtx } from './backfill';
 import { GmailApiError } from './gmailClient';
 import type { GmailMessage } from './mapMessage';
 import type { ProjectOutcome } from './emitMessage';
@@ -92,6 +92,9 @@ beforeEach(() => {
   persistLostOn = null; existing = {};
 });
 
+// Stable config identity for the harness's paging-affecting inputs (spec §7 step 1).
+const CONFIG_ID = computeBackfillConfigId('info@ninescrolls.com', 'newer_than:90d');
+
 describe('runBackfill', () => {
   it('persists {phase:backfill, anchorHistoryId, pageToken:null, window} BEFORE the first page', async () => {
     profileHistoryId('500'); pages([['a'], ['b']]); outcomes({ a: 'persisted', b: 'persisted' });
@@ -117,29 +120,29 @@ describe('runBackfill', () => {
   });
 
   it('resume uses the STORED anchor + pageToken (never re-captures)', async () => {
-    existingState({ phase: 'backfill', anchorHistoryId: '500', pageToken: 'pt-1', window: 'newer_than:90d' });
+    existingState({ phase: 'backfill', anchorHistoryId: '500', pageToken: 'pt-1', window: 'newer_than:90d', configId: CONFIG_ID });
     pages([['c']], { fromToken: 'pt-1' }); outcomes({ c: 'persisted' });
     await runBackfill(ctx);
     expect(profileCalls()).toBe(0);
   });
 
   it('resume fetches messagesList with the STORED pageToken (not undefined)', async () => {
-    existingState({ phase: 'backfill', anchorHistoryId: '500', pageToken: 'pt-1', window: 'newer_than:90d' });
+    existingState({ phase: 'backfill', anchorHistoryId: '500', pageToken: 'pt-1', window: 'newer_than:90d', configId: CONFIG_ID });
     pages([['c']], { fromToken: 'pt-1' }); outcomes({ c: 'persisted' });
     await runBackfill(ctx);
     expect(listCalls[0]).toEqual({ window: 'newer_than:90d', pageToken: 'pt-1' });
   });
 
   it('completion: ONE fenced write sets {phase:incremental, historyId:anchor} and clears backfill fields', async () => {
-    existingState({ phase: 'backfill', anchorHistoryId: '500', pageToken: null, window: 'newer_than:90d' });
+    existingState({ phase: 'backfill', anchorHistoryId: '500', pageToken: null, window: 'newer_than:90d', configId: CONFIG_ID });
     pages([['a']]); outcomes({ a: 'persisted' });
     const s = await runBackfill(ctx);
     expect(s.completed).toBe(true);
-    expect(stateWrites().at(-1)).toMatchObject({ phase: 'incremental', historyId: '500', anchorHistoryId: null, pageToken: null });
+    expect(stateWrites().at(-1)).toMatchObject({ phase: 'incremental', historyId: '500', anchorHistoryId: null, pageToken: null, configId: null });
   });
 
   it('completion sets the watermark to the STORED anchor, not a fresh profile call', async () => {
-    existingState({ phase: 'backfill', anchorHistoryId: '500', pageToken: null, window: 'newer_than:90d' });
+    existingState({ phase: 'backfill', anchorHistoryId: '500', pageToken: null, window: 'newer_than:90d', configId: CONFIG_ID });
     pages([['a']]); outcomes({ a: 'persisted' });
     await runBackfill(ctx);
     expect(profileCalls()).toBe(0);
@@ -163,7 +166,7 @@ describe('runBackfill', () => {
   });
 
   it('completion-persist CCFE still reports completed:true (page work is done) with aborted:true', async () => {
-    existingState({ phase: 'backfill', anchorHistoryId: '500', pageToken: null, window: 'newer_than:90d' });
+    existingState({ phase: 'backfill', anchorHistoryId: '500', pageToken: null, window: 'newer_than:90d', configId: CONFIG_ID });
     pages([['a']]); outcomes({ a: 'persisted' });
     loseFenceOn(0);   // the only persist() call here is the completion write (anchor already existed)
     const s = await runBackfill(ctx);
@@ -210,5 +213,70 @@ describe('runBackfill', () => {
     profileHistoryId('500'); pages([['a']]); outcomes({ a: 'persisted' });
     await runBackfill(ctx);
     expect(listCalls[0].window).toBe('newer_than:90d');
+  });
+
+  // Poison-message diagnostics (runbook "Poison-mailbox alarm response").
+  it('a blocked page surfaces the FIRST blocked message id + projection error in the summary', async () => {
+    profileHistoryId('500'); pages([['a', 'b']]); outcomes({ a: 'retryable_failure', b: 'retryable_failure' });
+    const s = await runBackfill(ctx);
+    expect(s.completed).toBe(false);
+    expect(s.blockedMessageId).toBe('a');
+    expect(s.blockedError).toBe('test failure');
+  });
+
+  it('a clean backfill carries no blockedMessageId', async () => {
+    profileHistoryId('500'); pages([['a']]); outcomes({ a: 'persisted' });
+    const s = await runBackfill(ctx);
+    expect(s.blockedMessageId).toBeUndefined();
+    expect(s.blockedError).toBeUndefined();
+  });
+
+  // configId restart guard (spec §7 step 1: config identity persisted with the anchor).
+  it('fresh backfill persists configId ATOMICALLY with the anchor (same single fenced write)', async () => {
+    profileHistoryId('500'); pages([['a']]); outcomes({ a: 'persisted' });
+    await runBackfill(ctx);
+    expect(stateWrites()[0]).toMatchObject({
+      phase: 'backfill', anchorHistoryId: '500', pageToken: null, window: 'newer_than:90d', configId: CONFIG_ID,
+    });
+  });
+
+  it('resume with a MATCHING configId continues from the stored cursor (no restart, no re-anchor)', async () => {
+    existingState({ phase: 'backfill', anchorHistoryId: '500', pageToken: 'pt-1', window: 'newer_than:90d', configId: CONFIG_ID });
+    pages([['c']], { fromToken: 'pt-1' }); outcomes({ c: 'persisted' });
+    const s = await runBackfill(ctx);
+    expect(s.restarted).toBeUndefined();
+    expect(profileCalls()).toBe(0);
+    expect(listCalls[0]).toEqual({ window: 'newer_than:90d', pageToken: 'pt-1' });
+  });
+
+  it('resume with a MISMATCHED configId restarts: fresh anchor captured, stale cursor discarded', async () => {
+    existingState({ phase: 'backfill', anchorHistoryId: '500', pageToken: 'pt-1', window: 'newer_than:30d', configId: computeBackfillConfigId('info@ninescrolls.com', 'newer_than:30d') });
+    profileHistoryId('900'); pages([['a']]); outcomes({ a: 'persisted' });
+    const s = await runBackfill(ctx);
+    expect(s.restarted).toBe(true);
+    expect(profileCalls()).toBe(1);                                        // fresh anchor captured
+    expect(listCalls[0]).toEqual({ window: 'newer_than:90d', pageToken: undefined });  // stale cursor discarded
+    // ONE fenced write replaces anchor+cursor+window+configId atomically — no separate reset write
+    expect(stateWrites()[0]).toMatchObject({
+      phase: 'backfill', anchorHistoryId: '900', pageToken: null, window: 'newer_than:90d', configId: CONFIG_ID,
+    });
+  });
+
+  it('a stored anchor with NO configId (legacy/unverifiable) also restarts deliberately', async () => {
+    existingState({ phase: 'backfill', anchorHistoryId: '500', pageToken: 'pt-1', window: 'newer_than:90d' });
+    profileHistoryId('900'); pages([['a']]); outcomes({ a: 'persisted' });
+    const s = await runBackfill(ctx);
+    expect(s.restarted).toBe(true);
+    expect(profileCalls()).toBe(1);
+    expect(listCalls[0].pageToken).toBeUndefined();
+  });
+
+  it('restart anchor-persist CCFE aborts before any page is fetched (fence discipline)', async () => {
+    existingState({ phase: 'backfill', anchorHistoryId: '500', pageToken: 'pt-1', window: 'newer_than:30d', configId: computeBackfillConfigId('info@ninescrolls.com', 'newer_than:30d') });
+    profileHistoryId('900'); loseFenceOn(0); pages([['a']]);
+    const s = await runBackfill(ctx);
+    expect(s.aborted).toBe(true);
+    expect(s.completed).toBe(false);
+    expect(listCalls).toHaveLength(0);
   });
 });
