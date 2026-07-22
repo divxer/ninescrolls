@@ -879,7 +879,7 @@ describe('gmail-sync IAM source contract', () => {
   });
 });
 ```
-  2. **Reproducible pre-merge synth+deploy gate (plan-review R3 — honest description):** this is a REAL deployment to a sandbox stack in the dev AWS account, not local-only synthesis — CDK synth runs locally first (structural failures, including the nested-stack-cycle class that broke deploys twice before, fail before anything deploys), and then real resources are created:
+  2. **Reproducible pre-merge synth+deploy gate (plan-review R3/R4 — honest description):** this deploys the ENTIRE Amplify backend (every function, the data stack, auth — not just gmail-sync) as a REAL sandbox stack in the dev AWS account; CDK synth runs locally first (structural failures, including the nested-stack-cycle class that broke deploys twice before, fail before anything deploys), and then real resources are created:
 ```bash
 npx ampx sandbox --identifier commsp2gate --once
 ```
@@ -940,7 +940,7 @@ it('gmail chain: raw message → mapped → emitted unresolved → queue unit �
   expect(table.get('TLEVENT#' + idOf('m1')).orgId).toBe('acme.com');
   const contact = table.byGsi4('EMAIL#bob@gmail.com');
   expect(contact.orgId).toBe('acme.com');
-  expect(contact.lastLinkGeneration).toMatch(/^E\d{8}#[0-9A-HJKMNP-TV-Z]{26}$/);   // R10 composite stamp
+  expect(contact.lastLinkGeneration).toMatch(/^[0-9A-HJKMNP-TV-Z]{26}$/);   // plain ULID generation (spec R10 final)
   // 4. a SUBSEQUENT raw message from the same address flows mapper→projector→emit and auto-resolves
   const mapped2 = mapMessage(rawGmailMetadataMessage('m2', { from: 'Bob <bob@gmail.com>', to: 'sales@ninescrolls.com' }), 'info@ninescrolls.com');
   await projectMessage(mapped2, invokeCrmApiToRealEmit);
@@ -970,9 +970,15 @@ npx tsc --noEmit -p amplify/tsconfig.json
 ```
 Expected: no output, exit 0.
 ```bash
-npx tsc --noEmit > .tsc-app.out 2>&1; echo "tsc exit: $?"; grep -v "main.tsx" .tsc-app.out | grep "error TS"; echo "new-error grep exit: $? (1 = PASS: no new errors)"; rm .tsc-app.out
+npx tsc --noEmit > .tsc-app.out 2>&1; echo "tsc exit: $?"
 ```
-`tsc exit` is expected nonzero (pre-existing `main.tsx` error); the gate is `new-error grep exit: 1` (no `error TS` lines outside `main.tsx`; `0` = new errors printed above — fix them).
+```bash
+grep -v "main.tsx" .tsc-app.out | grep "error TS"; echo "new-error grep exit: $? (1 = PASS: no new errors)"
+```
+```bash
+rm .tsc-app.out
+```
+(Three separate commands — a trailing `rm` in a compound line would exit 0 and mask the verdict.) `tsc exit` is expected nonzero (pre-existing `main.tsx` error); the gate is `new-error grep exit: 1` (no `error TS` lines outside `main.tsx`; `0` = new errors printed above — fix them).
 eslint clean on all touched files.
 - [ ] **Step 4:** Re-verify the 10 header invariants against the full Part-2 diff.
 - [ ] **Step 5:** Commit fixups scoped to touched files; report counts + invariant confirmation. Post-merge activation (PR body): runbook execution → first `gmail.sync.summary` (backfill) → spot-check an org timeline shows email rows → verify a Sent item produced outbound (spec R1/M4 spike note).

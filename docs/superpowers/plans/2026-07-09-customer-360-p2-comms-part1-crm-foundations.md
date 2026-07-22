@@ -16,15 +16,15 @@
 3. Per-event eligibility in EVERY move condition (`unresolved ∧ orgId=:unitKey ∧ ¬voided ∧ ¬internalOnly ∧ source=:src`).
 4. First move + marker in ONE `TransactWriteItems`; marker `attribute_not_exists(PK)`; a loser's transaction aborts → no marker.
 5. Marker lifecycle `building → pending`; drainer sees `pending` only; abandoned `building` ages in; ALL transitions version-fenced; CCFE on a transition = another actor won = skip.
-6. Generation stamps are composite **`E<8-digit epoch>#<26-char ULID>`** (spec R10) — never bare ULIDs; older stamp ⇒ `superseded` SUCCESS no-op on Contact + source; `linkLocked` never re-orged (`locked` = success).
-7. Every NEW authoritative action (link/relink/merge) stamps **observed epoch + 1** per record; replays re-assert the EXACT marker-persisted stamps (`sourceGen`/`contactGen`) and can never cross a later epoch (clock-free ordering); merge is paginated + conditional + idempotent under a stable `MERGE_OP` `opUlid`; non-generational writers preserve `lastLinkGeneration`; creation-time resolution is stamp-absent.
+6. Generations are plain ULIDs (spec R10 final — honest monotonic LWW, R9-accepted for true concurrency); older generation ⇒ `superseded` SUCCESS no-op on Contact + source; `linkLocked` never re-orged (`locked` = success).
+7. **Merge never touches stamps** (re-points org only); replays resolve their target through the merge chain — active ⇒ apply, archived+`mergedIntoOrgId` ⇒ apply to the canonical successor (depth ≤5, cycle-checked), no valid successor ⇒ `target_unavailable` and the marker stays blocked/actionable (NEVER false success); audits carry requested + effective target; non-generational writers preserve `lastLinkGeneration`; creation-time resolution is generation-absent; **every delayed `matchedOrgId` writer is guarded against overwriting a stamped decision** (Task 8b).
 8. Admin-group authorization before ANY DynamoDB access on the guarded resolvers; both `claims['cognito:groups']` (string or array) and `identity.groups` shapes.
 9. Markers/audits bounded: `movedCount` + ≤100-id sample, never full lists.
 10. Post-commit effects never throw out of an orchestrator; failure ⇒ marker survives + `postCommitStatus:'post_commit_failed'`.
 
 ---
 
-### Task 1: ULID generator + composite generation stamps (spec R10)
+### Task 1: ULID generator
 
 **Files:**
 - Create: `amplify/functions/crm-api/lib/ulid.ts`
@@ -33,7 +33,7 @@
 - [ ] **Step 1: Write the failing test** — create `amplify/functions/crm-api/lib/ulid.test.ts`:
 ```ts
 import { describe, it, expect } from 'vitest';
-import { generateUlid, ULID_REGEX, composeGen, epochOf, ulidOf, GEN_REGEX } from './ulid';
+import { generateUlid, ULID_REGEX } from './ulid';
 
 describe('generateUlid', () => {
   it('produces 26-char Crockford base32 ULIDs', () => {
@@ -52,33 +52,6 @@ describe('generateUlid', () => {
     expect(a < b).toBe(true);
   });
 });
-
-describe('composite generation stamps (spec R10 — epoch dominates clock)', () => {
-  it('composes E<8-digit epoch>#<ulid> and parses back', () => {
-    const g = composeGen(3, '01J0AAAAAAAAAAAAAAAAAAAAAA');
-    expect(g).toBe('E00000003#01J0AAAAAAAAAAAAAAAAAAAAAA');
-    expect(g).toMatch(GEN_REGEX);
-    expect(epochOf(g)).toBe(3);
-    expect(ulidOf(g)).toBe('01J0AAAAAAAAAAAAAAAAAAAAAA');
-  });
-  it('epochOf of absent/undefined stamp is 0 (creation-resolved records)', () => {
-    expect(epochOf(undefined)).toBe(0);
-    expect(epochOf(null)).toBe(0);
-  });
-  it('CORE R10 PROPERTY: a higher epoch beats ANY ulid — string comparison, no clocks', () => {
-    const preMergeButLaterClock = composeGen(1, 'ZZZZZZZZZZZZZZZZZZZZZZZZZZ');  // skewed clock: huge ulid
-    const mergeStamp = composeGen(2, '00000000000000000000000000');            // tiny ulid, higher epoch
-    expect(preMergeButLaterClock < mergeStamp).toBe(true);
-  });
-  it('within an epoch, ulid order tiebreaks (R9-accepted arbitrary order for true concurrency)', () => {
-    expect(composeGen(1, '01A0AAAAAAAAAAAAAAAAAAAAAA') < composeGen(1, '01B0AAAAAAAAAAAAAAAAAAAAAA')).toBe(true);
-  });
-  it('rejects malformed inputs (no bare-ULID stamps can ever be minted)', () => {
-    expect(() => composeGen(-1, '01J0AAAAAAAAAAAAAAAAAAAAAA')).toThrow();
-    expect(() => composeGen(1, 'not-a-ulid')).toThrow();
-    expect(() => composeGen(100_000_000, '01J0AAAAAAAAAAAAAAAAAAAAAA')).toThrow(); // > 8 digits
-  });
-});
 ```
 
 - [ ] **Step 2: Run** `npx vitest run amplify/functions/crm-api/lib/ulid.test.ts` — expect FAIL (module not found).
@@ -88,6 +61,9 @@ describe('composite generation stamps (spec R10 — epoch dominates clock)', () 
 import crypto from 'node:crypto';
 
 // Time-ordered unique id: 10 chars of ms-timestamp + 16 chars of randomness, Crockford base32.
+// Lexicographic order == time order (same-ms ties broken arbitrarily — accepted per spec R9/1;
+// spec R10: merge-vs-replay is handled STRUCTURALLY via canonical-successor resolution, so stamp
+// ordering never has to decide a merge outcome and plain ULIDs suffice).
 const ENC = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
 export const ULID_REGEX = /^[0-9A-HJKMNP-TV-Z]{26}$/;
 
@@ -97,30 +73,6 @@ export function generateUlid(now: number = Date.now()): string {
   const rand = Array.from(crypto.randomBytes(16), (b) => ENC[b % 32]).join('').slice(0, 16);
   return time + rand;
 }
-
-// ---- Composite generation stamps (spec R10) ---------------------------------
-// Format: E<8-digit zero-padded epoch>#<26-char ULID>. ALL generation stamps
-// (matchedOrgLinkGeneration, lastLinkGeneration) use this format — never bare ULIDs.
-// Plain string comparison ⇒ epoch dominance (clock-free ordering across writers),
-// ULID tiebreak only within an epoch (truly-concurrent actions, accepted per R9/1).
-export const GEN_REGEX = /^E\d{8}#[0-9A-HJKMNP-TV-Z]{26}$/;
-
-export function composeGen(epoch: number, ulid: string): string {
-  if (!Number.isInteger(epoch) || epoch < 0 || epoch > 99_999_999) throw new Error(`composeGen: bad epoch ${epoch}`);
-  if (!ULID_REGEX.test(ulid)) throw new Error(`composeGen: bad ulid ${ulid}`);
-  return `E${String(epoch).padStart(8, '0')}#${ulid}`;
-}
-
-export function epochOf(gen: string | null | undefined): number {
-  if (!gen) return 0;                                     // absent stamp = creation-resolved = epoch 0
-  if (!GEN_REGEX.test(gen)) throw new Error(`epochOf: malformed stamp ${gen}`);
-  return Number(gen.slice(1, 9));
-}
-
-export function ulidOf(gen: string): string {
-  if (!GEN_REGEX.test(gen)) throw new Error(`ulidOf: malformed stamp ${gen}`);
-  return gen.slice(10);
-}
 ```
 
 - [ ] **Step 4: Run** the test — expect PASS. `npx tsc --noEmit -p amplify/tsconfig.json` clean.
@@ -128,7 +80,7 @@ export function ulidOf(gen: string): string {
 - [ ] **Step 5: Commit**
 ```bash
 git add amplify/functions/crm-api/lib/ulid.ts amplify/functions/crm-api/lib/ulid.test.ts
-git commit -m "feat(comms-p1): ULID generator + R10 composite generation stamps (epoch#ulid)"
+git commit -m "feat(comms-p1): dependency-free ULID generator (time-ordered generations)"
 ```
 
 ---
@@ -540,7 +492,7 @@ export async function upsertContact(args: {
 }
 ```
 **Additional required tests (R2 Critical):** (a) after a raced CCFE, the retry's item reflects the FRESH read's org+lock+stamp **as a pair** (assert the final Put's `Item.orgId` AND `Item.lastLinkGeneration` both come from the re-read); (b) a contact that became `linkLocked` between read and write → generational retry returns `locked` (not a write); (c) null→absent stamp transitions in both directions; (d) three consecutive CCFEs → throws the bounded-contention error.
-**R10 stamp format:** `upsertContact` treats `linkGeneration` as an OPAQUE ordered string — the logic is format-agnostic — but all generational fixtures in this test file MUST use composite `composeGen(epoch, ulid)` stamps (never bare ULIDs), matching what real callers pass from Task 10 onward; include one test where an epoch-2 stamp beats an epoch-1 stamp whose ULID is lexically larger (the skew case, at the contact store).
+**Stamp format note:** `upsertContact` treats `linkGeneration` as an OPAQUE ordered string; generational fixtures use plain ULIDs (spec R10 final).
 **Add the race test:**
 ```ts
 it('non-generational write CASes on the observed generation and retries after a racing generational update', async () => {
@@ -565,48 +517,70 @@ git commit -m "feat(comms-p1): generation-aware upsertContact (preserve/conditio
 
 ---
 
-### Task 8: Generational source backfill (`superseded` outcome) + merge re-stamps
+### Task 8: Generational source backfill (`superseded`) + canonical-successor resolution + merge boundary
 
 **Files:**
 - Modify: `amplify/functions/crm-api/lib/repair/replaySideEffects.ts`
 - Modify: organization-api merge flow (locate via `git grep -n "mergeOrganization\|matchedOrgId" amplify/functions/organization-api/`)
 - Test: `amplify/functions/crm-api/lib/repair/replaySideEffects.structured.test.ts` (append) + the organization-api merge test file
 
-- [ ] **Step 1: Failing tests (replay side).** Append (`GEN_A = composeGen(1, '01J0AAAA…')` etc. via the Task-1 helpers):
+- [ ] **Step 1: Failing tests (replay side).** Append:
 ```ts
-it('backfill stamps matchedOrgId + matchedOrgLinkGeneration atomically with the EXACT marker stamp', async () => {
+it('backfill stamps matchedOrgId + matchedOrgLinkGeneration atomically', async () => {
   send.mockResolvedValueOnce({});
-  await replayStructuredSideEffects({ ...base, generation: '01J0BBBB…', sourceGen: GEN_B });
+  await replayStructuredSideEffects({ ...base, generation: '01J0BBBB…' });
   const u = send.mock.calls[0][0].input;
   expect(u.UpdateExpression).toContain('matchedOrgId');
   expect(u.UpdateExpression).toContain('matchedOrgLinkGeneration');
   expect(u.ConditionExpression).toContain('matchedOrgLinkGeneration < :gen');
-  expect(u.ExpressionAttributeValues[':gen']).toBe(GEN_B);      // R10: replay NEVER re-mints — exact stamp
 });
-it('older stamp vs newer stamp → superseded SUCCESS (not conflict, not stuck)', async () => {
+it('older generation vs newer stamp → superseded SUCCESS (not conflict, not stuck)', async () => {
   send.mockRejectedValueOnce(Object.assign(new Error('ccfe'), { name: 'ConditionalCheckFailedException' }));
-  send.mockResolvedValueOnce({ Item: { matchedOrgId: 'b.com', matchedOrgLinkGeneration: GEN_B } });
-  const r = await replayStructuredSideEffects({ ...base, targetOrgId: 'a.com', generation: '01J0AAAA…', sourceGen: GEN_A });
+  send.mockResolvedValueOnce({ Item: { matchedOrgId: 'b.com', matchedOrgLinkGeneration: '01J0BBBB…' } });
+  const r = await replayStructuredSideEffects({ ...base, targetOrgId: 'a.com', generation: '01J0AAAA…' });
   expect(r.ok).toBe(true);
   expect(r.backfillStatus).toBe('superseded');
-});
-it('R10 SKEWED-GENERATION: pre-merge stamp with a lexically-huge ulid still loses to a higher-epoch merge stamp', async () => {
-  const preMerge = composeGen(1, 'ZZZZZZZZZZZZZZZZZZZZZZZZZZ');   // skewed clock minted a "later" ulid
-  const merge = composeGen(2, '00000000000000000000000000');      // merge advanced the epoch
-  send.mockRejectedValueOnce(Object.assign(new Error('ccfe'), { name: 'ConditionalCheckFailedException' }));
-  send.mockResolvedValueOnce({ Item: { matchedOrgId: 'merged.com', matchedOrgLinkGeneration: merge } });
-  const r = await replayStructuredSideEffects({ ...base, targetOrgId: 'a.com', generation: ulidOf(preMerge), sourceGen: preMerge });
-  expect(r.ok).toBe(true);
-  expect(r.backfillStatus).toBe('superseded');                    // string compare: E00000001#Z… < E00000002#0…
 });
 it('genuine non-generational real-org mismatch is still conflict', async () => {
   send.mockRejectedValueOnce(Object.assign(new Error('ccfe'), { name: 'ConditionalCheckFailedException' }));
   send.mockResolvedValueOnce({ Item: { matchedOrgId: 'other.com' } });   // no generation stamp
-  const r = await replayStructuredSideEffects({ ...base, generation: '01J0AAAA…', sourceGen: GEN_A });
+  const r = await replayStructuredSideEffects({ ...base, generation: '01J0AAAA…' });
   expect(r).toMatchObject({ ok: false, errorType: 'source_conflict' });
 });
+// ---- spec R10 final: canonical-successor resolution -------------------------
+it('MERGE-BEFORE-REPLAY: archived target with mergedIntoOrgId → replay applies to the successor; audit carries both', async () => {
+  mockOrg('a.com', { status: 'archived', mergedIntoOrgId: 'b.com' });
+  mockOrg('b.com', { status: 'active' });
+  send.mockResolvedValueOnce({});                                  // the backfill write
+  const r = await replayStructuredSideEffects({ ...base, targetOrgId: 'a.com', generation: '01J0AAAA…' });
+  expect(r.ok).toBe(true);
+  expect(backfillWriteInput().ExpressionAttributeValues[':o']).toBe('b.com');   // applied THERE
+  expect(auditCallDetails()).toMatchObject({ requestedTargetOrgId: 'a.com', effectiveTargetOrgId: 'b.com' });
+});
+it('MULTI-HOP: a→b→c chain resolves to the final active org', async () => {
+  mockOrg('a.com', { status: 'archived', mergedIntoOrgId: 'b.com' });
+  mockOrg('b.com', { status: 'archived', mergedIntoOrgId: 'c.com' });
+  mockOrg('c.com', { status: 'active' });
+  send.mockResolvedValueOnce({});
+  const r = await replayStructuredSideEffects({ ...base, targetOrgId: 'a.com', generation: '01J0AAAA…' });
+  expect(r.ok).toBe(true);
+  expect(backfillWriteInput().ExpressionAttributeValues[':o']).toBe('c.com');
+});
+it('MISSING SUCCESSOR: archived without mergedIntoOrgId → target_unavailable, ok:false, NO writes', async () => {
+  mockOrg('a.com', { status: 'archived' });
+  const r = await replayStructuredSideEffects({ ...base, targetOrgId: 'a.com', generation: '01J0AAAA…' });
+  expect(r).toMatchObject({ ok: false, errorType: 'target_unavailable' });
+  expect(writesTo('RFQ#')).toHaveLength(0);                        // nothing half-applied
+});
+it('CYCLE + DEPTH LIMIT: a→b→a and chains >5 hops → target_unavailable, no infinite walk', async () => {
+  mockOrg('a.com', { status: 'archived', mergedIntoOrgId: 'b.com' });
+  mockOrg('b.com', { status: 'archived', mergedIntoOrgId: 'a.com' });
+  const r = await replayStructuredSideEffects({ ...base, targetOrgId: 'a.com', generation: '01J0AAAA…' });
+  expect(r).toMatchObject({ ok: false, errorType: 'target_unavailable' });
+  expect(orgReads()).toHaveLength(2);                               // visited-set stopped it, not a timeout
+});
 ```
-(`base` gains `generation` + `sourceGen`; add both to the shared fixture.)
+(`base` gains `generation`; add it to the shared fixture. `mockOrg`/`backfillWriteInput`/`auditCallDetails`/`writesTo`/`orgReads` are small helpers over the send mock.)
 
 - [ ] **Step 2: Run** — FAIL.
 
@@ -617,17 +591,34 @@ export interface ReplayStructuredArgs {
   sourceEntityId: string;
   targetOrgId: string;
   targetOrgName: string;
-  generation?: string;              // NEW, optional: the ACTION's ulid — audit identity only. Absent ⇒ legacy 3C semantics, byte-identical
-  sourceGen?: string;               // NEW, optional: EXACT composite stamp (E<epoch>#<ulid>) minted at link time for the source record — replays never re-mint (spec R10)
-  contactGen?: string;              // NEW, optional: EXACT composite stamp minted at link time for the Contact
+  generation?: string;              // NEW, optional: absent ⇒ legacy 3C semantics, byte-identical
   customerEmail?: string | null;    // NEW, optional: needed only for gmail units (readSourceEmailForUnit)
 }
 ```
-(`generation`/`sourceGen`/`contactGen` travel together: all present (generational) or all absent (legacy). Assert this at function entry — mixed input is a programming error, throw.)
-`backfillByPk` — BOTH branches executable, the legacy branch is the verbatim pre-existing 3C code. The generational branch writes the EXACT `sourceGen` stamp from the caller (spec R10 — a replay re-asserts, never re-mints; the epoch was fixed at action time):
+**Canonical-successor resolution (spec R10 final) — runs FIRST on every generational replay:**
 ```ts
-async function backfillByPk(pk: string, targetOrgId: string, sourceGen?: string): Promise<BackfillStatus> {
-  const generational = sourceGen !== undefined;
+type EffectiveTarget = { status: 'active'; orgId: string } | { status: 'unavailable'; reason: string };
+
+export async function resolveEffectiveTarget(requestedOrgId: string): Promise<EffectiveTarget> {
+  const visited = new Set<string>();
+  let cur = requestedOrgId;
+  for (let hop = 0; hop <= 5; hop++) {
+    if (visited.has(cur)) return { status: 'unavailable', reason: `merge-chain cycle at ${cur}` };
+    visited.add(cur);
+    const org = await readOrg(cur);                       // GetCommand on the org item (locate the exact key shape via git grep in organization-api)
+    if (!org) return { status: 'unavailable', reason: `org ${cur} not found` };
+    if (org.status !== 'archived') return { status: 'active', orgId: cur };
+    if (!org.mergedIntoOrgId) return { status: 'unavailable', reason: `org ${cur} archived without successor` };
+    cur = org.mergedIntoOrgId as string;
+  }
+  return { status: 'unavailable', reason: 'merge-chain depth limit (5) exceeded' };
+}
+```
+`replayStructuredSideEffects` (generational path only — the legacy path keeps its existing behavior byte-identical): resolve first; `unavailable` ⇒ return `{ ok: false, errorType: 'target_unavailable', reason }` BEFORE any write (the marker survives as blocked/actionable — a potentially-unfinished repair is never a false success). `active` ⇒ every subsequent effect (backfill, Contact, audit) uses the EFFECTIVE org id; when it differs from the requested one, audit `details` records `{ requestedTargetOrgId, effectiveTargetOrgId }`.
+`backfillByPk` — BOTH branches executable, the legacy branch is the verbatim pre-existing 3C code:
+```ts
+async function backfillByPk(pk: string, targetOrgId: string, generation?: string): Promise<BackfillStatus> {
+  const generational = generation !== undefined;
   try {
     await docClient.send(new UpdateCommand({
       TableName: TABLE_NAME(), Key: { PK: pk, SK: 'META' },
@@ -638,7 +629,7 @@ async function backfillByPk(pk: string, targetOrgId: string, sourceGen?: string)
         ? '(attribute_not_exists(matchedOrgId) OR attribute_type(matchedOrgId, :nullType) OR matchedOrgId = :empty OR begins_with(matchedOrgId, :unres)) OR (attribute_exists(matchedOrgLinkGeneration) AND matchedOrgLinkGeneration < :gen)'
         : 'attribute_not_exists(matchedOrgId) OR attribute_type(matchedOrgId, :nullType) OR matchedOrgId = :empty OR begins_with(matchedOrgId, :unres)',   // exact 3C condition
       ExpressionAttributeValues: generational
-        ? { ':o': targetOrgId, ':empty': '', ':unres': 'unresolved-', ':nullType': 'NULL', ':gen': sourceGen }
+        ? { ':o': targetOrgId, ':empty': '', ':unres': 'unresolved-', ':nullType': 'NULL', ':gen': generation }
         : { ':o': targetOrgId, ':empty': '', ':unres': 'unresolved-', ':nullType': 'NULL' },
     }));
     return 'written';
@@ -646,81 +637,58 @@ async function backfillByPk(pk: string, targetOrgId: string, sourceGen?: string)
     if ((err as { name?: string }).name !== 'ConditionalCheckFailedException') throw err;
     const cur = (await docClient.send(new GetCommand({ TableName: TABLE_NAME(), Key: { PK: pk, SK: 'META' } }))).Item as Record<string, unknown> | undefined;
     const curGen = cur?.matchedOrgLinkGeneration as string | undefined;
-    if (generational && curGen && curGen >= sourceGen!) return 'superseded';   // R8/R10: a later stamp already ruled
+    if (generational && curGen && curGen >= generation!) return 'superseded';   // R8: a later generation already ruled
     return (cur?.matchedOrgId as string | undefined) === targetOrgId ? 'already_set' : 'conflict';
   }
 }
 ```
-Decision logic: `superseded` counts as ok (like `already_set`); `conflict` unchanged. When `generation` is present the audit call passes it to `deterministicAuditId(..., generation)` and includes `generation`/`sourceGen`/`contactGen` in `details`; when absent, the audit id is computed exactly as today (add a regression test pinning the legacy id for a fixed input). Contact step (Task 7's API): call `upsertContact({..., linkGeneration: contactGen})` — the composite stamp; `locked`/`superseded` outcomes are SUCCESS for the contact effect. Add a test that a NO-generation call produces the identical UpdateCommand input as the current 3C code (snapshot the `.input`).
+(`targetOrgId` here is the EFFECTIVE org id from `resolveEffectiveTarget`.) Decision logic: `superseded` counts as ok (like `already_set`); `conflict` unchanged; `target_unavailable` is NOT ok (marker retained). When `generation` is present the audit call passes it to `deterministicAuditId(..., generation)` and includes it in `details` (plus requested/effective target when they differ); when absent, the audit id is computed exactly as today (add a regression test pinning the legacy id for a fixed input). Contact step (Task 7's API): call `upsertContact({..., orgId: effectiveOrgId, linkGeneration: generation})`; `locked`/`superseded` outcomes are SUCCESS for the contact effect. Add a test that a NO-generation call produces the identical UpdateCommand input as the current 3C code (snapshot the `.input`).
 
-- [ ] **Step 4: Merge side — epoch-advancing, paginated, conditional, retryable (spec R10).** A fresh wall-clock ULID alone is NOT sufficient (plan-review R3: clock skew / same-millisecond ordering could let a pre-merge generation sort after the merge stamp and undo it) — the merge must advance the EPOCH, which is clock-free. Rework the located merge flow's record re-pointing into `mergeRecords(fromOrgId, toOrgId)` (same file or a sibling `mergeRepoint.ts`, matching the file's existing structure; copy `ulid.ts` from crm-api if cross-function import is awkward, header comment naming the original):
-```ts
-// Stable operation identity: one MERGE_OP item per (from,to) merge; retries reuse its opUlid,
-// so a crashed merge resumes idempotently instead of re-minting and double-advancing epochs.
-async function getOrCreateMergeOp(fromOrgId: string, toOrgId: string): Promise<{ opUlid: string; cursor: string | null }> {
-  const pk = `MERGE_OP#${fromOrgId}#${toOrgId}`;
-  const existing = (await docClient.send(new GetCommand({ TableName: TABLE_NAME(), Key: { PK: pk, SK: 'META' }, ConsistentRead: true }))).Item;
-  if (existing && existing.status !== 'complete') return { opUlid: existing.opUlid as string, cursor: (existing.cursor as string) ?? null };
-  const opUlid = generateUlid();
-  await docClient.send(new PutCommand({
-    TableName: TABLE_NAME(), Item: { PK: pk, SK: 'META', entityType: 'MERGE_OP', opUlid, status: 'running', cursor: null, createdAt: new Date().toISOString() },
-    ConditionExpression: 'attribute_not_exists(PK) OR #s = :complete', ExpressionAttributeNames: { '#s': 'status' }, ExpressionAttributeValues: { ':complete': 'complete' },
-  }));
-  return { opUlid, cursor: null };
-}
-
-export async function mergeRecords(fromOrgId: string, toOrgId: string): Promise<{ repointed: number; skipped: number }> {
-  const { opUlid, cursor } = await getOrCreateMergeOp(fromOrgId, toOrgId);
-  let repointed = 0, skipped = 0, pageCursor = cursor;
-  do {
-    const page = await queryRecordsByOrg(fromOrgId, pageCursor);        // the existing paginated from-org query (records AND contacts partitions — two sub-queries, same loop)
-    for (const rec of page.items) {
-      const cur = await readStamp(rec);                                  // GetCommand, ConsistentRead
-      if (cur.stamp && ulidOf(cur.stamp) === opUlid) { skipped += 1; continue; }   // idempotent: this op already stamped it
-      const next = composeGen(epochOf(cur.stamp) + 1, opUlid);           // R10: EPOCH+1 — beats any pre-merge stamp regardless of clocks
-      try {
-        await docClient.send(new UpdateCommand({
-          TableName: TABLE_NAME(), Key: keyOf(rec),
-          UpdateExpression: 'SET matchedOrgId = :to, matchedOrgLinkGeneration = :gen',   // contacts: orgId/lastLinkGeneration — one helper, field names by partition
-          ConditionExpression: cur.stamp ? 'matchedOrgLinkGeneration = :cur' : 'attribute_not_exists(matchedOrgLinkGeneration)',
-          ExpressionAttributeValues: cur.stamp ? { ':to': toOrgId, ':gen': next, ':cur': cur.stamp } : { ':to': toOrgId, ':gen': next },
-        }));
-        repointed += 1;
-      } catch (err) {
-        if ((err as { name?: string }).name !== 'ConditionalCheckFailedException') throw err;
-        const re = await readStamp(rec);                                 // raced: re-read ONCE
-        if (re.stamp && ulidOf(re.stamp) === opUlid) { skipped += 1; continue; }
-        const retryGen = composeGen(epochOf(re.stamp) + 1, opUlid);      // bounded re-attempt on the fresh observation
-        await docClient.send(new UpdateCommand({
-          TableName: TABLE_NAME(), Key: keyOf(rec),
-          UpdateExpression: 'SET matchedOrgId = :to, matchedOrgLinkGeneration = :gen',
-          ConditionExpression: re.stamp ? 'matchedOrgLinkGeneration = :cur' : 'attribute_not_exists(matchedOrgLinkGeneration)',
-          ExpressionAttributeValues: re.stamp ? { ':to': toOrgId, ':gen': retryGen, ':cur': re.stamp } : { ':to': toOrgId, ':gen': retryGen },
-        }));                                                             // second CCFE propagates: surfaced as a merge error, retryable via the op item
-        repointed += 1;
-      }
-    }
-    pageCursor = page.nextCursor;
-    await persistMergeCursor(fromOrgId, toOrgId, pageCursor);            // page-complete checkpoint: crash ⇒ resume HERE with the SAME opUlid
-  } while (pageCursor);
-  await markMergeComplete(fromOrgId, toOrgId);
-  return { repointed, skipped };
-}
-```
-  **Why not clearing / why not a bare fresh ULID (document in the code):** clearing ⇒ generation-absent ⇒ an older pending replay claims the record back (R8 hole). Bare fresh ULID ⇒ clock skew or same-ms randomness can order a pre-merge stamp AFTER the merge (R3 hole). Epoch+1 under CAS is ordered by DynamoDB serialization itself.
-  Tests in the merge test file:
-  (a) re-point write carries org + stamp in ONE UpdateExpression, stamp = `E<epoch+1>#<opUlid>`;
-  (b) **skewed-generation**: record stamped `composeGen(1,'ZZZZ…')` → merge writes `E00000002#<opUlid>` and the (Step-1) replay of the old stamp is `superseded`;
-  (c) **same-millisecond**: two records whose current stamps share one ULID timestamp prefix — both re-pointed with epoch+1, deterministic regardless of ULID order;
-  (d) **partial-merge-retry**: kill the run after page 1 (mock throws), call `mergeRecords` again → same `opUlid` reused (no second MERGE_OP), page-1 records SKIPPED as already-stamped, page-2 records re-pointed, final counts exact;
-  (e) **later-admin-relink**: after merge (epoch 2), a new link observing the record mints `composeGen(3, newUlid)` and beats the merge stamp — while the merge had beaten the pre-merge epoch-1 stamp (three-generation chain asserted in order).
+- [ ] **Step 4: Merge side — spec R10 FINAL: the merge flow is left almost untouched.** Read the located `mergeOrganization` flow, then make exactly two changes:
+  1. **`mergedIntoOrgId` on the archived source org.** Locate where the merge archives the source org (`git grep -n "archived\|mergedInto" amplify/functions/organization-api/`). If the flow already persists a merged-into pointer, note its exact attribute name and use IT in `resolveEffectiveTarget` (adjust Step 3's `readOrg` mapping — do not invent a second attribute). If it does not, extend that archive write with `mergedIntoOrgId: toOrgId` (one attribute, same UpdateExpression).
+  2. **A regression guard proving merge NEVER touches stamps:** add a test to the organization-api merge test file asserting the record re-point write's `UpdateExpression` does NOT contain `matchedOrgLinkGeneration` and the contact re-point does NOT contain `lastLinkGeneration` (this is the R10 boundary: merge re-points orgs; stamp semantics live entirely in crm-api replay/link code).
+  **Why this is safe (document in the merge test file header):** an already-applied action's leftover replay supersedes on its own stamp (`curGen >= gen`); a not-yet-applied action targeting the merged-away org is redirected (or blocked, never falsely completed) by `resolveEffectiveTarget` at replay time; the archive step itself is the assignment fence — `orgExists`/active checks already refuse NEW links to an archived org. Clock skew never decides a merge outcome because no stamp comparison is involved.
+  Also add merge-side tests: (a) archive write persists `mergedIntoOrgId`; (b) merging into an ALREADY-archived target is rejected by the existing early-return (regression-pin the current behavior — no change).
 
 - [ ] **Step 5: Run** replay tests + merge tests + tsc — PASS/clean.
 
 - [ ] **Step 6: Commit**
 ```bash
 git add amplify/functions/crm-api/lib/repair/replaySideEffects.ts amplify/functions/crm-api/lib/repair/replaySideEffects.structured.test.ts amplify/functions/organization-api
-git commit -m "feat(comms-p1): generational source stamps (superseded) + merge re-stamps authoritatively"
+git commit -m "feat(comms-p1): generational source stamps + canonical-successor replay resolution (R10)"
+```
+
+---
+
+### Task 8b: Guard every delayed `matchedOrgId` writer (spec R10/critical)
+
+A writer that sets `matchedOrgId` OUTSIDE link/replay/merge (creation-time resolution in submit paths, order conversion) can run AFTER an admin link and overwrite the linked org while leaving the stamp — producing an unrepairable `{newOrg, staleGeneration}` pair. Make that unrepresentable.
+
+**Files:**
+- Enumerate FIRST: `git grep -n "matchedOrgId" amplify/functions/ amplify/lib/ | grep -v crm-api/lib/repair | grep -v crm-api/lib/link | grep -v organization-api | grep -v test` — expected hits: submit-rfq, submit-lead, order-creation, lead→order conversion (list EVERY hit in the task report; any writer found beyond these four gets the same treatment).
+- Modify: each writer file found.
+- Test: each writer's existing test file (append).
+
+- [ ] **Step 1: Failing tests (one per writer).** For each enumerated writer, append a test asserting its `matchedOrgId` write carries a ConditionExpression that refuses to overwrite (i) a stamped record and (ii) an already-set REAL org:
+```ts
+it('creation/conversion matchedOrgId write cannot overwrite a stamped or real-org record', async () => {
+  const call = captureMatchedOrgWrite();                 // helper over the writer's send mock
+  expect(call.ConditionExpression).toContain('attribute_not_exists(matchedOrgLinkGeneration)');
+  expect(call.ConditionExpression).toMatch(/attribute_not_exists\(matchedOrgId\)|matchedOrgId = :empty|begins_with\(matchedOrgId, :unres\)/);
+});
+it('a CCFE on that write is swallowed as a no-op (the admin decision stands; submission itself still succeeds)', async () => {
+  rejectWithCcfe();
+  await expect(runWriterHappyPath()).resolves.toBeTruthy();   // the outer submit/conversion MUST NOT fail
+});
+```
+- [ ] **Step 2: Run** — FAIL (writers currently write unconditionally or with weaker guards).
+- [ ] **Step 3: Implement.** For each writer: if it CREATES the record (fresh PK, `attribute_not_exists(PK)` semantics), it cannot collide — pin that with a test and leave it. If it UPDATES an existing record, add `attribute_not_exists(matchedOrgLinkGeneration) AND (attribute_not_exists(matchedOrgId) OR matchedOrgId = :empty OR begins_with(matchedOrgId, :unres))` to its ConditionExpression and catch CCFE as a logged no-op (`console.log('crm.writer.superseded', …)`).
+- [ ] **Step 4: Interleaving test (harness from Task 14):** seed a record; run the REAL link+replay to stamp it (`org=a.com, gen=G`); then run the writer's delayed update targeting `b.com` → store still shows `{a.com, G}`; writer resolved without throwing.
+- [ ] **Step 5: Run** all touched writer suites + tsc — PASS/clean.
+- [ ] **Step 6: Commit**
+```bash
+git add <each writer file + test file enumerated in Step 1>
+git commit -m "feat(comms-p1): guard delayed matchedOrgId writers against overwriting stamped decisions"
 ```
 
 ---
@@ -733,17 +701,14 @@ git commit -m "feat(comms-p1): generational source stamps (superseded) + merge r
 
 - [ ] **Step 1: Failing tests.** Rework the test file to cover the v2 contract:
 ```ts
-it('buildStructuredMarkerPut: generation-suffixed PK, building status, version 1, bounded sample, attribute_not_exists, R10 stamps', () => {
+it('buildStructuredMarkerPut: generation-suffixed PK, building status, version 1, bounded sample, attribute_not_exists', () => {
   const p = buildStructuredMarkerPut({ unitKey: 'unresolved-gmail-b@x.com', generation: '01J0AAAA…', targetOrgId: 'acme.com',
-    sourceGen: 'E00000001#01J0AAAA…', contactGen: 'E00000001#01J0AAAA…',
     operator: 'op', createdAt: 't', sourceType: 'gmail', sourceEntityId: 'mid', backfillPk: null,
     customerEmail: 'b@x.com', movedCount: 0, affectedEventIdsSample: [] , contactStatus: 'missing_email' });
   expect(p.Put.Item.PK).toBe('CRM_REPAIR#structured#unresolved-gmail-b@x.com#01J0AAAA…');
   expect(p.Put.Item.status).toBe('building');
   expect(p.Put.Item.GSI1PK).toBe('CRM_REPAIR#building');
   expect(p.Put.Item.version).toBe(1);
-  expect(p.Put.Item.sourceGen).toBe('E00000001#01J0AAAA…');    // R10: frozen at link time; drainer replays these EXACT stamps
-  expect(p.Put.Item.contactGen).toBe('E00000001#01J0AAAA…');
   expect(p.Put.ConditionExpression).toBe('attribute_not_exists(PK)');
 });
 it('accumulate: fenced on version, bumps it, caps the sample at 100', async () => {
@@ -781,7 +746,6 @@ it('queryBuildingOlderThan returns aged building markers (bounded Limit)', async
 ```ts
 export interface StructuredMarkerV2 extends Omit<RepairMarkerItem, 'status'> {
   generation: string; version: number;
-  sourceGen: string; contactGen: string;         // R10: exact composite stamps minted at link time — replay re-asserts, never re-mints
   status: 'building' | 'pending' | 'stuck';
   customerEmail: string | null; movedCount: number; affectedEventIdsSample: string[];
 }
@@ -942,24 +906,10 @@ it('replay ok → fenced delete; replay not-ok → seal building→pending (exac
   expect(deleteRepairMarkerFenced).not.toHaveBeenCalled();
   expect(out.postCommitStatus).toBe('post_commit_failed');
 });
-it('audit + contact + backfill all receive THIS action ulid + its frozen composite stamps', async () => {
+it('audit + contact + backfill all receive THIS generation', async () => {
   arrangeUnitWithEvents([ev1]);
   await linkStructuredUnit({ representativeEventId: ev1.id, targetOrgId: 'acme.com', operator: 'op' });
-  expect(replayStructuredSideEffects).toHaveBeenCalledWith(expect.objectContaining({
-    generation: expect.stringMatching(/^[0-9A-HJKMNP-TV-Z]{26}$/),
-    sourceGen: expect.stringMatching(/^E\d{8}#[0-9A-HJKMNP-TV-Z]{26}$/),   // R10 composite format
-    contactGen: expect.stringMatching(/^E\d{8}#[0-9A-HJKMNP-TV-Z]{26}$/),
-  }));
-  const call = replayStructuredSideEffects.mock.calls[0][0];
-  expect(ulidOf(call.sourceGen)).toBe(call.generation);                    // same action, per-record epochs
-  expect(ulidOf(call.contactGen)).toBe(call.generation);
-});
-it('R10: stamps mint OBSERVED epoch + 1 (record already at epoch 2 → sourceGen at epoch 3)', async () => {
-  arrangeUnitWithEvents([ev1]);
-  mockSourceStamp(composeGen(2, '01J0MMMMMMMMMMMMMMMMMMMMMM'));           // e.g. a prior merge stamped it
-  await linkStructuredUnit({ representativeEventId: ev1.id, targetOrgId: 'acme.com', operator: 'op' });
-  const call = replayStructuredSideEffects.mock.calls[0][0];
-  expect(epochOf(call.sourceGen)).toBe(3);                                 // later-admin-relink beats the merge, clock-free
+  expect(replayStructuredSideEffects).toHaveBeenCalledWith(expect.objectContaining({ generation: expect.stringMatching(/^[0-9A-HJKMNP-TV-Z]{26}$/) }));
 });
 ```
 (Write `arrangeUnitWithEvents`/`mockRepresentativeGet`/`transactCalls`/`rejectTransactWithCancellation` helpers against the file's existing docClient mock. `validRep` = an unresolved gmail event fixture with `payload.customerEmail`.)
@@ -995,18 +945,10 @@ export async function linkStructuredUnit(args: { representativeEventId: string; 
   let sourceEmail: string | null = customerEmail; let enrichmentError = false;
   if (!sourceEmail) { try { sourceEmail = await readSourceEmailForUnit(sourceType, sourceEntityId, events); } catch { enrichmentError = true; } }
 
-  // R10: mint the composite per-record stamps NOW — observed epoch + 1, frozen into the marker
-  // so foreground write and any later drainer replay assert the IDENTICAL stamps (never re-mint).
-  const sourceGen = composeGen(epochOf(backfillPk ? await readSourceStamp(backfillPk) : undefined) + 1, generation);
-  const contactGen = composeGen(epochOf(sourceEmail ? (await getContactByEmail(sourceEmail))?.lastLinkGeneration : undefined) + 1, generation);
-  // (backfillPk unresolvable here ⇒ epoch observed as 0; if the record's real epoch is higher, the
-  //  replay lands `superseded` — the record keeps its newer authoritative org; admin can relink. Rare,
-  //  convergent, documented.)
-
   // R6/R8: FIRST eligible move + building-marker in ONE transaction (loser aborts → no marker)
   const [first, ...rest] = events;
   const firstMove = buildMoveTransactPut(first, args.targetOrgId, sourceEmail, args.operator, nowIso, enrichmentError, sourceType);
-  const marker = buildStructuredMarkerPut({ unitKey, generation, sourceGen, contactGen, targetOrgId: args.targetOrgId, operator: args.operator,
+  const marker = buildStructuredMarkerPut({ unitKey, generation, targetOrgId: args.targetOrgId, operator: args.operator,
     createdAt: nowIso, sourceType, sourceEntityId, backfillPk, customerEmail: sourceEmail,
     movedCount: 1, affectedEventIdsSample: [first.id], contactStatus: enrichmentError ? 'enrichment_error' : 'missing_email' });
   let moved = 0, skipped = 0, errors = 0; let markerHandle: StructuredMarkerV2 | null = null;
@@ -1038,7 +980,7 @@ export async function linkStructuredUnit(args: { representativeEventId: string; 
 
   let postCommitStatus: 'ok' | 'post_commit_failed' = 'ok';
   const replay = await replayStructuredSideEffects({ sourceType, sourceEntityId, backfillPk, targetOrgId: args.targetOrgId,
-    unitKey, operator: args.operator, createdAt: nowIso, generation, sourceGen, contactGen, customerEmail: sourceEmail,
+    unitKey, operator: args.operator, createdAt: nowIso, generation, customerEmail: sourceEmail,
     movedCount: moved, affectedEventIdsSample: markerHandle.affectedEventIdsSample, contactStatus: markerHandle.contactStatus });
   if (replay.ok) {
     const del = await deleteRepairMarkerFenced(markerHandle);
@@ -1051,7 +993,7 @@ export async function linkStructuredUnit(args: { representativeEventId: string; 
   return { affected: events.length, moved, skipped, errors, sourceBackfillStatus: replay.backfillStatus ?? 'not_attempted', contactStatus: markerHandle.contactStatus, postCommitStatus };
 }
 ```
-Include the three small helpers in the same file: `buildMoveTransactPut` (the movedItem exactly as `manualMoveTimelineEvent` constructs it, wrapped as a `Put` with the R7 eligibility condition — extract the shared item-construction into an exported `buildMovedItem(event, targetOrgId, email, nowIso)` in `manualMoveTimelineEvent.ts` so the two paths cannot drift); `isConditionalCancellation` (inspects `err.name === 'TransactionCanceledException'` and `err.CancellationReasons?.some(r => r.Code === 'ConditionalCheckFailed')` — the R7-deferred cancellation mapping); and `readSourceStamp(pk: string): Promise<string | undefined>` (a `GetCommand` with `ConsistentRead: true` on `{PK: pk, SK: 'META'}` returning `Item?.matchedOrgLinkGeneration` — the R10 epoch observation; a read failure here throws and fails the link BEFORE any write, which is safe).
+Include the two small helpers in the same file: `buildMoveTransactPut` (the movedItem exactly as `manualMoveTimelineEvent` constructs it, wrapped as a `Put` with the R7 eligibility condition — extract the shared item-construction into an exported `buildMovedItem(event, targetOrgId, email, nowIso)` in `manualMoveTimelineEvent.ts` so the two paths cannot drift) and `isConditionalCancellation` (inspects `err.name === 'TransactionCanceledException'` and `err.CancellationReasons?.some(r => r.Code === 'ConditionalCheckFailed')` — the R7-deferred cancellation mapping).
 
 - [ ] **Step 4 (plan-review R2 fix — SECURE TRANSITIONAL ADAPTER, every commit deployable).** `handler.ts` calls `linkStructuredUnit` with the old args and would break this checkpoint; and the GraphQL schema keeps the LEGACY argument shape until Task 13 — so the handler must serve BOTH shapes in the window, or any deploy of an intermediate commit breaks the live admin UI. Add to `handler.ts`:
 ```ts
@@ -1162,7 +1104,7 @@ it('contact retry: marker with contactStatus!=="linked" and customerEmail → re
 
 - [ ] **Step 2: Run** — FAIL.
 
-- [ ] **Step 3: Implement** in `reconcileRepair.ts`: before draining, run the aging pass — loop `queryBuildingOlderThan(cutoffIso, 25, lastKey)` pages until `lastKey` is undefined (cutoff = `new Date(Date.now() - 2 * LINK_LAMBDA_TIMEOUT_MS).toISOString()`, `LINK_LAMBDA_TIMEOUT_MS = 120_000` with a keep-in-sync comment), calling `promoteAbandonedBuilding(m, cutoffIso, nowIso)` per marker; `{lost:true}` = fresh foreground activity → skip silently. Extend `replayFor` to pass `generation`, **`sourceGen`, `contactGen`** (the marker's frozen R10 stamps — the drainer NEVER re-mints or re-computes epochs), `customerEmail`, `contactStatus`, `affectedEventIdsSample`; add a test asserting `replayStructured` receives `sourceGen`/`contactGen` verbatim from the marker item. Transition calls switch to the fenced v2 fns; a `{lost:true}` on a drain transition increments a new `raced` counter (not `errors`). `superseded`/`locked` replay outcomes are OK-path (delete). Summary gains `aged` + `raced`.
+- [ ] **Step 3: Implement** in `reconcileRepair.ts`: before draining, run the aging pass — loop `queryBuildingOlderThan(cutoffIso, 25, lastKey)` pages until `lastKey` is undefined (cutoff = `new Date(Date.now() - 2 * LINK_LAMBDA_TIMEOUT_MS).toISOString()`, `LINK_LAMBDA_TIMEOUT_MS = 120_000` with a keep-in-sync comment), calling `promoteAbandonedBuilding(m, cutoffIso, nowIso)` per marker; `{lost:true}` = fresh foreground activity → skip silently. Extend `replayFor` to pass `generation`, `customerEmail`, `contactStatus`, `affectedEventIdsSample`. **`target_unavailable` outcome mapping (spec R10 final):** it is NOT ok and NOT transient — the drainer marks the marker **stuck with the resolver's reason string** (blocked/actionable; surfaces in CRM Health), never deletes it, and does not burn retries on it; add tests: (a) replay returning `{ok:false, errorType:'target_unavailable', reason}` ⇒ `markStuck` called with the reason, marker retained; (b) a later drain of a stuck-for-this-reason marker after the org chain is fixed (resolver now returns active) ⇒ repairs and deletes normally. Transition calls switch to the fenced v2 fns; a `{lost:true}` on a drain transition increments a new `raced` counter (not `errors`). `superseded`/`locked` replay outcomes are OK-path (delete). Summary gains `aged` + `raced`.
 
 - [ ] **Step 4: Run** the repair dir + tsc — PASS/clean.
 
@@ -1202,7 +1144,7 @@ git commit -m "feat(comms-p1): representativeEventId link contract across schema
 - [ ] **Step 1: Build the harness** — `amplify/functions/crm-api/lib/link/linkTestHarness.ts` (~200 lines, reusable; Part 2's chain test imports it). Requirements (plan-review R3 — real functions, real state, deterministic overlap; NO sequential mocks pretending to be concurrency):
   - An in-memory item map whose `docClient.send` mock **APPLIES** Get/Put/Update/Delete/TransactWrite semantics, **evaluating the ConditionExpressions this plan actually uses** (attribute_not_exists / attribute_exists / equality / `< :gen` / begins_with / AND-chains) against current store state; a failed condition throws `ConditionalCheckFailedException` (TransactWrite: `TransactionCanceledException` with per-item `CancellationReasons`). Assertions read RESULTING STATE.
   - **Deterministic interleaving gates:** `store.gateOn(predicate)` returns `{ released, release() }`; the FIRST `send` whose command matches `predicate` suspends (its promise unresolved) until `release()` is called. This lets a test park writer A at a precise operation, run writer B to completion through the REAL store, then release A — true overlap with a deterministic schedule, no timing races.
-  - All scenarios below call the REAL `linkStructuredUnit` / `replayStructuredSideEffects` / `upsertContact` / `mergeRecords` with only `docClient.send` (and `orgExists`→true, rollup pass-through) mocked.
+  - All scenarios below call the REAL `linkStructuredUnit` / `replayStructuredSideEffects` / `upsertContact` / `reconcileRepair` (and the Task-8b guarded writer helper) with only `docClient.send` (and rollup pass-through) mocked; `orgExists`/org reads resolve from the harness's seeded org items.
 
 - [ ] **Step 2: Write the suite** — every scenario complete (no placeholder bodies):
 ```ts
@@ -1222,10 +1164,9 @@ it('the committed marker is self-sufficient for replay', async () => {
   const store = seedStore([unresolvedEvent('tev-1')]);
   await linkStructuredUnit({ representativeEventId: 'tev-1', targetOrgId: 'acme.com', operator: 'op' });
   const marker = store.markersFor('unresolved-rfq-r1')[0];
-  for (const f of ['targetOrgId', 'unitKey', 'generation', 'sourceGen', 'contactGen', 'sourceType', 'sourceEntityId', 'customerEmail', 'backfillPk']) {
+  for (const f of ['targetOrgId', 'unitKey', 'generation', 'sourceType', 'sourceEntityId', 'customerEmail', 'backfillPk']) {
     expect(marker).toHaveProperty(f);
   }
-  expect(marker.sourceGen).toMatch(/^E\d{8}#/);          // R10 composite stamps frozen in
 });
 // Scenario 3 — TRUE overlapping same-unit links via a deterministic gate: A parks at its
 // TransactWrite, B runs to completion, A resumes and loses on the move condition.
@@ -1266,47 +1207,39 @@ it('130-event unit: full move, bounded sample, marker-driven replay converges', 
   expect(m.movedCount).toBe(130);
   expect(m.affectedEventIdsSample.length).toBeLessThanOrEqual(100);
 });
-// Scenario 6 — merge vs stale replay under CLOCK SKEW (spec R10): pre-merge stamp has a lexically
-// HUGE ulid; the merge advances the epoch and still wins; the old replay is superseded.
-it('post-merge skewed replay is superseded; record keeps the merged org', async () => {
-  const skewed = composeGen(1, 'ZZZZZZZZZZZZZZZZZZZZZZZZZZ');
-  const store = seedStore([rfqRecord('RFQ#1', { matchedOrgId: 'a.com', matchedOrgLinkGeneration: skewed })]);
-  await mergeRecords('a.com', 'b.com');                           // REAL merge: E00000002#<opUlid>
-  expect(epochOf(store.get('RFQ#1').matchedOrgLinkGeneration)).toBe(2);
-  const r = await replayStructuredSideEffects({ ...rfqBase, targetOrgId: 'a.com', generation: ulidOf(skewed), sourceGen: skewed, backfillPk: 'RFQ#1' });
+// Scenario 6 — MERGE-BEFORE-REPLAY with successor: the unapplied action's target was merged away;
+// the replay follows mergedIntoOrgId and completes Contact + source AT THE SUCCESSOR.
+it('replay after merge applies to the canonical successor; nothing silently unfinished', async () => {
+  const store = seedStore([rfqRecord('RFQ#1', { matchedOrgId: '' }),
+    orgItem('a.com', { status: 'archived', mergedIntoOrgId: 'b.com' }), orgItem('b.com', { status: 'active' })]);
+  const r = await replayStructuredSideEffects({ ...rfqBase, targetOrgId: 'a.com', generation: GEN_1, customerEmail: 'b@x.com', backfillPk: 'RFQ#1' });
   expect(r.ok).toBe(true);
-  expect(r.backfillStatus).toBe('superseded');
-  expect(store.get('RFQ#1').matchedOrgId).toBe('b.com');
+  expect(store.get('RFQ#1').matchedOrgId).toBe('b.com');           // source completed at the successor
+  expect(store.contactByEmail('b@x.com').orgId).toBe('b.com');     // Contact completed at the successor
+  expect(store.auditFor(GEN_1).details).toMatchObject({ requestedTargetOrgId: 'a.com', effectiveTargetOrgId: 'b.com' });
 });
-// Scenario 7 — partial-merge-retry: merge dies after page 1; retry reuses the SAME opUlid, skips
-// page-1 records, finishes page 2; no record double-advanced.
-it('crashed merge resumes idempotently under its stable opUlid', async () => {
-  const store = seedStore(Array.from({ length: 4 }, (_, i) => rfqRecord(`RFQ#${i}`, { matchedOrgId: 'a.com' })));
-  store.pageSize = 2;
-  const gate = store.gateOn((cmd, input) => String(input.Key?.PK ?? '').startsWith('RFQ#2'));  // dies entering page 2
-  await expect(Promise.race([mergeRecords('a.com', 'b.com'), gate.released.then(() => { throw new Error('crash'); })])).rejects.toThrow('crash');
-  store.clearGates();
-  const second = await mergeRecords('a.com', 'b.com');            // retry
-  const stamps = [0, 1, 2, 3].map((i) => store.get(`RFQ#${i}`).matchedOrgLinkGeneration);
-  expect(new Set(stamps.map(ulidOf)).size).toBe(1);               // ONE opUlid across both runs
-  expect(stamps.every((s) => epochOf(s) === 1)).toBe(true);       // no double-advance on retry
-  expect(second.skipped).toBeGreaterThanOrEqual(2);               // page-1 records recognized as done
+// Scenario 7 — MULTI-HOP chain a→b→c resolves to the final active org.
+it('multi-hop merge chain resolves through archived intermediates', async () => {
+  const store = seedStore([rfqRecord('RFQ#1', { matchedOrgId: '' }),
+    orgItem('a.com', { status: 'archived', mergedIntoOrgId: 'b.com' }),
+    orgItem('b.com', { status: 'archived', mergedIntoOrgId: 'c.com' }), orgItem('c.com', { status: 'active' })]);
+  const r = await replayStructuredSideEffects({ ...rfqBase, targetOrgId: 'a.com', generation: GEN_1, backfillPk: 'RFQ#1' });
+  expect(r.ok).toBe(true);
+  expect(store.get('RFQ#1').matchedOrgId).toBe('c.com');
 });
-// Scenario 8 — later-admin-relink beats the merge (three-stamp chain, clock-free).
-it('link(epoch1) < merge(epoch2) < relink(epoch3) — each later action deterministically wins', async () => {
-  const store = seedStore([unresolvedEvent('tev-1')]);
-  await linkStructuredUnit({ representativeEventId: 'tev-1', targetOrgId: 'a.com', operator: 'op' });     // stamps epoch 1
-  await mergeRecords('a.com', 'b.com');                                                                   // epoch 2
-  store.put('TLEVENT#tev-1', { ...store.get('TLEVENT#tev-1'), resolutionStatus: 'unresolved', orgId: 'unresolved-rfq-r1' }); // admin re-queues
-  await linkStructuredUnit({ representativeEventId: 'tev-1', targetOrgId: 'c.com', operator: 'op' });     // epoch 3
-  const s = store.get('RFQ#r1');
-  expect(s.matchedOrgId).toBe('c.com');
-  expect(epochOf(s.matchedOrgLinkGeneration)).toBe(3);
+// Scenario 8 — MISSING SUCCESSOR: archived, no mergedIntoOrgId → blocked, marker retained, no writes.
+it('archived target without successor blocks the repair instead of faking success', async () => {
+  const store = seedStore([rfqRecord('RFQ#1', { matchedOrgId: '' }), orgItem('a.com', { status: 'archived' })]);
+  const marker = putPendingMarker(store, { unitKey: 'unresolved-rfq-r1', generation: GEN_1, targetOrgId: 'a.com' });
+  await reconcileRepair();                                          // REAL drainer over the store
+  expect(store.get(marker.PK).status).toBe('stuck');                // blocked/actionable, NOT deleted
+  expect(store.get(marker.PK).stuckReason).toMatch(/without successor/);
+  expect(store.get('RFQ#1').matchedOrgId).toBe('');                 // no half-applied writes
 });
 // Scenario 9 — RFQ/order legacy regression: NO-generation replay writes the EXACT pre-plan shape.
 it('legacy (no-generation) replay is byte-identical to 3C and converges', async () => {
   const store = seedStore([rfqRecord('RFQ#1', { matchedOrgId: '' })]);
-  const r = await replayStructuredSideEffects({ ...rfqBase, targetOrgId: 'acme.com', backfillPk: 'RFQ#1' });  // no generation/sourceGen/contactGen
+  const r = await replayStructuredSideEffects({ ...rfqBase, targetOrgId: 'acme.com', backfillPk: 'RFQ#1' });  // no generation ⇒ legacy path
   expect(r.ok).toBe(true);
   const written = store.lastCommandFor('RFQ#1');
   expect(written.input.UpdateExpression).toBe('SET matchedOrgId = :o');           // NO stamp field — the verbatim 3C write
@@ -1316,20 +1249,29 @@ it('legacy (no-generation) replay is byte-identical to 3C and converges', async 
 });
 // Scenario 10 — cross-writer interleaving: non-generational upsertContact lands BETWEEN two
 // generational writes; the newest org+stamp pair survives.
-it('interleaved non-generational contact write preserves the newest epoch+org pair', async () => {
+it('interleaved non-generational contact write preserves the newest generation+org pair', async () => {
   const store = seedStore([]);
-  await upsertContact({ email: 'b@x.com', orgId: 'a.com', source: 'rfq', occurredAt: T1, linkGeneration: composeGen(1, ULID_A) });
+  await upsertContact({ email: 'b@x.com', orgId: 'a.com', source: 'rfq', occurredAt: T1, linkGeneration: GEN_1 });
   const gate = store.gateOn((cmd) => cmd.constructor.name === 'PutCommand');      // parks the non-generational Put
-  const pNonGen = upsertContact({ email: 'b@x.com', orgId: 'ignored.com', source: 'order', occurredAt: T2 });  // reads gen E1, parks
+  const pNonGen = upsertContact({ email: 'b@x.com', orgId: 'ignored.com', source: 'order', occurredAt: T2 });  // reads GEN_1, parks
   await store.idle();
-  await upsertContact({ email: 'b@x.com', orgId: 'b.com', source: 'rfq', occurredAt: T3, linkGeneration: composeGen(2, ULID_B) }); // generational write lands
+  await upsertContact({ email: 'b@x.com', orgId: 'b.com', source: 'rfq', occurredAt: T3, linkGeneration: GEN_2 }); // newer generational write lands
   gate.release();
-  await pNonGen;                                                                   // CASes on stale E1 → CCFE → re-read → retry with E2 state
+  await pNonGen;                                                                   // CASes on stale GEN_1 → CCFE → re-read → retry on fresh state
   const c = store.contactByEmail('b@x.com');
   expect(c.orgId).toBe('b.com');                                                   // newest org survives
-  expect(c.lastLinkGeneration).toBe(composeGen(2, ULID_B));                        // newest stamp survives
+  expect(c.lastLinkGeneration).toBe(GEN_2);                                        // newest stamp survives
+});
+// Scenario 11 — DELAYED SOURCE WRITER (Task 8b, store-level): a late creation-path matchedOrgId
+// write cannot overwrite a stamped admin decision.
+it('delayed writer update against a stamped record is a guarded no-op', async () => {
+  const store = seedStore([rfqRecord('RFQ#1', { matchedOrgId: 'a.com', matchedOrgLinkGeneration: GEN_1 })]);
+  await runDelayedWriterUpdate(store, { pk: 'RFQ#1', resolvedOrgId: 'late.com' });   // the REAL guarded writer helper from Task 8b
+  expect(store.get('RFQ#1').matchedOrgId).toBe('a.com');           // admin decision stands
+  expect(store.get('RFQ#1').matchedOrgLinkGeneration).toBe(GEN_1);
 });
 ```
+(`GEN_1 < GEN_2` are fixed ULID literals, e.g. `'01J0AAAAAAAAAAAAAAAAAAAAAA'` / `'01J0BBBBBBBBBBBBBBBBBBBBBB'`; `orgItem(id, fields)` seeds an organization item in the harness's org keyspace.)
 (Fixture helpers `unresolvedEvent(id)` → an unresolved rfq event in unit `unresolved-rfq-r1` with `sourceEntityId: 'r1'`; `rfqRecord(pk, fields)`; `rfqBase` = the replay fixture; all defined at the top of the suite.)
 
 - [ ] **Step 3: Run** `npx vitest run amplify/functions/crm-api/lib/link/linkStructuredUnit.adversarial.test.ts amplify/functions/crm-api/lib/contactStore.test.ts amplify/functions/crm-api/lib/repair/reconcileRepair.test.ts` — ALL pass.
@@ -1337,7 +1279,7 @@ it('interleaved non-generational contact write preserves the newest epoch+org pa
 - [ ] **Step 4: Commit**
 ```bash
 git add amplify/functions/crm-api/lib/link/linkStructuredUnit.adversarial.test.ts amplify/functions/crm-api/lib/link/linkTestHarness.ts
-git commit -m "test(comms-p1): stateful adversarial suite — gated interleavings, epoch chain, merge retry, legacy regression"
+git commit -m "test(comms-p1): stateful adversarial suite — gated interleavings, merge-chain resolution, delayed writers, legacy regression"
 ```
 
 ---
@@ -1352,9 +1294,15 @@ npx tsc --noEmit -p amplify/tsconfig.json
 ```
 Expected: no output, exit 0. Any diagnostic = a failure this plan introduced — fix it.
 ```bash
-npx tsc --noEmit > .tsc-app.out 2>&1; echo "tsc exit: $?"; grep -v "main.tsx" .tsc-app.out | grep "error TS"; echo "new-error grep exit: $? (1 = PASS: no new errors)"; rm .tsc-app.out
+npx tsc --noEmit > .tsc-app.out 2>&1; echo "tsc exit: $?"
 ```
-Read both echoed statuses explicitly: `tsc exit` is EXPECTED nonzero (the pre-existing `main.tsx` error — record the number); the check that gates this plan is the second one — `new-error grep exit: 1` means zero `error TS` lines outside `main.tsx` (grep "no match" = 1 = PASS here; `0` means NEW errors were printed above — fix them). Nothing is piped away and no `||` rewrites any status.
+```bash
+grep -v "main.tsx" .tsc-app.out | grep "error TS"; echo "new-error grep exit: $? (1 = PASS: no new errors)"
+```
+```bash
+rm .tsc-app.out
+```
+Three SEPARATE commands (plan-review R4: a trailing `rm` in a compound line would exit 0 and mask the verdict). Read both echoed statuses explicitly: `tsc exit` is EXPECTED nonzero (the pre-existing `main.tsx` error — record the number); the gate is the second command — `new-error grep exit: 1` means zero `error TS` lines outside `main.tsx` (grep "no match" = 1 = PASS here; `0` means NEW errors were printed above — fix them). The `rm` runs last, alone, and carries no verdict.
 - [ ] **Step 4:** `npx eslint` across every file this plan touched — clean.
 - [ ] **Step 5:** Re-check the 10 header invariants against the diff. If (and only if) fixups were needed, stage the specific touched files and commit:
 ```bash
