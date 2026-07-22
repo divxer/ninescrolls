@@ -326,18 +326,29 @@ describe('isAdmin', () => {
   });
 });
 ```
-Append to `handler.test.ts` (reuse its mocks; the guarded resolvers must reject BEFORE their lib fn is called):
+Append to `handler.test.ts` (plan-review fix: cover **ALL six** guarded resolvers × three identity cases; reuse its mocks; reject BEFORE the lib fn is called):
 ```ts
-it('linkStructuredUnit without admin group is rejected before any work', async () => {
-  await expect(handler({ info: { fieldName: 'linkStructuredUnit' }, arguments: {}, identity: { claims: { 'cognito:groups': ['staff'] } } } as never))
-    .rejects.toThrow(/admin/i);
-  expect(linkStructuredUnit).not.toHaveBeenCalled();
-});
-it('crmHealth with admin group passes the guard', async () => {
-  await handler({ info: { fieldName: 'crmHealth' }, arguments: {}, identity: { claims: { 'cognito:groups': ['admin'] } } } as never);
-  expect(crmHealthFn).toHaveBeenCalled();
+const GUARDED: Array<[string, () => ReturnType<typeof vi.fn>]> = [
+  ['timelineByOrg', () => timelineByOrgFn], ['needsLinkingQueue', () => needsLinkingQueueFn],
+  ['linkStructuredUnit', () => linkStructuredUnit], ['linkVisitor', () => linkVisitorFn],
+  ['crmHealth', () => crmHealthFn], ['runCrmRepair', () => reconcileRepair],
+];
+describe.each(GUARDED)('authz on %s', (fieldName, target) => {
+  it('missing groups → rejected, lib fn NOT called', async () => {
+    await expect(handler({ info: { fieldName }, arguments: {}, identity: { claims: {} } } as never)).rejects.toThrow(/admin/i);
+    expect(target()).not.toHaveBeenCalled();
+  });
+  it('wrong group → rejected, lib fn NOT called', async () => {
+    await expect(handler({ info: { fieldName }, arguments: {}, identity: { claims: { 'cognito:groups': ['staff'] } } } as never)).rejects.toThrow(/admin/i);
+    expect(target()).not.toHaveBeenCalled();
+  });
+  it('admin group → passes the guard (lib fn called)', async () => {
+    await handler({ info: { fieldName }, arguments: adminArgsFor(fieldName), identity: { claims: { 'cognito:groups': ['admin'] } } } as never).catch(() => {});
+    expect(target()).toHaveBeenCalled();
+  });
 });
 ```
+(`adminArgsFor` returns minimally-valid arguments per field so the resolver reaches its lib call; the `.catch` absorbs downstream mock rejections — the assertion is only that the guard passed.)
 
 - [ ] **Step 2: Run** both — FAIL.
 
@@ -463,9 +474,41 @@ export async function upsertContact(args: {
       throw err;
     }
   }
-  await docClient.send(new PutCommand({ TableName: TABLE_NAME(), Item: item }));
-  return { contactId, outcome: 'written' };
+  // NON-generational path (plan-review Critical): a blind Put could race a newer generational
+  // update and RESTORE its stale org+generation. CAS on the generation we observed; on conflict
+  // re-read and retry (bounded) so the carried-forward stamp is always the freshest.
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const observed = attempt === 0 ? (existing?.lastLinkGeneration ?? null) : ((await getContactByEmail(email))?.lastLinkGeneration ?? null);
+    const attemptItem = { ...item, lastLinkGeneration: observed };
+    const put = observed === null
+      ? new PutCommand({ TableName: TABLE_NAME(), Item: attemptItem,
+          ConditionExpression: 'attribute_not_exists(PK) OR attribute_not_exists(lastLinkGeneration) OR lastLinkGeneration = :null',
+          ExpressionAttributeValues: { ':null': null } })
+      : new PutCommand({ TableName: TABLE_NAME(), Item: attemptItem,
+          ConditionExpression: 'attribute_not_exists(PK) OR lastLinkGeneration = :obs',
+          ExpressionAttributeValues: { ':obs': observed } });
+    try {
+      await docClient.send(put);
+      return { contactId, outcome: 'written' };
+    } catch (err) {
+      if ((err as { name?: string }).name !== 'ConditionalCheckFailedException') throw err;
+      // generation moved under us — loop re-reads and retries with the fresh stamp
+    }
+  }
+  throw new Error('upsertContact: generation moved repeatedly; giving up after 3 attempts');
 }
+```
+**Add the race test:**
+```ts
+it('non-generational write CASes on the observed generation and retries after a racing generational update', async () => {
+  mockGetByEmail({ contactId: 'ct-1', orgId: 'a.com', linkLocked: false, lastLinkGeneration: '01J0AAAA…' });
+  send.mockRejectedValueOnce(Object.assign(new Error('raced'), { name: 'ConditionalCheckFailedException' })); // Put v1 fails
+  mockGetByEmailOnce({ contactId: 'ct-1', orgId: 'b.com', linkLocked: false, lastLinkGeneration: '01J0BBBB…' }); // re-read sees newer
+  send.mockResolvedValueOnce({});                                                                              // retry Put succeeds
+  await upsertContact({ email: 'b@x.com', orgId: 'c.com', source: 'rfq', occurredAt: 't1' });
+  const finalItem = putItemAt(-1);
+  expect(finalItem.lastLinkGeneration).toBe('01J0BBBB…');       // carried forward the FRESH stamp, not the stale one
+});
 ```
 **Callers:** the return type changed from `Promise<string>`. Update every call site to `(await upsertContact(...)).contactId` — `emitTimelineEvent.ts` and `manualMoveTimelineEvent.ts` (grep `upsertContact(` to catch all; keep their behavior otherwise identical).
 
@@ -514,7 +557,7 @@ it('genuine non-generational real-org mismatch is still conflict', async () => {
 
 - [ ] **Step 2: Run** — FAIL.
 
-- [ ] **Step 3: Implement replay side.** In `replaySideEffects.ts`: `BackfillStatus` gains `'superseded'`; `replayStructuredSideEffects` args gain `generation: string`; `backfillByPk(pk, targetOrgId, generation)` becomes:
+- [ ] **Step 3: Implement replay side.** In `replaySideEffects.ts`: `BackfillStatus` gains `'superseded'`; `replayStructuredSideEffects` args gain **OPTIONAL** `generation?: string` + `customerEmail?: string | null` (plan-review fix: callers migrate in Tasks 10/12 — optional params keep every existing caller compiling at THIS task's checkpoint; when `generation` is absent, `backfillByPk` uses the exact pre-existing 3C condition and the audit id omits the generation — legacy behavior byte-identical). `backfillByPk(pk, targetOrgId, generation?)` becomes (generation branch shown; wrap the new condition/values in `generation ? … : <the existing 3C condition>`):
 ```ts
 async function backfillByPk(pk: string, targetOrgId: string, generation: string): Promise<BackfillStatus> {
   try {
@@ -670,14 +713,32 @@ async function fencedUpdate(m: StructuredMarkerV2, expr: string, values: Record<
     throw err;
   }
 }
-export async function queryBuildingOlderThan(cutoffIso: string, limit: number): Promise<StructuredMarkerV2[]> {
+export async function queryBuildingOlderThan(cutoffIso: string, limit: number, startKey?: Record<string, unknown>): Promise<{ markers: StructuredMarkerV2[]; lastKey?: Record<string, unknown> }> {
   const res = await docClient.send(new QueryCommand({
     TableName: TABLE_NAME(), IndexName: 'GSI1',
     KeyConditionExpression: 'GSI1PK = :pk AND GSI1SK < :cut',
     ExpressionAttributeValues: { ':pk': 'CRM_REPAIR#building', ':cut': `${cutoffIso}#￿` },
-    ScanIndexForward: true, Limit: limit,
+    ScanIndexForward: true, Limit: limit, ExclusiveStartKey: startKey,
   }));
-  return (res.Items ?? []) as StructuredMarkerV2[];
+  return { markers: (res.Items ?? []) as StructuredMarkerV2[], lastKey: res.LastEvaluatedKey as Record<string, unknown> | undefined };
+}
+
+// plan-review fix: promotion has its OWN condition — must still be building, same version, AND
+// past the age cutoff (a fresh foreground seal/accumulate must never be clobbered by the ager).
+export async function promoteAbandonedBuilding(m: StructuredMarkerV2, cutoffIso: string, nowIso: string): Promise<{ lost: boolean }> {
+  try {
+    await docClient.send(new UpdateCommand({
+      TableName: TABLE_NAME(), Key: structuredMarkerKey(m.unitKey, m.generation),
+      UpdateExpression: 'SET GSI1PK = :g, #s = :pending, version = :nv, lastAttemptAt = :now',
+      ConditionExpression: 'attribute_exists(PK) AND #s = :building AND version = :v AND createdAt < :cut',
+      ExpressionAttributeNames: { '#s': 'status' },
+      ExpressionAttributeValues: { ':g': 'CRM_REPAIR#pending', ':pending': 'pending', ':building': 'building', ':v': m.version, ':nv': m.version + 1, ':now': nowIso, ':cut': cutoffIso },
+    }));
+    return { lost: false };
+  } catch (err) {
+    if ((err as { name?: string }).name === 'ConditionalCheckFailedException') return { lost: true };
+    throw err;
+  }
 }
 ```
 Rework `markStuck`/`bumpAttempt`/`touchInProgress` to route through `fencedUpdate` (they gain the version fence; keep their field semantics from 3C). `queryPendingMarkers` unchanged (drainer still Queries `#pending` only).
@@ -802,7 +863,15 @@ export async function linkStructuredUnit(args: { representativeEventId: string; 
   for (const ev of rest) {                                // remaining moves: per-event conditional, fenced accumulate
     try {
       const r = await manualMoveTimelineEvent({ event: ev, targetOrgId: args.targetOrgId, email: sourceEmail, operator: args.operator, nowIso, enrichmentError, representativeSource: sourceType });
-      if (r.moved) { moved += 1; await accumulateMarker(markerHandle, { movedCountDelta: 1, newSampleIds: [ev.id], contactStatus: r.contactStatus }, nowIso); }
+      if (r.moved) {
+        moved += 1;
+        const acc = await accumulateMarker(markerHandle, { movedCountDelta: 1, newSampleIds: [ev.id], contactStatus: r.contactStatus }, nowIso);
+        if (acc.lost) {
+          // plan-review fix: version fence lost = another actor (aged→drained) owns the marker.
+          // ABORT immediately: stop moving; unmoved events stay unresolved and re-surface (convergent).
+          return { affected: events.length, moved, skipped, errors, sourceBackfillStatus: 'not_attempted', contactStatus: markerHandle.contactStatus, postCommitStatus: 'post_commit_failed' };
+        }
+      }
       else if (r.skipped) skipped += 1;
     } catch { errors += 1; }
   }
@@ -824,12 +893,22 @@ export async function linkStructuredUnit(args: { representativeEventId: string; 
 ```
 Include the two small helpers in the same file: `buildMoveTransactPut` (the movedItem exactly as `manualMoveTimelineEvent` constructs it, wrapped as a `Put` with the R7 eligibility condition — extract the shared item-construction into an exported `buildMovedItem(event, targetOrgId, email, nowIso)` in `manualMoveTimelineEvent.ts` so the two paths cannot drift) and `isConditionalCancellation` (inspects `err.name === 'TransactionCanceledException'` and `err.CancellationReasons?.some(r => r.Code === 'ConditionalCheckFailed')` — the R7-deferred cancellation mapping).
 
-- [ ] **Step 4: Run** the reworked file suite + `manualMoveTimelineEvent.test.ts` (its condition gains the eligibility clauses — update its assertions) + tsc — PASS/clean.
+- [ ] **Step 4 (plan-review fix — compile order): migrate the handler resolver IN THIS TASK.** `handler.ts` calls `linkStructuredUnit` with the old args and would break this checkpoint. Update the resolver here (Task 13 then only handles schema + frontend):
+```ts
+  linkStructuredUnit: async (e) => {
+    requireAdmin(e);
+    const a = (e.arguments ?? {}) as { representativeEventId?: string; targetOrgId?: string };
+    return linkStructuredUnit({ representativeEventId: a.representativeEventId ?? '', targetOrgId: a.targetOrgId ?? '', operator: operatorOf(e) });
+  },
+```
+Update the handler test's linkStructuredUnit dispatch case accordingly.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 5: Run** the reworked file suite + `manualMoveTimelineEvent.test.ts` (its condition gains the eligibility clauses — update its assertions) + `handler.test.ts` + tsc — PASS/clean.
+
+- [ ] **Step 6: Commit**
 ```bash
-git add amplify/functions/crm-api/lib/link/linkStructuredUnit.ts amplify/functions/crm-api/lib/link/linkStructuredUnit.test.ts amplify/functions/crm-api/lib/link/manualMoveTimelineEvent.ts amplify/functions/crm-api/lib/link/manualMoveTimelineEvent.test.ts
-git commit -m "feat(comms-p1): linkStructuredUnit v2 — representative-derived unit, eligibility, first-move+marker transaction"
+git add amplify/functions/crm-api/lib/link/linkStructuredUnit.ts amplify/functions/crm-api/lib/link/linkStructuredUnit.test.ts amplify/functions/crm-api/lib/link/manualMoveTimelineEvent.ts amplify/functions/crm-api/lib/link/manualMoveTimelineEvent.test.ts amplify/functions/crm-api/handler.ts amplify/functions/crm-api/handler.test.ts
+git commit -m "feat(comms-p1): linkStructuredUnit v2 — representative-derived unit, eligibility, transaction (+handler migration)"
 ```
 
 ---
@@ -870,10 +949,19 @@ git commit -m "feat(comms-p1): queue representativeEventId + gmail customerEmail
 
 - [ ] **Step 1: Failing tests (append):**
 ```ts
-it('ages building markers older than 2× link timeout into pending, leaves fresh ones alone', async () => {
-  queryBuildingOlderThan.mockResolvedValueOnce([buildingMarker]);
+it('ages building markers older than 2× link timeout via promoteAbandonedBuilding, paginating until exhausted', async () => {
+  queryBuildingOlderThan
+    .mockResolvedValueOnce({ markers: [buildingA], lastKey: { k: 1 } })
+    .mockResolvedValueOnce({ markers: [buildingB], lastKey: undefined });
   await reconcileRepair({});
-  expect(sealMarker).toHaveBeenCalledWith(buildingMarker, expect.any(String));
+  expect(promoteAbandonedBuilding).toHaveBeenCalledTimes(2);
+  expect(promoteAbandonedBuilding).toHaveBeenCalledWith(buildingA, expect.any(String), expect.any(String));
+});
+it('a lost promotion (fresh foreground activity) is skipped silently, not an error', async () => {
+  queryBuildingOlderThan.mockResolvedValueOnce({ markers: [buildingA], lastKey: undefined });
+  promoteAbandonedBuilding.mockResolvedValueOnce({ lost: true });
+  const out = await reconcileRepair({});
+  expect(out.aged).toBe(0);
 });
 it('drains BOTH generations of the same unit independently (older-after-newer: superseded = repaired)', async () => {
   queryPendingMarkers.mockResolvedValueOnce({ markers: [genB, genA], hasMore: false });  // newer first
@@ -900,7 +988,7 @@ it('contact retry: marker with contactStatus!=="linked" and customerEmail → re
 
 - [ ] **Step 2: Run** — FAIL.
 
-- [ ] **Step 3: Implement** in `reconcileRepair.ts`: before draining, run the aging pass (`queryBuildingOlderThan(new Date(Date.now() - 2 * LINK_LAMBDA_TIMEOUT_MS).toISOString(), 25)` → `sealMarker` each; `LINK_LAMBDA_TIMEOUT_MS = 120_000` with a keep-in-sync comment). Extend `replayFor` to pass `generation`, `customerEmail`, `contactStatus`, `affectedEventIdsSample`. Transition calls switch to the fenced v2 fns; a `{lost:true}` result increments a new `raced` counter (not `errors`). `superseded`/`locked` replay outcomes are OK-path (delete). Summary gains `aged` + `raced`.
+- [ ] **Step 3: Implement** in `reconcileRepair.ts`: before draining, run the aging pass — loop `queryBuildingOlderThan(cutoffIso, 25, lastKey)` pages until `lastKey` is undefined (cutoff = `new Date(Date.now() - 2 * LINK_LAMBDA_TIMEOUT_MS).toISOString()`, `LINK_LAMBDA_TIMEOUT_MS = 120_000` with a keep-in-sync comment), calling `promoteAbandonedBuilding(m, cutoffIso, nowIso)` per marker; `{lost:true}` = fresh foreground activity → skip silently. Extend `replayFor` to pass `generation`, `customerEmail`, `contactStatus`, `affectedEventIdsSample`. Transition calls switch to the fenced v2 fns; a `{lost:true}` on a drain transition increments a new `raced` counter (not `errors`). `superseded`/`locked` replay outcomes are OK-path (delete). Summary gains `aged` + `raced`.
 
 - [ ] **Step 4: Run** the repair dir + tsc — PASS/clean.
 
@@ -932,11 +1020,68 @@ git commit -m "feat(comms-p1): representativeEventId link contract across schema
 
 ---
 
-### Task 14: Part-1 green-bar + invariant checkpoint
+### Task 14: Adversarial suite (executable) — concurrency / crash / cross-writer
 
-- [ ] **Step 1:** `npx vitest run amplify/functions/crm-api` — ALL pass (expect ≈270+; note count).
+**Files:**
+- Create: `amplify/functions/crm-api/lib/link/linkStructuredUnit.adversarial.test.ts`
+
+- [ ] **Step 1: Write the suite** (module-mock style like the sibling tests; each scenario is a real executable test — plan-review fix, no prose scenarios):
+```ts
+// Scenario 1 — pre-marker crash impossibility: the FIRST move and marker are one transaction.
+it('transaction commit implies marker exists; transaction abort implies no marker and no moved event', async () => {
+  arrangeUnitWithEvents([ev1]);
+  rejectTransactWithCancellation(['ConditionalCheckFailed']);
+  await linkStructuredUnit({ representativeEventId: ev1.id, targetOrgId: 'acme.com', operator: 'op' });
+  expect(transactCalls()).toHaveLength(1);
+  expect(sealMarker).not.toHaveBeenCalled();
+  expect(deleteRepairMarkerFenced).not.toHaveBeenCalled();
+});
+// Scenario 2 — foreground crash after transaction: drainer heals from the building marker (aging path).
+//   (Covered end-to-end by reconcileRepair.test.ts aging tests + replay idempotency tests — assert here
+//    that the marker built by the transaction carries EVERY unit-level replay input from creation.)
+it('the transacted marker is self-sufficient for replay from the moment it exists', async () => {
+  arrangeUnitWithEvents([ev1]);
+  await linkStructuredUnit({ representativeEventId: ev1.id, targetOrgId: 'acme.com', operator: 'op' });
+  const markerItem = transactCalls()[0].input.TransactItems[1].Put.Item;
+  for (const f of ['targetOrgId', 'unitKey', 'generation', 'sourceType', 'sourceEntityId', 'customerEmail', 'backfillPk']) {
+    expect(markerItem).toHaveProperty(f);
+  }
+});
+// Scenario 3 — concurrent same-unit links: exactly one transaction wins; the loser mints no marker.
+it('two concurrent links: second transaction cancels on the move condition and creates nothing', async () => {
+  arrangeUnitWithEvents([ev1]);
+  transactSucceedsOnce();                       // linker A wins
+  rejectTransactWithCancellation(['ConditionalCheckFailed']);   // linker B loses
+  const a = await linkStructuredUnit({ representativeEventId: ev1.id, targetOrgId: 'a.com', operator: 'op1' });
+  arrangeUnitWithEvents([ev1]);                 // B re-reads the same (now stale) unit
+  const b = await linkStructuredUnit({ representativeEventId: ev1.id, targetOrgId: 'b.com', operator: 'op2' });
+  expect(a.moved).toBe(1);
+  expect(b.moved).toBe(0);
+});
+// Scenario 4 — cross-writer: covered by executable tests in contactStore.test.ts (non-generational CAS
+// retry, Task 7) and the merge test (Task 8). Re-run them here as part of this suite's command.
+```
+(Reuse the Task-10 harness helpers via a small shared `linkTestHarness.ts` in the same dir if duplication exceeds ~30 lines.)
+
+- [ ] **Step 2: Run** `npx vitest run amplify/functions/crm-api/lib/link/linkStructuredUnit.adversarial.test.ts amplify/functions/crm-api/lib/contactStore.test.ts amplify/functions/crm-api/lib/repair/reconcileRepair.test.ts` — ALL pass.
+
+- [ ] **Step 3: Commit**
+```bash
+git add amplify/functions/crm-api/lib/link/linkStructuredUnit.adversarial.test.ts amplify/functions/crm-api/lib/link/linkTestHarness.ts
+git commit -m "test(comms-p1): executable adversarial suite (transaction, crash, concurrency, cross-writer)"
+```
+
+---
+
+### Task 15: Part-1 green-bar + invariant checkpoint
+
+- [ ] **Step 1:** `npx vitest run amplify/functions/crm-api` — ALL pass (expect ≈280+; note count).
 - [ ] **Step 2:** `npx vitest run src/pages/admin/NeedsLinkingPage.test.tsx src/components/admin/needslinking src/hooks` — pass.
-- [ ] **Step 3:** `npx tsc --noEmit && npx tsc --noEmit -p amplify/tsconfig.json` — only the pre-existing `main.tsx` error.
+- [ ] **Step 3 (plan-review fix — do NOT chain with `&&`; the app tsc exits non-zero on the pre-existing error and would mask the backend check):**
+```bash
+npx tsc --noEmit -p amplify/tsconfig.json          # expected: clean, exit 0
+npx tsc --noEmit 2>&1 | grep -v "main.tsx" || true # expected: no output besides the filtered pre-existing main.tsx line
+```
 - [ ] **Step 4:** `npx eslint` across every file this plan touched — clean.
 - [ ] **Step 5:** Re-check the 10 header invariants against the diff; commit any fixups scoped to touched files:
 ```bash

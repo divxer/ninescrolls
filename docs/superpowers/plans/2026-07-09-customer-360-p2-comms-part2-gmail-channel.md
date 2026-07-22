@@ -86,7 +86,9 @@ export function isNewerHistoryId(candidate: string, stored: string | null | unde
 }
 
 export async function readState(mailbox: string): Promise<GmailSyncState> {
-  const res = await docClient.send(new GetCommand({ TableName: TABLE_NAME(), Key: stateKey(mailbox) }));
+  // plan-review fix: always strongly-consistent — the read happens right after acquireLease and
+  // must see the previous holder's final fenced write, not an eventually-consistent ghost.
+  const res = await docClient.send(new GetCommand({ TableName: TABLE_NAME(), Key: stateKey(mailbox), ConsistentRead: true }));
   return (res.Item as GmailSyncState | undefined) ?? {};
 }
 
@@ -107,7 +109,10 @@ export async function acquireLease(mailbox: string, lambdaTimeoutSec: number, no
   }
 }
 
-// Every progress/heartbeat write: token AND unexpired. CCFE ⇒ {lost:true} ⇒ caller must abort the run.
+// Every progress write: token AND unexpired. CCFE ⇒ {lost:true} ⇒ caller must abort the run.
+// NO lease renewal/heartbeat exists — deliberately (plan-review): the lease is max(2×timeout,300s)=300s,
+// strictly greater than the 120s max invocation, so a live run can never outlast its own lease.
+// If the Lambda timeout is ever raised, this arithmetic MUST be revisited.
 export async function writeStateFenced(mailbox: string, token: string, nowMs: number, fields: Partial<GmailSyncState>): Promise<{ lost: boolean }> {
   const names: Record<string, string> = {}; const values: Record<string, unknown> = { ':tok': token, ':now': nowMs };
   const sets = Object.entries(fields).map(([k, v], i) => { names[`#f${i}`] = k; values[`:f${i}`] = v ?? null; return `#f${i} = :f${i}`; });
@@ -195,9 +200,11 @@ describe('gmailClient', () => {
     for (const h of ['From','To','Cc','Bcc','Subject','Date','Message-ID']) expect(url).toContain(`metadataHeaders=${h}`);
     expect(url).not.toContain('format=full');
   });
-  it('classifyGmailError: expiry ONLY for (historyList, 404); messages.get 404 = not_found; 429 = rate_limited; else transient', () => {
+  it('classifyGmailError: expiry ONLY for (historyList, 404, parsed NOT_FOUND/notFound reason); everything else classified strictly', () => {
     expect(classifyGmailError('historyList', 404, { error: { status: 'NOT_FOUND' } })).toBe('history_expired');
-    expect(classifyGmailError('messagesGet', 404, {})).toBe('not_found');
+    expect(classifyGmailError('historyList', 404, { error: { errors: [{ reason: 'notFound' }] } })).toBe('history_expired');
+    expect(classifyGmailError('historyList', 404, {})).toBe('not_found');            // 404 WITHOUT the parsed reason ≠ expiry
+    expect(classifyGmailError('messagesGet', 404, { error: { status: 'NOT_FOUND' } })).toBe('not_found'); // wrong endpoint ≠ expiry
     expect(classifyGmailError('historyList', 429, {})).toBe('rate_limited');
     expect(classifyGmailError('messagesGet', 500, {})).toBe('transient');
     expect(classifyGmailError('messagesGet', 400, {})).toBe('bad_request');
@@ -222,7 +229,11 @@ export type GmailEndpoint = 'historyList' | 'messagesList' | 'messagesGet' | 'ge
 export type GmailErrorClass = 'history_expired' | 'not_found' | 'rate_limited' | 'bad_request' | 'transient';
 
 export function classifyGmailError(endpoint: GmailEndpoint, status: number, body: unknown): GmailErrorClass {
-  if (endpoint === 'historyList' && status === 404) return 'history_expired';   // the ONLY re-anchor signal (R4)
+  // plan-review fix: expiry requires the PARSED Google reason, not the status code alone —
+  // (endpoint === historyList) AND (404) AND (error.status NOT_FOUND or errors[].reason notFound).
+  const err = (body as { error?: { status?: string; errors?: { reason?: string }[] } } | undefined)?.error;
+  const looksNotFound = err?.status === 'NOT_FOUND' || err?.errors?.some((e) => e.reason === 'notFound') === true;
+  if (endpoint === 'historyList' && status === 404 && looksNotFound) return 'history_expired';  // the ONLY re-anchor signal
   if (status === 404) return 'not_found';
   if (status === 429) return 'rate_limited';
   if (status === 400) return 'bad_request';
@@ -314,10 +325,11 @@ describe('mapMessage', () => {
     if (bccOnly.kind !== 'emit') throw new Error('expected emit');
     expect(bccOnly.emit.payload.customerEmail).toBe('hidden@ext.com');
   });
-  it('skips: all-internal; DRAFT/CHAT labels; non-customer alias (ap@); each with a reason', () => {
+  it('skips: all-internal; DRAFT/CHAT labels; non-customer alias (ap@); ZERO visible our-aliases (bcc-delivery); each with a reason', () => {
     expect(mapMessage(msg({}, { From: 'a@ninescrolls.com', To: 'b@ninescrolls.com' }), 'info@ninescrolls.com')).toEqual({ kind: 'skip', reason: 'all_internal' });
     expect(mapMessage(msg({ labelIds: ['DRAFT'] }), 'info@ninescrolls.com')).toEqual({ kind: 'skip', reason: 'draft_or_chat' });
     expect(mapMessage(msg({}, { To: 'ap@ninescrolls.com' }), 'info@ninescrolls.com')).toEqual({ kind: 'skip', reason: 'non_customer_alias' });
+    expect(mapMessage(msg({}, { From: 'a@ext.com', To: 'b@ext.com' }), 'info@ninescrolls.com')).toEqual({ kind: 'skip', reason: 'non_customer_alias' }); // reached us invisibly → unverifiable → skip
   });
   it('keep-if-ANY-recipient-is-customer-alias', () => {
     const r = mapMessage(msg({}, { To: 'ap@ninescrolls.com', Cc: 'sales@ninescrolls.com' }), 'info@ninescrolls.com');
@@ -377,10 +389,12 @@ export function mapMessage(m: GmailMessage, mailbox: string): MapResult {
   const all = [...from, ...toCc, ...bcc];
   if (all.length > 0 && all.every(isOurs)) return { kind: 'skip', reason: 'all_internal' };
 
-  // R7-era alias allowlist: the "our address" set this mail involves must touch a customer alias
+  // Alias allowlist (plan-review fix): the mail MUST visibly touch an approved customer alias.
+  // Zero of-our-addresses in the headers (e.g. reached us only via Bcc/Delivered-To) is unverifiable
+  // → skip, same reason. Never ingest on absence of evidence.
   const ourAddresses = all.filter(isOurs);
   const touchesCustomerAlias = ourAddresses.some((a) => CUSTOMER_ALIASES.has(a.split('@')[0]));
-  if (ourAddresses.length > 0 && !touchesCustomerAlias) return { kind: 'skip', reason: 'non_customer_alias' };
+  if (!touchesCustomerAlias) return { kind: 'skip', reason: 'non_customer_alias' };
 
   const inbound = from.length > 0 && !isOurs(from[0]);
   const customer = inbound ? from[0]
@@ -767,8 +781,9 @@ const safeGmailUrl = (u: string | null | undefined) => {
 ```
 Add the `email` chip to the chip config.
 
-- [ ] **Step 4: Run** mapper + frontend timeline tests + both tscs + eslint — PASS/clean.
-- [ ] **Step 5: Commit**
+- [ ] **Step 4 (plan-review clarification — client types):** this repo has **no codegen step** — frontend client types derive from `ClientSchema<typeof schema>` in `amplify/data/resource.ts` and flow through TypeScript directly. "Regenerating types" = re-running `npx tsc --noEmit` after the schema edit; do that here explicitly and confirm the new `direction`/`bodySnippet`/`externalUrl` fields appear on the frontend `Schema` types (a frontend type-usage in the row component compiling IS the check). Do not hunt for an `ampx generate` step — none is required or configured for client types.
+- [ ] **Step 5: Run** mapper + frontend timeline tests + both tscs (backend first, unchained — see Part 1 Task 15's command form) + eslint — PASS/clean.
+- [ ] **Step 6: Commit**
 ```bash
 git add amplify/data/resource.ts amplify/functions/crm-api/lib/read/organizationTimelineItem.ts amplify/functions/crm-api/lib/read/organizationTimelineItem.test.ts src/
 git commit -m "feat(comms-p2): email rendering — schema fields, mapper case, chip, origin-validated link"
@@ -814,7 +829,31 @@ if (!isSandbox) {
 ```
 Also: register `gmailSync` in `defineBackend`, import its resource, add `reservedConcurrentExecutions: 1` (via `(backend.gmailSync.resources.cfnResources.cfnFunction).reservedConcurrentExecutions = 1` or the defineFunction option if available — check the existing repo idiom first).
 
-- [ ] **Step 2: Synth verification (spec §10 — REQUIRED):** run the synth (`npx ampx sandbox --once` is NOT allowed against live; instead use `npx ampx generate` dry paths or inspect via `cdk.out` from the pipeline docs) — practical approach per repo history: run `npx tsc --noEmit -p amplify/tsconfig.json` + grep the synthesized template in CI/Console after push. Record in the PR: (a) the policy carries the LeadingKeys condition; (b) dependency edges are `gmailSyncStack → feedbackStack` one-way only.
+- [ ] **Step 2: Verification (spec §10 — plan-review fix, repository-valid + executable):** local synth doesn't exist in this repo (the Amplify Console build is the binding synth gate — established project history). So verification is three concrete layers:
+  1. **Pre-merge executable assertion** — create `amplify/backend.gmailSync.test.ts`, a source-contract test run by vitest:
+```ts
+import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+const src = readFileSync(new URL('./backend.ts', import.meta.url), 'utf8');
+describe('gmail-sync IAM source contract', () => {
+  it('carries the LeadingKeys condition exactly', () =>
+    expect(src).toMatch(/ForAllValues:StringLike[\s\S]{0,120}dynamodb:LeadingKeys[\s\S]{0,80}GMAIL_SYNC#\*/));
+  it('grants the base table ARN only (no /index/*) for gmail-sync dynamo access', () =>
+    expect(src).not.toMatch(/gmailSync[\s\S]{0,400}index\/\*/));
+  it('cron rule lives in the gmail-sync stack and is sandbox-gated', () => {
+    expect(src).toMatch(/if \(!isSandbox\)[\s\S]{0,600}GmailSyncRule/);
+    expect(src).toMatch(/Stack\.of\(backend\.gmailSync\.resources\.lambda\)/);
+  });
+});
+```
+  2. **Console synth** — the deploy pipeline is the binding structural check (nested-stack cycles fail there; watch the first build).
+  3. **Post-deploy IAM assertion** (runbook, exact commands):
+```bash
+ROLE=$(aws lambda get-function-configuration --function-name <gmail-sync fn name> --query 'Role' --output text | awk -F/ '{print $NF}')
+for P in $(aws iam list-role-policies --role-name "$ROLE" --query 'PolicyNames[]' --output text); do
+  aws iam get-role-policy --role-name "$ROLE" --policy-name "$P" --query 'PolicyDocument' | grep -q 'GMAIL_SYNC#\*' && echo "LeadingKeys condition present in $P"
+done
+```
 
 - [ ] **Step 3: Runbook** — write `docs/runbooks/2026-07-09-gmail-sync-setup.md`: dedicated GCP project + SA creation; enable DWD; Admin-console scope authorization for the SA client-id (`gmail.readonly`); create the Secrets Manager secret (name + ARN → `GMAIL_SA_SECRET_ARN`); CloudTrail alarm on `GetSecretValue`; key-rotation cadence; §0 precondition re-check; watermark/backfill-state reset procedure (delete the `GMAIL_SYNC#<mailbox>` item → next run re-seeds); poison-mailbox alarm response; backfill window `N` default 90.
 
@@ -826,10 +865,58 @@ git commit -m "feat(comms-p2): gmail-sync infra — secret, LeadingKeys IAM, cro
 
 ---
 
-### Task 10: Part-2 green-bar + adversarial checkpoint
+### Task 10: E2E chain test (executable — plan-review fix)
+
+**Files:**
+- Create: `amplify/functions/crm-api/lib/link/gmailLinkChain.e2e.test.ts`
+
+- [ ] **Step 1: Write the executable chain test** (module-mock in-memory DDB harness; the R3-blocker-1 path end-to-end against the REAL Part-1 functions — mock only `docClient.send` with a stateful in-memory table):
+```ts
+// In-memory single-table fake driving REAL emitTimelineEvent → needsLinkingQueue → linkStructuredUnit
+// → (contact created) → a SECOND emit auto-resolving via contact_email_exact.
+it('gmail chain: unresolved → queue unit → link by representative → Contact → future exact resolution', async () => {
+  // 1. emit a gmail event for bob@gmail.com (free-mail → resolves unresolved-gmail-bob@gmail.com)
+  await emitTimelineEvent(gmailEmitArgs('m1', 'bob@gmail.com'));
+  expect(table.get('TLEVENT#' + idOf('m1')).orgId).toBe('unresolved-gmail-bob@gmail.com');
+  // 2. queue collapses to ONE unit with a representativeEventId
+  const q = await needsLinkingQueue({});
+  const unit = q.items.find((i) => i.unitKey === 'unresolved-gmail-bob@gmail.com')!;
+  expect(unit.representativeEventId).toBeDefined();
+  expect(unit.signal.email).toBe('bob@gmail.com');
+  // 3. link by representative → event moves + Contact created with the link generation
+  const res = await linkStructuredUnit({ representativeEventId: unit.representativeEventId, targetOrgId: 'acme.com', operator: 'admin@ninescrolls.com' });
+  expect(res.moved).toBe(1);
+  expect(table.get('TLEVENT#' + idOf('m1')).orgId).toBe('acme.com');
+  const contact = table.byGsi4('EMAIL#bob@gmail.com');
+  expect(contact.orgId).toBe('acme.com');
+  expect(contact.lastLinkGeneration).toMatch(/^[0-9A-HJKMNP-TV-Z]{26}$/);
+  // 4. a SUBSEQUENT email from the same address auto-resolves via contact_email_exact
+  await emitTimelineEvent(gmailEmitArgs('m2', 'bob@gmail.com'));
+  const ev2 = table.get('TLEVENT#' + idOf('m2'));
+  expect(ev2.orgId).toBe('acme.com');
+  expect(ev2.resolutionReason).toBe('contact_email_exact');
+});
+```
+Build the small in-memory `table` harness (Get/Put/Update/Query/TransactWrite against a Map keyed on PK|SK, with a GSI1/GSI2/GSI4 secondary map — ~80 lines, lives in the test file; `orgExists` mocked true; rollup/audit fns pass through).
+
+- [ ] **Step 2: Run** `npx vitest run amplify/functions/crm-api/lib/link/gmailLinkChain.e2e.test.ts` — PASS.
+- [ ] **Step 3: Commit**
+```bash
+git add amplify/functions/crm-api/lib/link/gmailLinkChain.e2e.test.ts
+git commit -m "test(comms-p2): executable E2E chain — unresolved → queue → link → Contact → exact resolution"
+```
+
+---
+
+### Task 11: Part-2 green-bar + adversarial checkpoint
 
 - [ ] **Step 1:** `npx vitest run amplify/functions/gmail-sync amplify/functions/crm-api` — ALL pass.
 - [ ] **Step 2:** frontend timeline + needslinking tests — pass.
-- [ ] **Step 3:** `npx tsc --noEmit && npx tsc --noEmit -p amplify/tsconfig.json` — only the pre-existing `main.tsx` error. eslint clean on all touched files.
-- [ ] **Step 4:** Re-verify the 10 header invariants against the full Part-2 diff; then the E2E chain test from the spec §8 (queue → link → move → Contact → future auto-resolve) now runs against real Part-1 code with a gmail-shaped unit.
+- [ ] **Step 3 (unchained tsc — see Part 1 Task 15):**
+```bash
+npx tsc --noEmit -p amplify/tsconfig.json          # expected: clean, exit 0
+npx tsc --noEmit 2>&1 | grep -v "main.tsx" || true # expected: nothing beyond the filtered pre-existing line
+```
+eslint clean on all touched files.
+- [ ] **Step 4:** Re-verify the 10 header invariants against the full Part-2 diff.
 - [ ] **Step 5:** Commit fixups scoped to touched files; report counts + invariant confirmation. Post-merge activation (PR body): runbook execution → first `gmail.sync.summary` (backfill) → spot-check an org timeline shows email rows → verify a Sent item produced outbound (spec R1/M4 spike note).
