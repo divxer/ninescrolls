@@ -120,4 +120,34 @@ describe('emitTimelineEvent', () => {
     expect(bumpOrgRollupOnCreate).not.toHaveBeenCalled();
     expect(mockSend).toHaveBeenCalledTimes(2); // reject + clean overwrite only
   });
+  it('persists comms fields when provided', async () => {
+    resolveLinks.mockResolvedValueOnce({ orgId: 'org-df', contactId: null, resolutionStatus: 'resolved', resolutionReason: 'email_domain_exact', confidence: 0.95 });
+    upsertContact.mockResolvedValueOnce('ct-terry');
+    mockSend.mockResolvedValueOnce({}); // conditional put (new)
+    mockSend.mockResolvedValueOnce({}); // set rollupApplied=true
+    await emitTimelineEvent({
+      ...baseEvt,
+      direction: 'inbound', externalId: 'mid@x', threadId: 't1',
+      from: 'a@ext.com', to: 'info@ninescrolls.com', subject: 'Hi', bodySnippet: 'snippet…',
+    } as never);
+    const item = mockSend.mock.calls[0][0].input.Item;
+    expect(item.direction).toBe('inbound');
+    expect(item.externalId).toBe('mid@x');
+    expect(item.threadId).toBe('t1');
+    expect(item.from).toBe('a@ext.com');
+    expect(item.to).toBe('info@ninescrolls.com');
+    expect(item.subject).toBe('Hi');
+    expect(item.bodySnippet).toBe('snippet…');
+  });
+  it('still writes null comms fields when omitted (existing channels byte-identical)', async () => {
+    resolveLinks.mockResolvedValueOnce({ orgId: 'org-df', contactId: null, resolutionStatus: 'resolved', resolutionReason: 'email_domain_exact', confidence: 0.95 });
+    upsertContact.mockResolvedValueOnce('ct-terry');
+    mockSend.mockResolvedValueOnce({});
+    mockSend.mockResolvedValueOnce({});
+    await emitTimelineEvent(baseEvt);
+    const item = mockSend.mock.calls[0][0].input.Item;
+    for (const f of ['direction', 'externalId', 'threadId', 'from', 'to', 'subject', 'bodySnippet']) {
+      expect(item[f]).toBeNull();
+    }
+  });
 });

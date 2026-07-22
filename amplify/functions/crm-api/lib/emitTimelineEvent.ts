@@ -22,6 +22,13 @@ export type EmitArgs = {
   voided?: boolean;
   createdBy?: string | null;
   payload?: Record<string, unknown> | null;
+  direction?: 'inbound' | 'outbound';
+  externalId?: string;
+  threadId?: string;
+  from?: string;
+  to?: string;
+  subject?: string;
+  bodySnippet?: string;
 };
 
 // P1 never creates orgs, so the only sentinel is the per-event unresolved placeholder.
@@ -50,7 +57,8 @@ export async function emitTimelineEvent(args: EmitArgs): Promise<void> {
     isInternalOnly: args.isInternalOnly ?? false, voided: args.voided ?? false,
     createdBy: args.createdBy ?? null, payload: args.payload ?? null,
     rollupApplied, rollupPendingOrgId,
-    direction: null, externalId: null, threadId: null, from: null, to: null, subject: null, bodySnippet: null,
+    direction: args.direction ?? null, externalId: args.externalId ?? null, threadId: args.threadId ?? null,
+    from: args.from ?? null, to: args.to ?? null, subject: args.subject ?? null, bodySnippet: args.bodySnippet ?? null,
     createdAt, updatedAt: nowIso,
   }) as TimelineEventItem;
 
