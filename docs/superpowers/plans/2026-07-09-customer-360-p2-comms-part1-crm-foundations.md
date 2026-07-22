@@ -469,9 +469,12 @@ export async function upsertContact(args: {
 
     const put = args.linkGeneration
       ? new PutCommand({ TableName: TABLE_NAME(), Item: item,
-          // store-enforced monotonicity — a racing NEWER generation makes this CCFE
-          ConditionExpression: 'attribute_not_exists(PK) OR attribute_not_exists(lastLinkGeneration) OR lastLinkGeneration < :gen',
-          ExpressionAttributeValues: { ':gen': args.linkGeneration } })
+          // store-enforced monotonicity — a racing NEWER generation makes this CCFE.
+          // attribute_type NULL alternate (execution-R1 Critical): the non-generational path writes
+          // lastLinkGeneration: null as a TYPED NULL — the attribute EXISTS, so without this branch
+          // the first generational link on an emit-created contact would permanently CCFE (3B NULL lesson).
+          ConditionExpression: 'attribute_not_exists(PK) OR attribute_not_exists(lastLinkGeneration) OR attribute_type(lastLinkGeneration, :nullType) OR lastLinkGeneration < :gen',
+          ExpressionAttributeValues: { ':gen': args.linkGeneration, ':nullType': 'NULL' } })
       : (observed === null
           ? new PutCommand({ TableName: TABLE_NAME(), Item: item,
               ConditionExpression: 'attribute_not_exists(PK) OR attribute_not_exists(lastLinkGeneration) OR lastLinkGeneration = :null',
@@ -1314,7 +1317,7 @@ git commit -m "feat(comms-p1): representativeEventId link contract + acknowledge
 - Create: `amplify/functions/crm-api/lib/link/linkStructuredUnit.adversarial.test.ts`
 
 - [ ] **Step 1: Build the harness** — `amplify/functions/crm-api/lib/link/linkTestHarness.ts` (~200 lines, reusable; Part 2's chain test imports it). Requirements (plan-review R3 — real functions, real state, deterministic overlap; NO sequential mocks pretending to be concurrency):
-  - An in-memory item map whose `docClient.send` mock **APPLIES** Get/Put/Update/Delete/TransactWrite semantics, **evaluating the ConditionExpressions this plan actually uses** (attribute_not_exists / attribute_exists / equality / `< :gen` / begins_with / AND-chains) against current store state; a failed condition throws `ConditionalCheckFailedException` (TransactWrite: `TransactionCanceledException` with per-item `CancellationReasons`). Assertions read RESULTING STATE.
+  - An in-memory item map whose `docClient.send` mock **APPLIES** Get/Put/Update/Delete/TransactWrite semantics, **evaluating the ConditionExpressions this plan actually uses** (attribute_not_exists / attribute_exists / **attribute_type(x, 'NULL') with typed-NULL vs absent distinction — a JS `null` item value counts as a PRESENT NULL-typed attribute, exactly like lib-dynamodb marshalling** / equality / `< :gen` (NULL < S is FALSE, cross-type) / begins_with / AND/OR-chains) against current store state; a failed condition throws `ConditionalCheckFailedException` (TransactWrite: `TransactionCanceledException` with per-item `CancellationReasons`). Assertions read RESULTING STATE.
   - **Deterministic interleaving gates:** `store.gateOn(predicate)` returns `{ released, release() }`; the FIRST `send` whose command matches `predicate` suspends (its promise unresolved) until `release()` is called. This lets a test park writer A at a precise operation, run writer B to completion through the REAL store, then release A — true overlap with a deterministic schedule, no timing races.
   - All scenarios below call the REAL `linkStructuredUnit` / `replayStructuredSideEffects` / `upsertContact` / `reconcileRepair` (and the Task-8b guarded writer helper) with only `docClient.send` (and rollup pass-through) mocked; `orgExists`/org reads resolve from the harness's seeded org items.
 
