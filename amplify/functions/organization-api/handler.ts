@@ -862,6 +862,7 @@ type OrgMetaItem = {
     status?: string;
     mergedInto?: string;
     mergePhase?: string;
+    mergedSources?: Set<string> | string[];
     aliasDomains?: string[];
     primaryDomain?: string;
     rfqCount?: number;
@@ -917,6 +918,13 @@ class MergeFenceLostError extends Error {
         super(`effective merge target ${orgId} is no longer active`);
         this.name = 'MergeFenceLostError';
     }
+}
+
+// DocumentClient materializes a DynamoDB String Set as a JS Set; be tolerant of arrays too.
+function mergedSourcesContains(mergedSources: Set<string> | string[] | undefined, orgId: string): boolean {
+    if (mergedSources instanceof Set) return mergedSources.has(orgId);
+    if (Array.isArray(mergedSources)) return mergedSources.includes(orgId);
+    return false;
 }
 
 async function readOrgMeta(orgId: string): Promise<(OrgMetaItem & Record<string, unknown>) | undefined> {
@@ -1262,6 +1270,25 @@ async function runRemainingMergePhases(
             if (cls === 'target_fence') throw new MergeFenceLostError(effectiveTargetOrgId);
             if (cls === 'write_condition') continue;        // already re-pointed — idempotent skip
             throw err;
+        }
+    }
+
+    // Phase C guard (chained resume — review fix): the `mergedSources` idempotency set travels
+    // with each target org, NOT with the chain. If the REQUESTED target already absorbed this
+    // source (its retained mergedSources contains it), the source's counts already flowed to the
+    // successor via the requested target's OWN merge — re-aggregating onto the effective target
+    // would double them. Strong-read the archived requested target and skip Phase C in that case.
+    if (phaseArgs.requestedTargetOrgId !== effectiveTargetOrgId) {
+        const requested = await readOrgMeta(phaseArgs.requestedTargetOrgId);
+        if (mergedSourcesContains(requested?.mergedSources, sourceOrgId)) {
+            console.log(JSON.stringify({
+                event: 'org.merge.aggregation-skipped-already-absorbed',
+                sourceOrgId,
+                requestedTargetOrgId: phaseArgs.requestedTargetOrgId,
+                effectiveTargetOrgId,
+                itemsMoved,
+            }));
+            return target as Record<string, unknown>;
         }
     }
 

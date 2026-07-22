@@ -1376,6 +1376,7 @@ describe('mergeOrganization — Task 8 merge boundary', () => {
         sendMock.mockResolvedValueOnce({ Items: [{ PK: 'RFQ#a1', SK: 'META', submittedAt: '2026-03-01T00:00:00Z' }] });
         sendMock.mockResolvedValueOnce({});                       // fenced re-point ON C
         sendMock.mockResolvedValueOnce({ Items: [] });
+        sendMock.mockResolvedValueOnce({ Item: b });              // Phase C guard: requested target's mergedSources (absent → aggregate)
         sendMock.mockResolvedValueOnce({ Attributes: { orgId: 'c.com' } });
         sendMock.mockResolvedValueOnce({});                       // complete on A
 
@@ -1442,6 +1443,7 @@ describe('mergeOrganization — Task 8 merge boundary', () => {
         sendMock.mockResolvedValueOnce({ Item: succ });
         sendMock.mockResolvedValueOnce({ Items: [] });
         sendMock.mockResolvedValueOnce({ Items: [] });
+        sendMock.mockResolvedValueOnce({ Item: tgtArchived });    // Phase C guard: requested target's mergedSources (absent → aggregate)
         sendMock.mockResolvedValueOnce({ Attributes: { orgId: 'succ.com' } });
         sendMock.mockResolvedValueOnce({});                       // complete
         const { handler } = await import('./handler');
@@ -1513,6 +1515,7 @@ describe('mergeOrganization — Task 8 merge boundary', () => {
         sendMock.mockResolvedValueOnce({ Items: [{ PK: 'RFQ#a1', SK: 'META', submittedAt: '2026-03-01T00:00:00Z' }] });
         sendMock.mockResolvedValueOnce({});                       // fenced re-point ON D succeeds
         sendMock.mockResolvedValueOnce({ Items: [] });
+        sendMock.mockResolvedValueOnce({ Item: bArchived });      // Phase C guard: requested target's mergedSources (absent → aggregate)
         sendMock.mockResolvedValueOnce({ Attributes: { orgId: 'd.com' } });
         sendMock.mockResolvedValueOnce({});                       // complete
         const { handler } = await import('./handler');
@@ -1563,5 +1566,142 @@ describe('mergeOrganization — Task 8 merge boundary', () => {
         expect(result.orgId).toBe('b.com');
         const completes = updateCalls(sendMock).filter((c: any) => String(c[0].input.UpdateExpression).includes('mergePhase = :complete'));
         expect(completes).toHaveLength(1);
+    });
+});
+
+// -----------------------------------------------------------------------------------------------
+// Review fix (Task 8 follow-up): chained-resume double-aggregation. `mergedSources` is per-target:
+// src→T aggregates onto T (T.mergedSources += src) then crashes before complete; T→U completes,
+// folding T's counts (already including src's) into U; the retry of src→T resumes against U whose
+// mergedSources lacks src — WITHOUT the guard, src's counts would be added to U a SECOND time.
+// -----------------------------------------------------------------------------------------------
+describe('mergeOrganization — chained-resume aggregation guard', () => {
+    beforeEach(() => {
+        vi.resetModules();
+    });
+
+    async function bindSend() {
+        const docMock = await import('@aws-sdk/lib-dynamodb');
+        const sendMock = vi.fn();
+        (docMock.DynamoDBDocumentClient.from as any).mockReturnValue({ send: sendMock });
+        return sendMock;
+    }
+    const mergeEvent = (sourceOrgId: string, targetOrgId: string) => ({
+        info: { fieldName: 'mergeOrganization' },
+        arguments: { sourceOrgId, targetOrgId },
+        identity: { username: 'admin', groups: ['admin'] },
+    } as any);
+    const orgMeta = (orgId: string, overrides: Record<string, any> = {}) => ({
+        PK: `ORG#${orgId}`, SK: 'META', entityType: 'ORGANIZATION', orgId,
+        primaryDomain: orgId, aliasDomains: [], type: 'unknown', status: 'active',
+        leadScore: 0, rfqCount: 0, orderCount: 0, leadCount: 0,
+        totalOrderValueUSD: 0, contactCount: 0, hasActiveInquiry: false,
+        firstSeenAt: '2026-01-01T00:00:00.000Z', lastActivityAt: '2026-01-01T00:00:00.000Z',
+        ...overrides,
+    });
+
+    it('src→T crash-after-aggregation, T→U completes, retry src→T ⇒ src counts land in U exactly ONCE (Phase C skipped on the chained resume)', async () => {
+        const sendMock = await bindSend();
+        const { handler } = await import('./handler');
+        const aggUpdatesOn = (orgId: string, from = 0) =>
+            sendMock.mock.calls.slice(from).filter((c: any) =>
+                c[0].constructor.name === 'UpdateCommand'
+                && c[0].input.Key?.PK === `ORG#${orgId}`
+                && c[0].input.ExpressionAttributeValues?.[':rfqCount'] !== undefined);
+
+        // ---- call 1: src→T — aggregation onto T COMMITS, crash before mergePhase='complete'
+        const src = orgMeta('src.com', { rfqCount: 2, leadScore: 4 });
+        const t0 = orgMeta('t.com', { rfqCount: 1, leadScore: 3 });
+        sendMock.mockResolvedValueOnce({ Item: src });
+        sendMock.mockResolvedValueOnce({ Item: t0 });
+        sendMock.mockResolvedValueOnce({});                       // archive tx (src archived → T)
+        sendMock.mockResolvedValueOnce({ Item: src });            // phase reads
+        sendMock.mockResolvedValueOnce({ Item: t0 });
+        sendMock.mockResolvedValueOnce({ Items: [] });
+        sendMock.mockResolvedValueOnce({ Items: [] });
+        sendMock.mockResolvedValueOnce({ Attributes: { orgId: 't.com', rfqCount: 3, leadScore: 7 } }); // aggregation onto T
+        sendMock.mockRejectedValueOnce(new Error('crash before complete'));
+        await expect(handler(mergeEvent('src.com', 't.com'))).rejects.toThrow('crash before complete');
+        // src's counts flowed into T exactly once
+        const call1Agg = aggUpdatesOn('t.com');
+        expect(call1Agg).toHaveLength(1);
+        expect(call1Agg[0][0].input.ExpressionAttributeValues[':rfqCount']).toBe(3);   // 1 + 2 (src)
+        expect(call1Agg[0][0].input.ExpressionAttributeValues[':leadScore']).toBe(7);  // 3 + 4 (src)
+        const afterCall1 = sendMock.mock.calls.length;
+
+        // ---- call 2: T→U completes fully — T's counts (already including src's) fold into U
+        const t1 = orgMeta('t.com', { rfqCount: 3, leadScore: 7, mergedSources: new Set(['src.com']) });
+        const u0 = orgMeta('u.com', { rfqCount: 5, leadScore: 10 });
+        sendMock.mockResolvedValueOnce({ Item: t1 });
+        sendMock.mockResolvedValueOnce({ Item: u0 });
+        sendMock.mockResolvedValueOnce({});                       // archive tx (T archived → U)
+        sendMock.mockResolvedValueOnce({ Item: t1 });
+        sendMock.mockResolvedValueOnce({ Item: u0 });
+        sendMock.mockResolvedValueOnce({ Items: [] });
+        sendMock.mockResolvedValueOnce({ Items: [] });
+        sendMock.mockResolvedValueOnce({ Attributes: { orgId: 'u.com', rfqCount: 8, leadScore: 17 } }); // aggregation onto U
+        sendMock.mockResolvedValueOnce({});                       // complete on T
+        const call2: any = await handler(mergeEvent('t.com', 'u.com'));
+        expect(call2.rfqCount).toBe(8);
+        const call2Agg = aggUpdatesOn('u.com', afterCall1);
+        expect(call2Agg).toHaveLength(1);
+        expect(call2Agg[0][0].input.ExpressionAttributeValues[':rfqCount']).toBe(8);   // 5 + 3 — src's 2 in there ONCE
+        const afterCall2 = sendMock.mock.calls.length;
+
+        // ---- call 3: retry src→T — chained resume against U; U.mergedSources lacks src.com but
+        //      T.mergedSources HAS it ⇒ Phase C must be SKIPPED, U keeps rfqCount 8.
+        const srcArchived = orgMeta('src.com', { status: 'archived', mergedInto: 't.com', mergePhase: 'archived', rfqCount: 2, leadScore: 4 });
+        const tArchived = orgMeta('t.com', {
+            status: 'archived', mergedInto: 'u.com', mergePhase: 'complete',
+            rfqCount: 3, leadScore: 7, mergedSources: new Set(['src.com']),
+        });
+        const u1 = orgMeta('u.com', { rfqCount: 8, leadScore: 17, mergedSources: new Set(['t.com']) });
+        sendMock.mockResolvedValueOnce({ Item: srcArchived });    // top source read
+        sendMock.mockResolvedValueOnce({ Item: tArchived });      // top target read
+        sendMock.mockResolvedValueOnce({ Item: tArchived });      // resolve('t.com') → archived → u
+        sendMock.mockResolvedValueOnce({ Item: u1 });             // → ACTIVE u.com
+        sendMock.mockResolvedValueOnce({ Item: srcArchived });    // phase reads
+        sendMock.mockResolvedValueOnce({ Item: u1 });
+        sendMock.mockResolvedValueOnce({ Items: [] });            // GSI2 residuals
+        sendMock.mockResolvedValueOnce({ Items: [] });            // lookup residuals
+        sendMock.mockResolvedValueOnce({ Item: tArchived });      // GUARD: requested target's retained mergedSources
+        sendMock.mockResolvedValueOnce({});                       // complete on src
+        const call3: any = await handler(mergeEvent('src.com', 't.com'));
+
+        // src's counts appear in U exactly once: NO second aggregation write on U
+        expect(aggUpdatesOn('u.com', afterCall2)).toHaveLength(0);
+        expect(call3.rfqCount).toBe(8);                            // U unchanged — not 10
+        expect(call3.leadScore).toBe(17);                          // not 21
+        // the resume still finishes: mergePhase='complete' flips on src as the last write
+        const call3Writes = sendMock.mock.calls.slice(afterCall2).filter((c: any) => c[0].constructor.name === 'UpdateCommand');
+        expect(call3Writes).toHaveLength(1);
+        expect(call3Writes[0][0].input.Key).toEqual({ PK: 'ORG#src.com', SK: 'META' });
+        expect(call3Writes[0][0].input.UpdateExpression).toContain('mergePhase = :complete');
+    });
+
+    it('chained resume where the requested target did NOT absorb the source still aggregates onto the successor', async () => {
+        const sendMock = await bindSend();
+        const { handler } = await import('./handler');
+        // A→B archived (phases never ran, B.mergedSources lacks a.com); B→C completed; retry A→B.
+        const aArchived = orgMeta('a.com', { status: 'archived', mergedInto: 'b.com', mergePhase: 'archived', rfqCount: 2 });
+        const bArchived = orgMeta('b.com', { status: 'archived', mergedInto: 'c.com', mergePhase: 'complete', mergedSources: new Set(['x.com']) });
+        const c0 = orgMeta('c.com', { rfqCount: 5 });
+        sendMock.mockResolvedValueOnce({ Item: aArchived });
+        sendMock.mockResolvedValueOnce({ Item: bArchived });
+        sendMock.mockResolvedValueOnce({ Item: bArchived });      // resolve → b archived → c
+        sendMock.mockResolvedValueOnce({ Item: c0 });             // c ACTIVE
+        sendMock.mockResolvedValueOnce({ Item: aArchived });      // phase reads
+        sendMock.mockResolvedValueOnce({ Item: c0 });
+        sendMock.mockResolvedValueOnce({ Items: [] });
+        sendMock.mockResolvedValueOnce({ Items: [] });
+        sendMock.mockResolvedValueOnce({ Item: bArchived });      // GUARD read: b.mergedSources lacks a.com
+        sendMock.mockResolvedValueOnce({ Attributes: { orgId: 'c.com', rfqCount: 7 } }); // aggregation PROCEEDS onto C
+        sendMock.mockResolvedValueOnce({});                       // complete on a
+        const result: any = await handler(mergeEvent('a.com', 'b.com'));
+        expect(result.rfqCount).toBe(7);                          // 5 + 2 — aggregated exactly once, onto C
+        const agg = sendMock.mock.calls.filter((cl: any) =>
+            cl[0].constructor.name === 'UpdateCommand' && cl[0].input.Key?.PK === 'ORG#c.com');
+        expect(agg).toHaveLength(1);
+        expect(agg[0][0].input.ExpressionAttributeValues[':rfqCount']).toBe(7);
     });
 });
