@@ -14,15 +14,17 @@
  * deployments the invoke fails with "No resolver for field: createStripeOrder".
  *
  * Usage:
- *   npx tsx scripts/backfill-stripe-order.ts <stripe_checkout_session_id> [--institution "Name"]
+ *   STRIPE_SECRET_KEY=rk_live_… npx tsx scripts/backfill-stripe-order.ts <stripe_checkout_session_id> [--institution "Name"]
  *
  * The Stripe session id is the full `cs_live_…` id (the StripeOrders partition key).
- * Requires local AWS credentials that can read the StripeOrders table and invoke
- * the order-api Lambda.
+ * STRIPE_SECRET_KEY is required for independent payment verification — a
+ * restricted key with only Checkout Sessions read access is sufficient.
+ * Also requires local AWS credentials that can read the StripeOrders table and
+ * invoke the order-api Lambda.
  */
 import { DynamoDBClient, ListTablesCommand } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, GetCommand } from '@aws-sdk/lib-dynamodb';
-import { LambdaClient, InvokeCommand, ListFunctionsCommand, GetFunctionConfigurationCommand } from '@aws-sdk/client-lambda';
+import { LambdaClient, InvokeCommand, ListFunctionsCommand } from '@aws-sdk/client-lambda';
 
 interface StripeOrderRecord {
   orderId: string;
@@ -77,18 +79,21 @@ async function findFunction(lambda: LambdaClient, fragment: RegExp, label: strin
  * hard-coded status 'paid' — including potentially unsettled delayed-payment
  * sessions — so the StripeOrders row alone cannot be trusted.
  *
- * Key resolution: STRIPE_SECRET_KEY env var, else read from the deployed
- * stripe-webhook Lambda's configuration (the operator's IAM already allows it).
+ * The key must be provided explicitly via STRIPE_SECRET_KEY (a restricted key
+ * with only Checkout Sessions read access is sufficient — create one in the
+ * Stripe Dashboard). The script deliberately does NOT read it from the
+ * deployed Lambda's configuration or any AWS secret store: that would expose
+ * the webhook's entire environment (webhook + SendGrid secrets) and require
+ * broader operator permissions than this script needs.
  */
-async function verifyPaidWithStripe(lambda: LambdaClient, sessionId: string): Promise<void> {
-  let key = process.env.STRIPE_SECRET_KEY;
+async function verifyPaidWithStripe(sessionId: string): Promise<void> {
+  const key = process.env.STRIPE_SECRET_KEY;
   if (!key) {
-    const webhookFn = await findFunction(lambda, /stripewebhook/i, 'stripe-webhook');
-    const cfg = await lambda.send(new GetFunctionConfigurationCommand({ FunctionName: webhookFn }));
-    key = cfg.Environment?.Variables?.STRIPE_SECRET_KEY;
-  }
-  if (!key) {
-    throw new Error('STRIPE_SECRET_KEY not found (env var or stripe-webhook Lambda config) — cannot verify payment');
+    throw new Error(
+      'STRIPE_SECRET_KEY is required to verify the payment with Stripe.\n'
+      + 'Use a restricted key (Checkout Sessions: read) from the Stripe Dashboard:\n'
+      + '  STRIPE_SECRET_KEY=rk_live_… npx tsx scripts/backfill-stripe-order.ts <cs_live_…>',
+    );
   }
 
   const res = await fetch(`https://api.stripe.com/v1/checkout/sessions/${sessionId}`, {
@@ -142,10 +147,10 @@ async function main() {
   console.log(`Order: ${productName} — $${(rec.amountTotal / 100).toFixed(2)} ${rec.currency.toUpperCase()} — ${rec.customerName} <${rec.customerEmail}> — paid ${rec.createdAt.slice(0, 10)}`);
 
   // 2. Independently confirm the payment actually settled before creating an order
-  const lambda = new LambdaClient({});
-  await verifyPaidWithStripe(lambda, sessionId);
+  await verifyPaidWithStripe(sessionId);
 
   // 3. Invoke the canonical internal resolver (idempotent per session — safe to re-run)
+  const lambda = new LambdaClient({});
   const fnName = await findFunction(lambda, /orderapi/i, 'order-api');
   console.log(`order-api Lambda: ${fnName}`);
 
