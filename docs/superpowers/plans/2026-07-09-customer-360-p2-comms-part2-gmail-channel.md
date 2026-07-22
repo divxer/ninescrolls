@@ -805,19 +805,36 @@ git commit -m "feat(comms-p2): email rendering — schema fields, mapper case, c
 - [ ] **Step 1: Wire in `backend.ts`** (mirroring the existing channel-Lambda + cron patterns):
 ```ts
 // gmail-sync (P2 comms): Google adapter + its ONE state item. Spec §10.
-backend.gmailSync.addEnvironment('GMAIL_SA_SECRET_ARN', GMAIL_SA_SECRET_ARN);       // const near the top; the secret is created manually (runbook) — reference by ARN
+// plan-review R3 — GMAIL_SA_SECRET_ARN supply & validation, per environment:
+//   prod (Amplify Console build): set as an Amplify Console environment variable (runbook step) —
+//     available to backend.ts at synth via process.env.
+//   sandbox (`ampx sandbox`): developer shell env var; UNSET by default ⇒ the whole gmail-sync
+//     wiring below is SKIPPED (secret grant, cron, env) — the function deploys inert. This keeps
+//     every developer sandbox synthesizable with zero Google setup.
+//   validation: if SET but malformed, FAIL SYNTH LOUDLY (a typo'd ARN must not deploy a broken grant).
+const GMAIL_SA_SECRET_ARN = process.env.GMAIL_SA_SECRET_ARN ?? '';
+const SECRET_ARN_RE = /^arn:aws:secretsmanager:[a-z0-9-]+:\d{12}:secret:[A-Za-z0-9/_+=.@-]+-[A-Za-z0-9]{6}$/;  // COMPLETE arn incl. the 6-char suffix
+if (GMAIL_SA_SECRET_ARN && !SECRET_ARN_RE.test(GMAIL_SA_SECRET_ARN)) {
+  throw new Error(`GMAIL_SA_SECRET_ARN is set but not a complete Secrets Manager ARN (must include the 6-char suffix): ${GMAIL_SA_SECRET_ARN}`);
+}
+const gmailSyncEnabled = GMAIL_SA_SECRET_ARN !== '';
+
+backend.gmailSync.addEnvironment('GMAIL_SA_SECRET_ARN', GMAIL_SA_SECRET_ARN);       // empty in a bare sandbox — the handler validates at runtime and reports 'not_configured' in its summary instead of crash-looping
 backend.gmailSync.addEnvironment('MAILBOXES', 'info@ninescrolls.com');
 backend.gmailSync.addEnvironment('INTELLIGENCE_TABLE', intelligenceTable.tableName);
-// plan-review R2 — EXACT Secrets Manager pattern: CDK import + grantRead (adds GetSecretValue
-// + DescribeSecret, and kms:Decrypt automatically IF the secret ever moves to a CMK).
+// plan-review R2/R3 — EXACT Secrets Manager pattern: CDK import + grantRead.
+// grantRead on an ARN-IMPORTED secret grants secretsmanager:GetSecretValue + DescribeSecret ONLY —
+// it can NOT add kms:Decrypt automatically (the imported ref has no key association). The secret is
+// created with the default aws/secretsmanager key, which needs no extra grant; if it is EVER moved
+// to a customer-managed KMS key, an explicit kms:Decrypt PolicyStatement on that key MUST be added
+// here (runbook carries the same warning). Spec §10 amended to this exact permission set.
 // Import into the gmail-sync stack (Stack.of the lambda) so no cross-stack edge is created.
-// GMAIL_SA_SECRET_ARN must be the COMPLETE arn including the 6-char suffix
-// (arn:aws:secretsmanager:us-east-2:<acct>:secret:<name>-AbCdEf) — fromSecretCompleteArn
-// requires it; the runbook records the full ARN at secret creation.
 import { Secret } from 'aws-cdk-lib/aws-secretsmanager';                             // (top of file)
 const gmailSyncStack = Stack.of(backend.gmailSync.resources.lambda);                 // hoisted — also used by the cron below
-const gmailSaSecret = Secret.fromSecretCompleteArn(gmailSyncStack, 'GmailSaSecret', GMAIL_SA_SECRET_ARN);
-gmailSaSecret.grantRead(backend.gmailSync.resources.lambda);
+if (gmailSyncEnabled) {
+  const gmailSaSecret = Secret.fromSecretCompleteArn(gmailSyncStack, 'GmailSaSecret', GMAIL_SA_SECRET_ARN);
+  gmailSaSecret.grantRead(backend.gmailSync.resources.lambda);
+}
 backend.gmailSync.resources.lambda.addToRolePolicy(new PolicyStatement({
   effect: Effect.ALLOW,
   actions: ['dynamodb:GetItem', 'dynamodb:PutItem', 'dynamodb:UpdateItem'],
@@ -829,7 +846,7 @@ backend.gmailSync.resources.lambda.addToRolePolicy(new PolicyStatement({
   effect: Effect.ALLOW, actions: ['lambda:InvokeFunction'], resources: [backend.crmApi.resources.lambda.functionArn],
 }));
 backend.gmailSync.addEnvironment('CRM_API_FUNCTION_NAME', backend.crmApi.resources.lambda.functionName);
-if (!isSandbox) {
+if (!isSandbox && gmailSyncEnabled) {   // an unconfigured function must not be cron-invoked
   // gmailSyncStack hoisted above (shared with the secret import)
   new Rule(gmailSyncStack, 'GmailSyncRule', {
     schedule: Schedule.cron({ minute: '*/10', hour: '*', day: '*', month: '*', year: '*' }),
@@ -852,17 +869,28 @@ describe('gmail-sync IAM source contract', () => {
     expect(src).toMatch(/ForAllValues:StringLike[\s\S]{0,120}dynamodb:LeadingKeys[\s\S]{0,80}GMAIL_SYNC#\*/));
   it('grants the base table ARN only (no /index/*) for gmail-sync dynamo access', () =>
     expect(src).not.toMatch(/gmailSync[\s\S]{0,400}index\/\*/));
-  it('cron rule lives in the gmail-sync stack and is sandbox-gated', () => {
-    expect(src).toMatch(/if \(!isSandbox\)[\s\S]{0,600}GmailSyncRule/);
+  it('cron rule lives in the gmail-sync stack, gated on sandbox AND secret configuration', () => {
+    expect(src).toMatch(/if \(!isSandbox && gmailSyncEnabled\)[\s\S]{0,600}GmailSyncRule/);
     expect(src).toMatch(/Stack\.of\(backend\.gmailSync\.resources\.lambda\)/);
+  });
+  it('validates GMAIL_SA_SECRET_ARN format at synth and gates the secret grant on it', () => {
+    expect(src).toMatch(/SECRET_ARN_RE/);
+    expect(src).toMatch(/if \(gmailSyncEnabled\)[\s\S]{0,300}fromSecretCompleteArn/);
   });
 });
 ```
-  2. **Reproducible pre-merge synth (plan-review R2)** — run the sandbox deploy once from the worktree:
+  2. **Reproducible pre-merge synth+deploy gate (plan-review R3 — honest description):** this is a REAL deployment to a sandbox stack in the dev AWS account, not local-only synthesis — CDK synth runs locally first (structural failures, including the nested-stack-cycle class that broke deploys twice before, fail before anything deploys), and then real resources are created:
 ```bash
-npx ampx sandbox --once
+npx ampx sandbox --identifier commsp2gate --once
 ```
-CDK synthesis runs LOCALLY before any deploy, so structural failures — including the nested-stack-cycle class that broke deploys twice before — fail fast on this command pre-merge. (The sandbox cron is `isSandbox`-gated, so no schedules start firing; requires live AWS creds — if SSO is expired, ask the user to re-auth rather than skipping.) The Amplify Console build remains the final binding gate on merge, but it is no longer the FIRST place a synth error can appear.
+  - Unique identifier `commsp2gate` keeps this gate's stack separate from any developer's default sandbox.
+  - No crons fire (`isSandbox`-gated) and gmail-sync deploys inert when `GMAIL_SA_SECRET_ARN` is unset.
+  - Requires live AWS creds — if SSO is expired, ask the user to re-auth rather than skipping.
+  - **Cleanup policy:** after the gate passes (or on abandoning the branch), delete the stack:
+```bash
+npx ampx sandbox delete --identifier commsp2gate
+```
+  The Amplify Console build remains the final binding gate on merge; this step just makes synth failures visible pre-merge.
   3. **Post-deploy IAM assertion** (runbook, exact commands):
 ```bash
 ROLE=$(aws lambda get-function-configuration --function-name <gmail-sync fn name> --query 'Role' --output text | awk -F/ '{print $NF}')
@@ -871,7 +899,8 @@ for P in $(aws iam list-role-policies --role-name "$ROLE" --query 'PolicyNames[]
 done
 ```
 
-- [ ] **Step 3: Runbook** — write `docs/runbooks/2026-07-09-gmail-sync-setup.md`: dedicated GCP project + SA creation; enable DWD; Admin-console scope authorization for the SA client-id (`gmail.readonly`); create the Secrets Manager secret (name + ARN → `GMAIL_SA_SECRET_ARN`); CloudTrail alarm on `GetSecretValue`; key-rotation cadence; §0 precondition re-check; watermark/backfill-state reset procedure (delete the `GMAIL_SYNC#<mailbox>` item → next run re-seeds); poison-mailbox alarm response; backfill window `N` default 90.
+- [ ] **Step 3: Runbook** — write `docs/runbooks/2026-07-09-gmail-sync-setup.md`: dedicated GCP project + SA creation; enable DWD; Admin-console scope authorization for the SA client-id (`gmail.readonly`); create the Secrets Manager secret with the **default `aws/secretsmanager` key** (record the COMPLETE ARN incl. 6-char suffix → `GMAIL_SA_SECRET_ARN`; **set it as an Amplify Console environment variable for the prod branch** — that is how backend.ts receives it at build; sandbox devs export it in-shell only when testing gmail-sync; ⚠️ if the secret is ever moved to a customer-managed KMS key, an explicit `kms:Decrypt` grant must be added in backend.ts — grantRead cannot do it for an ARN-imported secret); CloudTrail alarm on `GetSecretValue`; key-rotation cadence; §0 precondition re-check; watermark/backfill-state reset procedure (delete the `GMAIL_SYNC#<mailbox>` item → next run re-seeds); poison-mailbox alarm response; backfill window `N` default 90.
+  **Handler runtime guard (same commit, `amplify/functions/gmail-sync/handler.ts`):** if `process.env.GMAIL_SA_SECRET_ARN` is empty, return `{ status: 'not_configured' }` in the run summary immediately — never throw/crash-loop on an inert deployment; add a handler test for it.
 
 - [ ] **Step 4:** tsc clean; run the new source-contract test (`npx vitest run amplify/backend.gmailSync.test.ts` — PASS); commit **including the test file** (plan-review R2: it must be staged, not just written):
 ```bash
@@ -911,7 +940,7 @@ it('gmail chain: raw message → mapped → emitted unresolved → queue unit �
   expect(table.get('TLEVENT#' + idOf('m1')).orgId).toBe('acme.com');
   const contact = table.byGsi4('EMAIL#bob@gmail.com');
   expect(contact.orgId).toBe('acme.com');
-  expect(contact.lastLinkGeneration).toMatch(/^[0-9A-HJKMNP-TV-Z]{26}$/);
+  expect(contact.lastLinkGeneration).toMatch(/^E\d{8}#[0-9A-HJKMNP-TV-Z]{26}$/);   // R10 composite stamp
   // 4. a SUBSEQUENT raw message from the same address flows mapper→projector→emit and auto-resolves
   const mapped2 = mapMessage(rawGmailMetadataMessage('m2', { from: 'Bob <bob@gmail.com>', to: 'sales@ninescrolls.com' }), 'info@ninescrolls.com');
   await projectMessage(mapped2, invokeCrmApiToRealEmit);
@@ -935,15 +964,15 @@ git commit -m "test(comms-p2): executable integration chain — raw message → 
 
 - [ ] **Step 1:** `npx vitest run amplify/functions/gmail-sync amplify/functions/crm-api` — ALL pass.
 - [ ] **Step 2:** frontend timeline + needslinking tests — pass.
-- [ ] **Step 3 (unchained tsc, no masking — same form as Part 1 Task 15):**
+- [ ] **Step 3 (no pipes that eat compiler status — same form as Part 1 Task 15):**
 ```bash
 npx tsc --noEmit -p amplify/tsconfig.json
 ```
-Expected: clean, exit 0.
+Expected: no output, exit 0.
 ```bash
-npx tsc --noEmit 2>&1 | grep -cv "main.tsx"
+npx tsc --noEmit > .tsc-app.out 2>&1; echo "tsc exit: $?"; grep -v "main.tsx" .tsc-app.out | grep "error TS"; echo "new-error grep exit: $? (1 = PASS: no new errors)"; rm .tsc-app.out
 ```
-Expected printed count: `0` (only the pre-existing `main.tsx` diagnostics exist). A nonzero count = new errors: fix them.
+`tsc exit` is expected nonzero (pre-existing `main.tsx` error); the gate is `new-error grep exit: 1` (no `error TS` lines outside `main.tsx`; `0` = new errors printed above — fix them).
 eslint clean on all touched files.
 - [ ] **Step 4:** Re-verify the 10 header invariants against the full Part-2 diff.
 - [ ] **Step 5:** Commit fixups scoped to touched files; report counts + invariant confirmation. Post-merge activation (PR body): runbook execution → first `gmail.sync.summary` (backfill) → spot-check an org timeline shows email rows → verify a Sent item produced outbound (spec R1/M4 spike note).
