@@ -271,6 +271,18 @@ describe('runBackfill', () => {
     expect(listCalls[0].pageToken).toBeUndefined();
   });
 
+  it('anchor-less start ignores stale window/configId residue: anchor-capture write + paging use the CURRENT config', async () => {
+    // post-reset residue / manual surgery: no anchor, but stale paging config left on the item
+    existingState({ phase: 'backfill', anchorHistoryId: null, pageToken: 'pt-1', window: 'newer_than:30d', configId: computeBackfillConfigId('info@ninescrolls.com', 'newer_than:30d') });
+    profileHistoryId('700'); pages([['a']]); outcomes({ a: 'persisted' });
+    const s = await runBackfill(ctx);
+    expect(stateWrites()[0]).toMatchObject({
+      phase: 'backfill', anchorHistoryId: '700', pageToken: null, window: 'newer_than:90d', configId: CONFIG_ID,
+    });
+    expect(listCalls[0]).toEqual({ window: 'newer_than:90d', pageToken: undefined });
+    expect(s.completed).toBe(true);
+  });
+
   it('restart anchor-persist CCFE aborts before any page is fetched (fence discipline)', async () => {
     existingState({ phase: 'backfill', anchorHistoryId: '500', pageToken: 'pt-1', window: 'newer_than:30d', configId: computeBackfillConfigId('info@ninescrolls.com', 'newer_than:30d') });
     profileHistoryId('900'); loseFenceOn(0); pages([['a']]);

@@ -12,7 +12,8 @@ vi.mock('./lib/gmailSyncState', () => ({
 }));
 
 const createGmailClient = vi.fn();
-vi.mock('./lib/gmailClient', () => ({
+vi.mock('./lib/gmailClient', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./lib/gmailClient')>()),   // keep the real GmailApiError class
   createGmailClient: (...a: unknown[]) => createGmailClient(...a),
 }));
 
@@ -27,7 +28,8 @@ vi.mock('./lib/backfill', () => ({
 }));
 
 const projectMessage = vi.fn();
-vi.mock('./lib/emitMessage', () => ({
+vi.mock('./lib/emitMessage', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./lib/emitMessage')>()),   // keep the REAL sanitizeDiagnostic
   projectMessage: (...a: unknown[]) => projectMessage(...a),
 }));
 
@@ -266,6 +268,73 @@ describe('gmail-sync handler poison diagnostics', () => {
     const [, , , fields] = releaseLease.mock.calls[0];
     expect(fields).toMatchObject({ blockedMessageId: 'm1', blockedStreak: 3 });
     logSpy.mockRestore();
+  });
+
+  it('reviewer sequence: blocked → throw → transient → lease-held → blocked = streak 1, unchanged, unchanged, unchanged, 2', async () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const durable = { phase: 'incremental', historyId: '999', blockedMessageId: 'm1', blockedStreak: 1 };
+
+    // run 1: blocked on m1 → streak 1
+    readState.mockResolvedValueOnce({ phase: 'incremental', historyId: '999' });
+    runIncremental.mockResolvedValueOnce({ checkpoint: '999', counters: {}, hasMore: false, blockedMessageId: 'm1', blockedError: 'x' });
+    await handler();
+    expect(releaseLease.mock.calls[0][3]).toMatchObject({ blockedMessageId: 'm1', blockedStreak: 1 });
+
+    // run 2: thrown run = inconclusive — release must NOT touch the blocked fields
+    readState.mockResolvedValueOnce(durable);
+    runIncremental.mockRejectedValueOnce(new Error('boom'));
+    await handler();
+    const f2 = releaseLease.mock.calls[1][3];
+    expect('blockedMessageId' in f2).toBe(false);
+    expect('blockedStreak' in f2).toBe(false);
+
+    // run 3: transient exit (hasMore:true, no blockedMessageId) = inconclusive — NOT a clear
+    readState.mockResolvedValueOnce(durable);
+    runIncremental.mockResolvedValueOnce({ checkpoint: '999', counters: {}, hasMore: true });
+    await handler();
+    const f3 = releaseLease.mock.calls[2][3];
+    expect('blockedMessageId' in f3).toBe(false);
+    expect('blockedStreak' in f3).toBe(false);
+
+    // run 4: lease held = inconclusive — nothing written at all
+    acquireLease.mockResolvedValueOnce(null);
+    await handler();
+    expect(releaseLease).toHaveBeenCalledTimes(3);
+
+    // run 5: blocked on m1 again — durable state still says streak 1 → streak 2
+    readState.mockResolvedValueOnce(durable);
+    runIncremental.mockResolvedValueOnce({ checkpoint: '999', counters: {}, hasMore: false, blockedMessageId: 'm1', blockedError: 'x' });
+    await handler();
+    expect(releaseLease.mock.calls[3][3]).toMatchObject({ blockedMessageId: 'm1', blockedStreak: 2 });
+
+    logSpy.mockRestore(); errSpy.mockRestore();
+  });
+
+  it('a needsReanchor run is inconclusive: prior blocked fields ride through untouched', async () => {
+    readState.mockResolvedValue({ phase: 'incremental', historyId: '999', blockedMessageId: 'm1', blockedStreak: 2 });
+    runIncremental.mockResolvedValue({ checkpoint: null, counters: {}, hasMore: false, needsReanchor: true });
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    await handler();
+    const [, , , fields] = releaseLease.mock.calls[0];
+    expect('blockedMessageId' in fields).toBe(false);
+    expect('blockedStreak' in fields).toBe(false);
+    logSpy.mockRestore();
+  });
+
+  it('a thrown run with a PII-bearing error persists/logs only a sanitized diagnostic', async () => {
+    readState.mockResolvedValue({ phase: 'incremental', historyId: '999' });
+    runIncremental.mockRejectedValue(new Error(`crm-api error: emit failed for bob@acme.com ${'Z'.repeat(9000)}`));
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const res = await handler();
+    const error = (res.results[0] as { error: string }).error;
+    expect(error).not.toContain('bob@acme.com');
+    expect(error.length).toBeLessThanOrEqual(250);
+    const failLog = errSpy.mock.calls.map((c) => c[0]).find((l) => typeof l === 'string' && l.includes('gmail.sync.mailbox_failed')) as string;
+    expect(failLog).not.toContain('bob@acme.com');
+    const [, , , fields] = releaseLease.mock.calls[0];
+    expect(JSON.stringify(fields)).not.toContain('bob@acme.com');
+    errSpy.mockRestore();
   });
 
   it('a blocked BACKFILL run also tracks the streak (phase-agnostic)', async () => {

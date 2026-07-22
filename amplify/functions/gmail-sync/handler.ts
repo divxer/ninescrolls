@@ -2,7 +2,7 @@ import { readState, acquireLease, releaseLease, writeStateFenced, type GmailSync
 import { createGmailClient } from './lib/gmailClient';
 import { runIncremental } from './lib/incrementalSync';
 import { runBackfill } from './lib/backfill';
-import { projectMessage, type ProjectOutcome } from './lib/emitMessage';
+import { projectMessage, sanitizeDiagnostic, type ProjectOutcome } from './lib/emitMessage';
 import type { MapResult } from './lib/mapMessage';
 
 // keep in sync with gmail-sync/resource.ts's timeoutSeconds (see that file's comment for the
@@ -15,6 +15,22 @@ const DEFAULT_MAILBOXES = 'info@ninescrolls.com';
 // */10 cron). The streak lives durably on the state item (blockedMessageId/blockedStreak),
 // written only through the fenced releaseLease below.
 const POISON_STREAK_THRESHOLD = 3;
+
+// Tri-state classification of a completed (non-thrown, non-aborted-returned) mailbox run for the
+// poison-streak bookkeeping. 'clean' means the run genuinely completed with zero retryable
+// failures — an incremental pass that neither paused on a transient (hasMore) nor bailed to
+// re-anchor, or a backfill that finished. Anything else that lacks a blocked id is inconclusive:
+// the blocked message was never revisited, so the streak must not be cleared.
+function classifyRun(outcome: Record<string, unknown>): 'blocked' | 'clean' | 'inconclusive' {
+  if (typeof outcome.blockedMessageId === 'string') return 'blocked';
+  if (outcome.aborted === true) return 'inconclusive';               // defensive — aborted runs return before release
+  const counters = outcome.counters as Record<string, number> | undefined;
+  if ((counters?.retryable_failure ?? 0) > 0) return 'inconclusive'; // defensive: retryable seen but no id surfaced
+  if (outcome.phase === 'incremental') {
+    return outcome.hasMore === true || outcome.needsReanchor === true ? 'inconclusive' : 'clean';
+  }
+  return outcome.completed === true ? 'clean' : 'inconclusive';
+}
 
 // Both engines (runIncremental/runBackfill) already filter out kind:'skip' before calling
 // ctx.project — this adapter only exists to narrow their shared MapResult param down to the
@@ -80,9 +96,15 @@ async function syncMailbox(mailbox: string, nowMs: number): Promise<Record<strin
       outcome = { mailbox, phase: 'backfill', ...r };
     }
   } catch (err) {
-    const error = err instanceof Error ? err.message : String(err);
+    // Thrown-run choke point (see sanitizeDiagnostic in emitMessage.ts): the error text entering
+    // the mailbox_failed log and durable lastSummary is sanitized here — never the raw message.
+    const { errorClass, diagnostic } = sanitizeDiagnostic(err);
+    const error = `${errorClass}: ${diagnostic}`;
     console.error(JSON.stringify({ event: 'gmail.sync.mailbox_failed', mailbox, error }));
     try {
+      // Inconclusive run (thrown): lastSummary only — blockedMessageId/blockedStreak are NOT
+      // named in this write, and releaseLease's UpdateExpression only SETs the fields it is
+      // given, so the prior streak persists on the item untouched.
       await releaseLease(mailbox, lease, Date.now(), { lastSummary: { status: 'error', error } });
     } catch {
       // best-effort — see the function-level comment above.
@@ -93,9 +115,20 @@ async function syncMailbox(mailbox: string, nowMs: number): Promise<Record<strin
   // Poison-mailbox diagnostics: fold this run's blocked-message diagnostics into a durable
   // consecutive-blocked streak. The streak fields ride the SAME fenced releaseLease write as
   // lastSummary — no extra write, full fence discipline (a lost lease skips them entirely).
-  const blockedMessageId = typeof outcome.blockedMessageId === 'string' ? outcome.blockedMessageId : null;
+  //
+  // Tri-state run outcome:
+  //  - 'blocked'      : the summary names a blocked message → same id: streak+1, new id: reset to 1
+  //  - 'clean'        : the run COMPLETED with zero retryable_failures → the ONLY state that clears
+  //  - 'inconclusive' : transient exit / needsReanchor / defensive retryable-without-id — the
+  //                     blocked message was never revisited, so the prior streak must persist.
+  //                     The fields are simply NOT named in the releaseLease write: its
+  //                     UpdateExpression only SETs provided fields, so the item keeps them.
+  // (Thrown runs and aborted/lease-lost/lease-held runs are inconclusive too — they return from
+  // the catch / early paths above and never reach this write.)
+  const runClass = classifyRun(outcome);
   const blockedFields: Partial<GmailSyncState> = {};
-  if (blockedMessageId) {
+  if (runClass === 'blocked') {
+    const blockedMessageId = outcome.blockedMessageId as string;
     const blockedStreak = state.blockedMessageId === blockedMessageId ? (state.blockedStreak ?? 0) + 1 : 1;
     blockedFields.blockedMessageId = blockedMessageId;
     blockedFields.blockedStreak = blockedStreak;
@@ -107,8 +140,8 @@ async function syncMailbox(mailbox: string, nowMs: number): Promise<Record<strin
       // Stable, metric-filterable event name — the runbook's poison-mailbox alarm keys on it.
       console.log(JSON.stringify({ event: 'gmail.sync.poison', mailbox, blockedMessageId, blockedStreak }));
     }
-  } else if (state.blockedMessageId != null || state.blockedStreak != null) {
-    blockedFields.blockedMessageId = null;      // clean run: clear the streak
+  } else if (runClass === 'clean' && (state.blockedMessageId != null || state.blockedStreak != null)) {
+    blockedFields.blockedMessageId = null;      // genuine clean completion: clear the streak
     blockedFields.blockedStreak = null;
   }
 

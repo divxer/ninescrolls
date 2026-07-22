@@ -35,7 +35,6 @@ export async function runBackfill(ctx: BackfillCtx): Promise<BackfillResult> {
   const configId = computeBackfillConfigId(ctx.mailbox, currentWindow);
   let anchor = ctx.existing.anchorHistoryId ?? null;
   let pageToken = ctx.existing.pageToken ?? null;
-  let window = ctx.existing.window ?? currentWindow;
   let restarted = false;
   let diag: { blockedMessageId: string; blockedError: string } | undefined;
 
@@ -44,8 +43,14 @@ export async function runBackfill(ctx: BackfillCtx): Promise<BackfillResult> {
   // RESTART anchor-first in this same run. The reset is carried by the fresh-anchor fenced write
   // below, which atomically replaces anchor+cursor+window+configId in one state write.
   if (anchor && ctx.existing.configId !== configId) {
-    anchor = null; pageToken = null; window = currentWindow; restarted = true;
+    anchor = null; restarted = true;
   }
+
+  // ANY anchor-less start (fresh mailbox, config restart, post-reset residue, manual surgery)
+  // ignores stored paging state entirely — cursor and window normalize to the CURRENT inputs, so
+  // a stale window/configId left on the item can never bind a fresh anchor to an old listing.
+  if (!anchor) pageToken = null;
+  const window = anchor ? (ctx.existing.window ?? currentWindow) : currentWindow;
 
   if (!anchor) {                                                 // fresh backfill: capture-then-persist FIRST
     const profile = await ctx.client.getProfile() as { historyId?: string };
