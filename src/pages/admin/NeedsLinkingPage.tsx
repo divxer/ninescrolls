@@ -33,8 +33,7 @@ export function NeedsLinkingPage() {
       let result: { postCommitStatus?: string | null } | null | undefined;
       if (unit.linkUnitType === 'structured') {
         result = await svc.linkStructuredUnit({
-          sourceType: unit.source,
-          sourceEntityId: unit.sourceEntityId as string,
+          representativeEventId: unit.representativeEventId,
           targetOrgId,
         });
       } else {

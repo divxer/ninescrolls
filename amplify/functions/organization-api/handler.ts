@@ -7,6 +7,7 @@ import {
     UpdateCommand,
     QueryCommand,
     ScanCommand,
+    TransactWriteCommand,
 } from '@aws-sdk/lib-dynamodb';
 import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
 import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime';
@@ -829,23 +830,39 @@ async function reclassifyOrganization(args: { orgId: string; force?: boolean }) 
 }
 
 /**
- * Merge `sourceOrgId` into `targetOrgId`.
+ * Merge `sourceOrgId` into `targetOrgId`. (Task 8 / spec R10 restructure)
  *
- * Steps:
- *  1. Validate both Org META rows exist and are not the same.
- *  2. Re-point all GSI2-linked items (RFQ / ORDER / LEAD) from source to target,
- *     rewriting `matchedOrgId` + `GSI2PK` + `GSI2SK` (SK shape depends on PK prefix).
- *  3. Re-point all `ORG_DOMAIN_LOOKUP` rows whose `orgId` == sourceOrgId to target.
- *  4. Aggregate counts / scores / dates onto target META and re-evaluate GSI3 indexing.
- *  5. Archive source META: status='archived', mergedInto, mergedAt, REMOVE GSI1/GSI3.
+ * ORDER — archive-FIRST is the linearization point:
+ *  1. Validate: distinct orgs, both exist (strong reads), target exactly 'active' (R5 — an
+ *     archived target would mint merge chains ending in a dead org).
+ *  2. ONE atomic archive TransactWriteItems:
+ *       [0] ConditionCheck target status='active'   (competing merges linearize here)
+ *       [1] archive source: status='archived', mergedInto, mergedAt, mergePhase='archived',
+ *           REMOVE GSI1/GSI3 — conditioned on source status='active'
+ *       [2] MERGE_RECON visibility-marker UPSERT (full GSI metadata; scrubs stale probe/ack fields)
+ *  3. runRemainingMergePhases: re-point GSI2-linked records + domain lookups (each write fenced on
+ *     the EFFECTIVE target being active), then aggregate counts/scores/dates onto the effective
+ *     target (its own conditional update doubles as the fence).
+ *  4. mergePhase='complete' on the source LAST. 'complete' means the interactive flow finished —
+ *     it is NOT a convergence claim (the Task 12 probe owns residual visibility).
  *
- * Idempotency: if source is already merged into the SAME target, return target unchanged.
- * Throws if source is already merged into a DIFFERENT target.
+ * Resume semantics: source archived into the SAME target with mergePhase='archived' ⇒ RESUME the
+ * phases (chained merges re-resolve the target's active successor; `mergedInto` keeps the
+ * historical target). mergePhase='complete' — or absent, i.e. archived by the legacy flow whose
+ * archive was the LAST step — ⇒ idempotent early-return. A DIFFERENT target throws.
+ *
+ * WHY THIS IS SAFE with crm-api's generational replays: already-applied replays supersede on their
+ * own stamp; not-yet-applied replays are fenced at write time and redirected (or blocked, never
+ * falsely completed); archive-first makes the fence airtight and the re-drain catches the
+ * fenced-in-flight window. Clock skew never decides a merge outcome (no stamp comparison here) —
+ * and merge NEVER touches matchedOrgLinkGeneration / lastLinkGeneration (R10 boundary).
  */
 // Minimal view of an Org META item as read during a merge — only the fields read here.
 type OrgMetaItem = {
     status?: string;
     mergedInto?: string;
+    mergePhase?: string;
+    mergedSources?: Set<string> | string[];
     aliasDomains?: string[];
     primaryDomain?: string;
     rfqCount?: number;
@@ -863,6 +880,88 @@ type OrgMetaItem = {
     GSI3PK?: string;
 };
 
+const MERGE_LAG_HORIZON_MS = 15 * 60 * 1000; // Task 12 probe never inspects markers younger than this
+
+function orgKey(orgId: string) {
+    return { PK: `ORG#${orgId}`, SK: 'META' };
+}
+function mergeReconKey(fromOrgId: string, toOrgId: string) {
+    return { PK: `MERGE_RECON#${fromOrgId}`, SK: `TO#${toOrgId}` };
+}
+
+// R5/R6 write fence: element 0 of every phase TransactWriteItems — the effective target must
+// still be active for any re-point to land.
+function orgActiveCheck(orgId: string) {
+    return {
+        ConditionCheck: {
+            TableName: TABLE(),
+            Key: orgKey(orgId),
+            ConditionExpression: '#s = :active',
+            ExpressionAttributeNames: { '#s': 'status' },
+            ExpressionAttributeValues: { ':active': 'active' },
+        },
+    };
+}
+
+// POSITIONAL cancellation mapping (never `.some(...)`, never guess on a missing array).
+type MergeCancellation = 'target_fence' | 'write_condition' | 'other';
+function classifyMergeCancellation(err: unknown, writeIndex: number): MergeCancellation {
+    const e = err as { name?: string; CancellationReasons?: Array<{ Code?: string }> };
+    if (e?.name !== 'TransactionCanceledException' || !Array.isArray(e.CancellationReasons)) return 'other';
+    if (e.CancellationReasons[0]?.Code === 'ConditionalCheckFailed') return 'target_fence';
+    if (e.CancellationReasons[writeIndex]?.Code === 'ConditionalCheckFailed') return 'write_condition';
+    return 'other';
+}
+
+class MergeFenceLostError extends Error {
+    constructor(orgId: string) {
+        super(`effective merge target ${orgId} is no longer active`);
+        this.name = 'MergeFenceLostError';
+    }
+}
+
+// DocumentClient materializes a DynamoDB String Set as a JS Set; be tolerant of arrays too.
+function mergedSourcesContains(mergedSources: Set<string> | string[] | undefined, orgId: string): boolean {
+    if (mergedSources instanceof Set) return mergedSources.has(orgId);
+    if (Array.isArray(mergedSources)) return mergedSources.includes(orgId);
+    return false;
+}
+
+async function readOrgMeta(orgId: string): Promise<(OrgMetaItem & Record<string, unknown>) | undefined> {
+    const res = await ddb.send(new GetCommand({
+        TableName: TABLE(),
+        Key: orgKey(orgId),
+        ConsistentRead: true,
+    }));
+    return res.Item as (OrgMetaItem & Record<string, unknown>) | undefined;
+}
+
+// Canonical-successor resolution (same semantics as crm-api's resolveEffectiveTarget, spec R10):
+// strong reads; ONLY exact 'active' applies; successors followed ONLY from exact 'archived' via
+// `mergedInto`; depth ≤5 with a visited-set; anything else is structural unavailability.
+// `visitedArchived` (mirrored from crm-api to prevent shape drift) lists the archived orgs the
+// walk passed through, in hop order — the resume path may ignore or use it.
+type EffectiveTargetOrg =
+    | { status: 'active'; orgId: string; visitedArchived: string[] }
+    | { status: 'unavailable'; reason: string };
+async function resolveEffectiveTargetOrg(requestedOrgId: string): Promise<EffectiveTargetOrg> {
+    const visited = new Set<string>();
+    const visitedArchived: string[] = [];
+    let cur = requestedOrgId;
+    for (let hop = 0; hop <= 5; hop++) {
+        if (visited.has(cur)) return { status: 'unavailable', reason: `merge-chain cycle at ${cur}` };
+        visited.add(cur);
+        const org = await readOrgMeta(cur);
+        if (!org) return { status: 'unavailable', reason: `org ${cur} not found` };
+        if (org.status === 'active') return { status: 'active', orgId: cur, visitedArchived };
+        if (org.status !== 'archived') return { status: 'unavailable', reason: `org ${cur} has non-navigable status '${String(org.status)}'` };
+        if (!org.mergedInto) return { status: 'unavailable', reason: `org ${cur} archived without successor` };
+        visitedArchived.push(cur);
+        cur = org.mergedInto;
+    }
+    return { status: 'unavailable', reason: 'merge-chain depth limit (5) exceeded' };
+}
+
 async function mergeOrganization(
     args: { sourceOrgId: string; targetOrgId: string },
     identity: string,
@@ -872,38 +971,221 @@ async function mergeOrganization(
         throw new Error('Cannot merge an Org into itself');
     }
 
-    const [sourceRes, targetRes] = await Promise.all([
-        ddb.send(new GetCommand({
-            TableName: TABLE(),
-            Key: { PK: `ORG#${sourceOrgId}`, SK: 'META' },
-        })),
-        ddb.send(new GetCommand({
-            TableName: TABLE(),
-            Key: { PK: `ORG#${targetOrgId}`, SK: 'META' },
-        })),
-    ]);
-    const source = sourceRes.Item as OrgMetaItem | undefined;
-    const target = targetRes.Item as OrgMetaItem | undefined;
+    const [source, target] = await Promise.all([readOrgMeta(sourceOrgId), readOrgMeta(targetOrgId)]);
     if (!source) throw new Error(`Organization not found: ${sourceOrgId}`);
     if (!target) throw new Error(`Organization not found: ${targetOrgId}`);
 
-    // Idempotency check
+    // Idempotency / resume detection (R10-final-gate)
     if (source.status === 'archived' && source.mergedInto) {
-        if (source.mergedInto === targetOrgId) {
-            console.log(JSON.stringify({
-                event: 'org.merge.idempotent-noop',
-                sourceOrgId,
-                targetOrgId,
-                changedBy: identity,
-            }));
-            return target;
+        if (source.mergedInto !== targetOrgId) {
+            throw new Error(
+                `Source Org ${sourceOrgId} is already merged into ${source.mergedInto}, cannot re-merge into ${targetOrgId}`,
+            );
+        }
+        if (source.mergePhase === 'archived') {
+            // Crash-after-archive: RESUME the remaining phases (chained merges re-resolve the successor).
+            return resumeMerge(sourceOrgId, targetOrgId, identity);
+        }
+        // mergePhase === 'complete', or absent: the legacy flow archived LAST, so an archived
+        // legacy source means every phase already ran — pinned idempotent early-return.
+        console.log(JSON.stringify({
+            event: 'org.merge.idempotent-noop',
+            sourceOrgId,
+            targetOrgId,
+            changedBy: identity,
+        }));
+        return target;
+    }
+
+    // R5: reject non-active merge TARGETS up front (strong read above) — an archived target would
+    // mint chains ending in a dead org; merge into its active successor instead.
+    if (target.status !== 'active') {
+        throw new Error(`Target Org ${targetOrgId} is not active (status '${String(target.status)}') — merge into its active successor instead`);
+    }
+    if (source.status !== 'active') {
+        throw new Error(`Source Org ${sourceOrgId} is not active (status '${String(source.status)}'), cannot merge`);
+    }
+
+    // ONE atomic archive transaction (R7 blockers 1+3 — the linearization point).
+    const nowIso = new Date().toISOString();
+    const lagHorizonIso = new Date(Date.now() + MERGE_LAG_HORIZON_MS).toISOString();
+    try {
+        await ddb.send(new TransactWriteCommand({ TransactItems: [
+            orgActiveCheck(targetOrgId),
+            { Update: {
+                TableName: TABLE(),
+                Key: orgKey(sourceOrgId),
+                // Production archive expression EXTENDED (R8 blocker 2): retains mergedAt/updatedAt
+                // and the active/score index REMOVEs; adds mergePhase; now conditioned on the EXACT
+                // source state so competing merges linearize here.
+                UpdateExpression: 'SET #st = :archived, mergedInto = :target, mergedAt = :now, updatedAt = :now, mergePhase = :ph REMOVE GSI1PK, GSI1SK, GSI3PK, GSI3SK',
+                ConditionExpression: '#st = :active',
+                ExpressionAttributeNames: { '#st': 'status' },
+                ExpressionAttributeValues: {
+                    ':archived': 'archived',
+                    ':target': targetOrgId,
+                    ':now': nowIso,
+                    ':ph': 'archived',
+                    ':active': 'active',
+                },
+            } },
+            { Update: {
+                // UPSERT visibility marker — no Put collision can cancel the transaction; an upsert
+                // implicitly supersedes a prior pair's marker. R8 blocker 1: full index metadata so
+                // the Task 12 probe can discover it; R9: scrub stale probe/ack metadata on re-merge.
+                TableName: TABLE(),
+                Key: mergeReconKey(sourceOrgId, targetOrgId),
+                UpdateExpression: 'SET #ms = :probe, GSI1PK = :gpk, GSI1SK = :gsk, entityType = :et, fromOrgId = :from, toOrgId = :to2, mergedAt = :now, residualsDetected = :null, residualSamples = :empty, lagHorizonAt = :horizon, updatedAt = :now, createdAt = if_not_exists(createdAt, :now), version = if_not_exists(version, :zero) + :one REMOVE probedAt, acknowledgedBy, acknowledgedAt',
+                ExpressionAttributeNames: { '#ms': 'state' },
+                ExpressionAttributeValues: {
+                    ':probe': 'pending_probe',
+                    ':gpk': 'MERGE_RECON#pending_probe',
+                    ':gsk': nowIso,
+                    ':et': 'MERGE_RECON',
+                    ':from': sourceOrgId,
+                    ':to2': targetOrgId,
+                    ':now': nowIso,
+                    ':null': null,
+                    ':empty': [],
+                    ':horizon': lagHorizonIso,
+                    ':zero': 0,
+                    ':one': 1,
+                },
+            } },
+        ] }));
+    } catch (err) {
+        return handleArchiveCancellation(err, sourceOrgId, targetOrgId, identity);
+    }
+
+    const targetAttrs = await runPhasesWithFenceRetry(sourceOrgId, targetOrgId, targetOrgId);
+    await setMergeComplete(sourceOrgId);
+    console.log(JSON.stringify({
+        event: 'org.merge',
+        sourceOrgId,
+        targetOrgId,
+        changedBy: identity,
+    }));
+    return targetAttrs;
+}
+
+// Positional cancellation outcomes for the archive transaction (R9 critical — chained merge during
+// resume). Index 0 = target fence; index 1 = the source archive's own condition; index 2 (marker
+// upsert) is unconditioned and cannot fail conditionally.
+async function handleArchiveCancellation(err: unknown, sourceOrgId: string, targetOrgId: string, identity: string) {
+    const e = err as { name?: string; CancellationReasons?: Array<{ Code?: string }> };
+    if (e?.name !== 'TransactionCanceledException' || !Array.isArray(e.CancellationReasons)) throw err;
+
+    if (e.CancellationReasons[0]?.Code === 'ConditionalCheckFailed') {
+        // Target not active — READ THE SOURCE FIRST: if OUR archive already committed on a prior
+        // attempt and the target was itself merged away (A→B crashed, then B→C completed), this is
+        // a chained RESUME, not a rejection. Only an ACTIVE source makes this a genuine rejection.
+        const src = await readOrgMeta(sourceOrgId);
+        if (src?.status === 'archived' && src.mergedInto === targetOrgId && src.mergePhase !== 'complete') {
+            return resumeMerge(sourceOrgId, targetOrgId, identity);
+        }
+        if (src?.status === 'archived' && src.mergedInto && src.mergedInto !== targetOrgId) {
+            throw new Error(
+                `Source Org ${sourceOrgId} is already merged into ${src.mergedInto}, cannot re-merge into ${targetOrgId}`,
+            );
+        }
+        throw new Error(`Target Org ${targetOrgId} is not active — merge into its active successor instead`);
+    }
+
+    if (e.CancellationReasons[1]?.Code === 'ConditionalCheckFailed') {
+        // Source not active — a competing merge won the linearization race. Read it to decide.
+        const src = await readOrgMeta(sourceOrgId);
+        if (src?.mergedInto === targetOrgId && src.mergePhase === 'archived') {
+            return resumeMerge(sourceOrgId, targetOrgId, identity);   // same-pair competitor archived; finish its phases
+        }
+        if (src?.mergedInto === targetOrgId) {
+            console.log(JSON.stringify({ event: 'org.merge.idempotent-noop', sourceOrgId, targetOrgId, changedBy: identity }));
+            return readOrgMeta(targetOrgId);                          // same-pair competitor completed
         }
         throw new Error(
-            `Source Org ${sourceOrgId} is already merged into ${source.mergedInto}, cannot re-merge into ${targetOrgId}`,
+            `Source Org ${sourceOrgId} is already merged into ${String(src?.mergedInto)}, cannot re-merge into ${targetOrgId}`,
         );
     }
 
-    // Step 2: Query GSI2 for all items linked to source
+    throw err; // malformed/unknown cancellation — propagate, never guessed into an outcome
+}
+
+async function resumeMerge(sourceOrgId: string, requestedTargetOrgId: string, identity: string) {
+    const eff = await resolveEffectiveTargetOrg(requestedTargetOrgId);
+    if (eff.status === 'unavailable') {
+        // Source stays incomplete (mergePhase='archived') and visible via its MERGE_RECON marker.
+        throw new Error(
+            `Cannot resume merge of ${sourceOrgId}: successor of ${requestedTargetOrgId} unavailable (${eff.reason})`,
+        );
+    }
+    const targetAttrs = await runPhasesWithFenceRetry(sourceOrgId, requestedTargetOrgId, eff.orgId);
+    await setMergeComplete(sourceOrgId);
+    console.log(JSON.stringify({
+        event: 'org.merge.resumed',
+        sourceOrgId,
+        requestedTargetOrgId,
+        effectiveTargetOrgId: eff.orgId,   // logs record BOTH when they differ
+        changedBy: identity,
+    }));
+    return targetAttrs;
+}
+
+// Fence-loss wrapper: the effective target was itself merged mid-resume (C→D) — re-resolve ONCE
+// and re-enter; a SECOND fence loss aborts with a transient error, mergePhase stays 'archived'
+// (retryable, visible via the recon marker).
+async function runPhasesWithFenceRetry(sourceOrgId: string, requestedTargetOrgId: string, effectiveTargetOrgId: string) {
+    try {
+        return await runRemainingMergePhases({ sourceOrgId, requestedTargetOrgId, effectiveTargetOrgId });
+    } catch (err) {
+        if ((err as { name?: string }).name !== 'MergeFenceLostError') throw err;
+        const re = await resolveEffectiveTargetOrg(requestedTargetOrgId);
+        if (re.status === 'unavailable') {
+            throw new Error(
+                `Cannot resume merge of ${sourceOrgId}: successor of ${requestedTargetOrgId} unavailable (${re.reason})`,
+            );
+        }
+        try {
+            return await runRemainingMergePhases({ sourceOrgId, requestedTargetOrgId, effectiveTargetOrgId: re.orgId });
+        } catch (err2) {
+            if ((err2 as { name?: string }).name === 'MergeFenceLostError') {
+                throw new Error(
+                    `Merge of ${sourceOrgId} into ${requestedTargetOrgId}: target fence lost twice (merge storm) — mergePhase stays 'archived', retry later`,
+                );
+            }
+            throw err2;
+        }
+    }
+}
+
+// 'complete' is set on the SOURCE, LAST, only after the phase run finishes.
+async function setMergeComplete(sourceOrgId: string) {
+    await ddb.send(new UpdateCommand({
+        TableName: TABLE(),
+        Key: orgKey(sourceOrgId),
+        UpdateExpression: 'SET mergePhase = :complete, mergeCompletedAt = :now, updatedAt = :now',
+        ConditionExpression: '#st = :archived',
+        ExpressionAttributeNames: { '#st': 'status' },
+        ExpressionAttributeValues: { ':complete': 'complete', ':now': new Date().toISOString(), ':archived': 'archived' },
+    }));
+}
+
+// ONE shared resume/phase path (R6 blocker 3, exact contract R10-final-gate). Target usage:
+// record re-points + domain re-points + aggregation → effectiveTargetOrgId (fenced); the source
+// side needs no dirty-mark (it is legitimately archived; its counts stay as historical truth).
+// Positional cancellations: index 0 (fence) ⇒ MergeFenceLostError (caller re-resolves ONCE);
+// index 1 (the write's own condition) ⇒ idempotency — already re-pointed — skip and continue.
+async function runRemainingMergePhases(
+    phaseArgs: { sourceOrgId: string; requestedTargetOrgId: string; effectiveTargetOrgId: string },
+): Promise<Record<string, unknown> | undefined> {
+    const { sourceOrgId, effectiveTargetOrgId } = phaseArgs;
+    // Fresh strong reads: aggregation must land on the org the fenced writes actually target.
+    const source = await readOrgMeta(sourceOrgId);
+    const target = await readOrgMeta(effectiveTargetOrgId);
+    if (!source) throw new Error(`Organization not found: ${sourceOrgId}`);
+    if (!target) throw new Error(`Organization not found: ${effectiveTargetOrgId}`);
+
+    // Phase A: re-point all GSI2-linked items (RFQ / ORDER / LEAD) from source to the effective
+    // target, rewriting matchedOrgId + GSI2PK + GSI2SK (SK shape depends on PK prefix).
+    // R10 boundary: NEVER touches matchedOrgLinkGeneration — stamp semantics live in crm-api.
     const linked = await ddb.send(new QueryCommand({
         TableName: TABLE(),
         IndexName: 'GSI2',
@@ -932,26 +1214,38 @@ async function mergeOrganization(
             console.warn(JSON.stringify({
                 event: 'org.merge.unknown-linked-pk',
                 sourceOrgId,
-                targetOrgId,
+                targetOrgId: effectiveTargetOrgId,
                 pk,
             }));
             continue;
         }
 
-        await ddb.send(new UpdateCommand({
-            TableName: TABLE(),
-            Key: { PK: item.PK, SK: item.SK },
-            UpdateExpression: 'SET matchedOrgId = :target, GSI2PK = :gsi2pk, GSI2SK = :gsi2sk',
-            ExpressionAttributeValues: {
-                ':target': targetOrgId,
-                ':gsi2pk': `ORG#${targetOrgId}`,
-                ':gsi2sk': newGsi2Sk,
-            },
-        }));
-        itemsMoved++;
+        try {
+            await ddb.send(new TransactWriteCommand({ TransactItems: [
+                orgActiveCheck(effectiveTargetOrgId),
+                { Update: {
+                    TableName: TABLE(),
+                    Key: { PK: item.PK, SK: item.SK },
+                    UpdateExpression: 'SET matchedOrgId = :target, GSI2PK = :gsi2pk, GSI2SK = :gsi2sk',
+                    ConditionExpression: 'GSI2PK = :src',   // still on the source partition ⇒ not yet re-pointed
+                    ExpressionAttributeValues: {
+                        ':target': effectiveTargetOrgId,
+                        ':gsi2pk': `ORG#${effectiveTargetOrgId}`,
+                        ':gsi2sk': newGsi2Sk,
+                        ':src': `ORG#${sourceOrgId}`,
+                    },
+                } },
+            ] }));
+            itemsMoved++;
+        } catch (err) {
+            const cls = classifyMergeCancellation(err, 1);
+            if (cls === 'target_fence') throw new MergeFenceLostError(effectiveTargetOrgId);
+            if (cls === 'write_condition') continue;        // already re-pointed on a prior run — idempotent skip
+            throw err;
+        }
     }
 
-    // Step 3: Re-point ORG_DOMAIN_LOOKUP rows whose orgId == sourceOrgId.
+    // Phase B: Re-point ORG_DOMAIN_LOOKUP rows whose orgId == sourceOrgId.
     // ORG_DOMAIN_LOOKUP rows are keyed by PK='ORG_DOMAIN_LOOKUP', SK=`DOMAIN#${domain}`.
     // Their GSI2PK is `ORG_DOMAIN#${domain}` (NOT `ORG#${sourceOrgId}`), so they won't
     // be returned by the GSI2 query above — we need a separate Query on PK.
@@ -966,15 +1260,45 @@ async function mergeOrganization(
         },
     }));
     for (const lookup of (lookupRes.Items ?? []) as { PK?: string; SK?: string }[]) {
-        await ddb.send(new UpdateCommand({
-            TableName: TABLE(),
-            Key: { PK: lookup.PK, SK: lookup.SK },
-            UpdateExpression: 'SET orgId = :target',
-            ExpressionAttributeValues: { ':target': targetOrgId },
-        }));
+        try {
+            await ddb.send(new TransactWriteCommand({ TransactItems: [
+                orgActiveCheck(effectiveTargetOrgId),
+                { Update: {
+                    TableName: TABLE(),
+                    Key: { PK: lookup.PK, SK: lookup.SK },
+                    UpdateExpression: 'SET orgId = :target',
+                    ConditionExpression: 'orgId = :src',
+                    ExpressionAttributeValues: { ':target': effectiveTargetOrgId, ':src': sourceOrgId },
+                } },
+            ] }));
+        } catch (err) {
+            const cls = classifyMergeCancellation(err, 1);
+            if (cls === 'target_fence') throw new MergeFenceLostError(effectiveTargetOrgId);
+            if (cls === 'write_condition') continue;        // already re-pointed — idempotent skip
+            throw err;
+        }
     }
 
-    // Step 4: Aggregate target META.
+    // Phase C guard (chained resume — review fix): the `mergedSources` idempotency set travels
+    // with each target org, NOT with the chain. If the REQUESTED target already absorbed this
+    // source (its retained mergedSources contains it), the source's counts already flowed to the
+    // successor via the requested target's OWN merge — re-aggregating onto the effective target
+    // would double them. Strong-read the archived requested target and skip Phase C in that case.
+    if (phaseArgs.requestedTargetOrgId !== effectiveTargetOrgId) {
+        const requested = await readOrgMeta(phaseArgs.requestedTargetOrgId);
+        if (mergedSourcesContains(requested?.mergedSources, sourceOrgId)) {
+            console.log(JSON.stringify({
+                event: 'org.merge.aggregation-skipped-already-absorbed',
+                sourceOrgId,
+                requestedTargetOrgId: phaseArgs.requestedTargetOrgId,
+                effectiveTargetOrgId,
+                itemsMoved,
+            }));
+            return target as Record<string, unknown>;
+        }
+    }
+
+    // Phase C: Aggregate the effective target META.
     // aliasDomains = union(target.aliasDomains, source.aliasDomains, source.primaryDomain)
     const aliasSet = new Set<string>(target.aliasDomains ?? []);
     for (const d of (source.aliasDomains ?? []) as string[]) aliasSet.add(d);
@@ -986,7 +1310,7 @@ async function mergeOrganization(
         console.warn(JSON.stringify({
             event: 'org.merge.alias-cap-exceeded',
             sourceOrgId,
-            targetOrgId,
+            targetOrgId: effectiveTargetOrgId,
             unionSize: aliasDomains.length,
             cap: ALIAS_DOMAINS_CAP,
             dropped: aliasDomains.length - ALIAS_DOMAINS_CAP,
@@ -1048,7 +1372,7 @@ async function mergeOrganization(
         ':lastActivityAt': newLastActivityAt,
         ':hasActiveInquiry': newHasActiveInquiry,
         ':now': nowIso,
-        ':gsi1Sk': `${invertedActivityToken(newLastActivityAt)}#${targetOrgId}`,
+        ':gsi1Sk': `${invertedActivityToken(newLastActivityAt)}#${effectiveTargetOrgId}`,
     };
     if (newLatestRFQDate) { setExprs.push('latestRFQDate = :latestRFQDate'); exprValues[':latestRFQDate'] = newLatestRFQDate; }
     if (newLatestOrderDate) { setExprs.push('latestOrderDate = :latestOrderDate'); exprValues[':latestOrderDate'] = newLatestOrderDate; }
@@ -1063,73 +1387,55 @@ async function mergeOrganization(
         setExprs.push('GSI3PK = :gsi3pk');
         setExprs.push('GSI3SK = :gsi3sk');
         exprValues[':gsi3pk'] = 'ORG_LEAD_SCORE';
-        exprValues[':gsi3sk'] = `${invertedScoreToken(newLeadScore)}#${targetOrgId}`;
+        exprValues[':gsi3sk'] = `${invertedScoreToken(newLeadScore)}#${effectiveTargetOrgId}`;
     } else if (target.GSI3PK) {
         removeGsi3 = true;
     }
 
-    // Retry-safety: if this merge call is a retry after a partial failure (e.g.
-    // Lambda timed out after step 4 succeeded but before step 5 archived source),
-    // we must NOT re-aggregate target counts a second time.
-    //
-    // Strategy: ADD the source orgId to a `mergedSources` String Set on target;
-    // condition the whole UpdateItem on the source NOT already being in that set.
-    // On retry the condition fails (CCFE), and we catch + skip aggregation —
-    // target stays consistent. Then we proceed to (idempotent) source archive.
+    // Retry-safety: re-runs (resume paths) must NOT re-aggregate counts a second time.
+    // Strategy: ADD the source orgId to a `mergedSources` String Set on the effective target;
+    // condition the whole UpdateItem on the source NOT already being in that set. The same
+    // conditional update doubles as this phase's org-active fence (ConditionCheck + Update on the
+    // SAME item is not allowed inside one transaction, so the fence lives in the condition).
     exprValues[':srcId'] = sourceOrgId;
     exprValues[':srcSet'] = new Set([sourceOrgId]);
+    exprValues[':active'] = 'active';
     const updateExpr = `SET ${setExprs.join(', ')} ADD mergedSources :srcSet${removeGsi3 ? ' REMOVE GSI3PK, GSI3SK' : ''}`;
 
     let targetAttrs: Record<string, unknown> | undefined;
     try {
         const targetUpdate = await ddb.send(new UpdateCommand({
             TableName: TABLE(),
-            Key: { PK: `ORG#${targetOrgId}`, SK: 'META' },
+            Key: orgKey(effectiveTargetOrgId),
             UpdateExpression: updateExpr,
+            ExpressionAttributeNames: { '#st': 'status' },
             ExpressionAttributeValues: exprValues,
             ConditionExpression:
-                'attribute_exists(PK) AND (attribute_not_exists(mergedSources) OR NOT contains(mergedSources, :srcId))',
+                '#st = :active AND attribute_exists(PK) AND (attribute_not_exists(mergedSources) OR NOT contains(mergedSources, :srcId))',
             ReturnValues: 'ALL_NEW',
         }));
         targetAttrs = targetUpdate.Attributes;
     } catch (err) {
         if ((err as { name?: string } | undefined)?.name !== 'ConditionalCheckFailedException') throw err;
+        // Disambiguate: fence loss (target no longer active) vs already-aggregated retry.
+        const fresh = await readOrgMeta(effectiveTargetOrgId);
+        if (fresh && fresh.status !== 'active') throw new MergeFenceLostError(effectiveTargetOrgId);
         // Target already aggregated this source on a previous (interrupted) run.
-        // Re-fetch target to return its current state and continue to archive source.
         console.warn(JSON.stringify({
             event: 'org.merge.target-already-aggregated',
             sourceOrgId,
-            targetOrgId,
-            changedBy: identity,
+            targetOrgId: effectiveTargetOrgId,
         }));
-        const fresh = await ddb.send(new GetCommand({
-            TableName: TABLE(),
-            Key: { PK: `ORG#${targetOrgId}`, SK: 'META' },
-        }));
-        targetAttrs = fresh.Item;
+        targetAttrs = fresh;
     }
 
-    // Step 5: archive source META. REMOVE GSI1/GSI3 so it disappears from admin lists.
-    await ddb.send(new UpdateCommand({
-        TableName: TABLE(),
-        Key: { PK: `ORG#${sourceOrgId}`, SK: 'META' },
-        UpdateExpression: 'SET #st = :archived, mergedInto = :target, mergedAt = :now, updatedAt = :now REMOVE GSI1PK, GSI1SK, GSI3PK, GSI3SK',
-        ExpressionAttributeNames: { '#st': 'status' },
-        ExpressionAttributeValues: {
-            ':archived': 'archived',
-            ':target': targetOrgId,
-            ':now': nowIso,
-        },
-        ConditionExpression: 'attribute_exists(PK)',
-    }));
-
     console.log(JSON.stringify({
-        event: 'org.merge',
+        event: 'org.merge.phases-complete',
         sourceOrgId,
-        targetOrgId,
+        requestedTargetOrgId: phaseArgs.requestedTargetOrgId,
+        effectiveTargetOrgId,
         itemsMoved,
         newLeadScore,
-        changedBy: identity,
     }));
 
     return targetAttrs;

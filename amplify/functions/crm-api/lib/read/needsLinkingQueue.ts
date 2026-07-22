@@ -10,7 +10,7 @@ export interface NeedsLinkingSignal {
 }
 export interface NeedsLinkingItem {
   unitKey: string; linkUnitType: 'structured' | 'analytics'; source: string; kind: string;
-  occurredAt: string; eventCount: number; sourceEntityId?: string; visitorId?: string; signal: NeedsLinkingSignal;
+  occurredAt: string; eventCount: number; representativeEventId: string; sourceEntityId?: string; visitorId?: string; signal: NeedsLinkingSignal;
 }
 
 export async function needsLinkingQueue(args: { limit?: number; nextToken?: string }): Promise<{ items: NeedsLinkingItem[]; nextToken: string | null }> {
@@ -48,7 +48,7 @@ export async function needsLinkingQueue(args: { limit?: number; nextToken?: stri
       } catch { signal = { enrichmentStatus: 'error' }; }
     }
     items.push({ unitKey, linkUnitType: isAnalytics ? 'analytics' : 'structured', source: rep.source, kind: rep.kind,
-      occurredAt: rep.occurredAt, eventCount: evs.length,
+      occurredAt: rep.occurredAt, eventCount: evs.length, representativeEventId: rep.id,
       ...(isAnalytics ? { visitorId: unitKey } : { sourceEntityId: rep.sourceEntityId }), signal });
   }
   const key = res.LastEvaluatedKey as Record<string, unknown> | undefined;

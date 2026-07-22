@@ -77,8 +77,7 @@ export async function getNeedsLinkingQueue(args: { limit?: number; nextToken?: s
 }
 
 export async function linkStructuredUnit(args: {
-  sourceType: string;
-  sourceEntityId: string;
+  representativeEventId: string;
   targetOrgId: string;
 }) {
   const { data, errors } = await client().mutations.linkStructuredUnit(args, AUTH);
@@ -102,4 +101,10 @@ export async function runCrmRepair(args: { limit?: number } = {}) {
   const { data, errors } = await client().mutations.runCrmRepair(args, AUTH);
   if (errors?.length) throw new Error(errors.map((e) => e.message).join(', '));
   return data;
+}
+
+export async function acknowledgeMergeRecon(fromOrgId: string, toOrgId: string) {
+  const { data, errors } = await client().mutations.acknowledgeMergeRecon({ fromOrgId, toOrgId }, AUTH);
+  if (errors?.length) throw new Error(errors.map((e) => e.message).join(', '));
+  return data as { ok?: boolean; raced?: boolean; notFound?: boolean } | null;
 }

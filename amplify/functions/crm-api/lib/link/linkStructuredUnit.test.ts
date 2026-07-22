@@ -1,248 +1,273 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-const mockSend = vi.fn();
-vi.mock('../dynamodb', () => ({ docClient: { send: (...a: unknown[]) => mockSend(...a) }, TABLE_NAME: () => 'T' }));
-const orgExistsMock = vi.fn(); const moveMock = vi.fn(); const auditMock = vi.fn();
-vi.mock('../orgStore', () => ({ orgExists: (o: string) => orgExistsMock(o), recomputeRollupsForOrg: vi.fn() }));
-vi.mock('./manualMoveTimelineEvent', () => ({ manualMoveTimelineEvent: (a: unknown) => moveMock(a) }));
-vi.mock('../auditStore', () => ({ writeLinkAuditLog: (a: unknown) => auditMock(a) }));
+const send = vi.fn();
+vi.mock('../dynamodb', () => ({ docClient: { send: (...a: unknown[]) => send(...a) }, TABLE_NAME: () => 'T' }));
+const orgExistsMock = vi.fn(); const recomputeMock = vi.fn(); const markMock = vi.fn(); const upsertContactMock = vi.fn();
+vi.mock('../orgStore', () => ({ orgExists: (o: string) => orgExistsMock(o), recomputeRollupsForOrg: (o: string) => recomputeMock(o) }));
+vi.mock('../timelineStore', () => ({ markRollupApplied: (id: string) => markMock(id) }));
+vi.mock('../contactStore', () => ({ upsertContact: (a: unknown) => upsertContactMock(a) }));
 
-const putRepairMarker = vi.fn(); const deleteRepairMarker = vi.fn();
-vi.mock('../repair/repairMarker', () => ({
-  putRepairMarker: (...a: unknown[]) => putRepairMarker(...a),
-  deleteRepairMarker: (...a: unknown[]) => deleteRepairMarker(...a),
-}));
+// v2 marker fns: buildStructuredMarkerPut stays REAL (pure — its Put must ride the captured
+// transaction so tx[2] is the genuine marker element); the fenced lifecycle fns are mocked.
+const accumulateMarker = vi.fn(); const sealMarker = vi.fn(); const deleteRepairMarkerFenced = vi.fn();
+vi.mock('../repair/repairMarker', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../repair/repairMarker')>();
+  return {
+    ...actual,
+    accumulateMarker: (...a: unknown[]) => accumulateMarker(...a),
+    sealMarker: (...a: unknown[]) => sealMarker(...a),
+    deleteRepairMarkerFenced: (...a: unknown[]) => deleteRepairMarkerFenced(...a),
+  };
+});
 const replayStructuredSideEffects = vi.fn();
 vi.mock('../repair/replaySideEffects', () => ({ replayStructuredSideEffects: (...a: unknown[]) => replayStructuredSideEffects(...a) }));
-
-// readSourceEmailForUnit stays REAL (exercised via the docClient mock, as before). Only the
-// exported backfillTargetPk is overridden so linkStructuredUnit's link-time caching call is
-// independently controllable per test (default resolves like the real rfq/lead mapping would).
 const backfillTargetPkMock = vi.fn();
 vi.mock('./sourceEmail', async (importOriginal) => {
   const actual = await importOriginal<typeof import('./sourceEmail')>();
   return { ...actual, backfillTargetPk: (...a: unknown[]) => backfillTargetPkMock(...a) };
 });
+// manualMoveTimelineEvent stays REAL: the subsequent-move fence tests inspect ITS transactions.
 
 import { linkStructuredUnit } from './linkStructuredUnit';
+import { ULID_REGEX } from '../ulid';
 
-const unresolvedEvent = { id: 'tev-a', orgId: 'unresolved-rfq-r1', kind: 'rfq_submitted', source: 'rfq', sourceEntityType: 'rfq', sourceEntityId: 'r1', occurredAt: 't', resolutionStatus: 'unresolved' };
+// validRep = an unresolved gmail event fixture with payload.customerEmail (unit key format per
+// resolveLinks: `unresolved-gmail-<normalized email>`).
+const validRep = {
+  id: 'tev-1', orgId: 'unresolved-gmail-a@acme.com', kind: 'email_received', source: 'gmail',
+  sourceEntityType: 'gmail', sourceEntityId: 'msg-1', occurredAt: '2026-07-01T00:00:00Z',
+  resolutionStatus: 'unresolved', voided: false, isInternalOnly: false, contactId: null,
+  payload: { customerEmail: 'a@acme.com' },
+};
+const ev1 = { ...validRep };
+const ev2 = { ...validRep, id: 'tev-2', occurredAt: '2026-07-01T00:00:01Z' };
+const ev3 = { ...validRep, id: 'tev-3', occurredAt: '2026-07-01T00:00:02Z' };
+
+// ---- harness (against the docClient mock) ----
+let repItem: Record<string, unknown> | null = null;
+let unitEvents: Record<string, unknown>[] = [];
+const transactScript: Array<Error | 'ok'> = [];
+
+function mockRepresentativeGet(item: Record<string, unknown> | null) { repItem = item; }
+function arrangeUnitWithEvents(events: Record<string, unknown>[]) { repItem = events[0]; unitEvents = events; }
+const transactCalls = () => send.mock.calls
+  .filter((c) => (c[0] as { constructor?: { name?: string } })?.constructor?.name === 'TransactWriteCommand')
+  .map((c) => c[0] as { input: { TransactItems: Array<Record<string, any>> } });
+function rejectTransactWithCancellation(codes: string[]) {
+  transactScript.push(Object.assign(new Error('Transaction cancelled'), {
+    name: 'TransactionCanceledException', CancellationReasons: codes.map((Code) => ({ Code })),
+  }));
+}
+function rejectTransactWithNoReasons() {
+  transactScript.push(Object.assign(new Error('Transaction cancelled'), { name: 'TransactionCanceledException' }));
+}
+function transactSucceedsOnce() { transactScript.push('ok'); }
+
 beforeEach(() => {
-  mockSend.mockReset(); orgExistsMock.mockReset(); moveMock.mockReset(); auditMock.mockReset();
-  putRepairMarker.mockReset(); deleteRepairMarker.mockReset();
-  replayStructuredSideEffects.mockReset();
+  send.mockReset(); orgExistsMock.mockReset(); recomputeMock.mockReset(); markMock.mockReset(); upsertContactMock.mockReset();
+  accumulateMarker.mockReset(); sealMarker.mockReset(); deleteRepairMarkerFenced.mockReset();
+  replayStructuredSideEffects.mockReset(); backfillTargetPkMock.mockReset();
+  repItem = null; unitEvents = []; transactScript.length = 0;
+
+  orgExistsMock.mockResolvedValue(true);
+  upsertContactMock.mockResolvedValue({ contactId: 'ct-1', outcome: 'written' });
+  accumulateMarker.mockResolvedValue({ lost: false });
+  sealMarker.mockResolvedValue({ lost: false });
+  deleteRepairMarkerFenced.mockResolvedValue({ lost: false });
   replayStructuredSideEffects.mockResolvedValue({ ok: true, backfillStatus: 'written' });
-  backfillTargetPkMock.mockReset();
-  backfillTargetPkMock.mockResolvedValue('RFQ#1');
+  backfillTargetPkMock.mockResolvedValue(null);
+
+  send.mockImplementation(async (cmd: { constructor: { name: string }; input: Record<string, unknown> }) => {
+    const kind = cmd.constructor?.name;
+    if (kind === 'GetCommand') {
+      const key = (cmd.input as { Key?: { PK?: string } }).Key;
+      if (key?.PK?.startsWith('TLEVENT#')) return { Item: repItem ?? undefined };
+      return {};
+    }
+    if (kind === 'QueryCommand') return { Items: unitEvents };
+    if (kind === 'TransactWriteCommand') {
+      const next = transactScript.shift() ?? 'ok';
+      if (next !== 'ok') throw next;
+      return {};
+    }
+    return {};
+  });
 });
 
-describe('linkStructuredUnit', () => {
+describe('linkStructuredUnit v2', () => {
   it('rejects a non-existent / unresolved-* target before any write', async () => {
     orgExistsMock.mockResolvedValueOnce(false);
-    await expect(linkStructuredUnit({ sourceType: 'rfq', sourceEntityId: 'r1', targetOrgId: 'nope.com', operator: 'op' })).rejects.toThrow(/target/i);
-    expect(mockSend).not.toHaveBeenCalled();
+    await expect(linkStructuredUnit({ representativeEventId: 'tev-1', targetOrgId: 'nope.com', operator: 'op' })).rejects.toThrow(/target/i);
+    expect(send).not.toHaveBeenCalled();
   });
 
-  it('alreadyLinked (empty partition) does NOT backfill the source from the request target (stale-client safe)', async () => {
-    orgExistsMock.mockResolvedValueOnce(true);
-    mockSend.mockResolvedValueOnce({ Items: [] });   // no unresolved events → alreadyLinked
-    const r = await linkStructuredUnit({ sourceType: 'rfq', sourceEntityId: 'r1', targetOrgId: 'acme.com', operator: 'op' });
-    expect(r).toMatchObject({ alreadyLinked: true });
-    const updates = mockSend.mock.calls.filter((c) => c[0].constructor?.name === 'UpdateCommand');
-    expect(updates.length).toBe(0);                  // NO backfill from a possibly-stale request target
-    expect(auditMock).not.toHaveBeenCalled();
-    expect(putRepairMarker).not.toHaveBeenCalled();
+  it('derives the unit from a strongly-read representative and rejects invalid ones', async () => {
+    for (const bad of [
+      { resolutionStatus: 'resolved' }, { voided: true }, { isInternalOnly: true },
+      { orgId: 'acme.com' }, { source: 'manual' }, null,
+    ]) {
+      mockRepresentativeGet(bad && { ...validRep, ...bad });
+      await expect(linkStructuredUnit({ representativeEventId: 'tev-1', targetOrgId: 'acme.com', operator: 'op' }))
+        .rejects.toThrow(/invalid representative/i);
+    }
+    const getInput = send.mock.calls[0][0].input;
+    expect(getInput.ConsistentRead).toBe(true);
   });
 
-  it('moves each unresolved event, writes a repair marker, and delegates backfill+audit to replayStructuredSideEffects', async () => {
-    orgExistsMock.mockResolvedValueOnce(true);
-    mockSend
-      .mockResolvedValueOnce({ Items: [unresolvedEvent] })                         // synthetic partition query
-      .mockResolvedValueOnce({ Item: { PK: 'RFQ#r1', SK: 'META', email: 'a@acme.com' } }); // readSourceEmail GET
-    moveMock.mockResolvedValueOnce({ moved: true, skipped: false, contactStatus: 'linked' });
-    const r = await linkStructuredUnit({ sourceType: 'rfq', sourceEntityId: 'r1', targetOrgId: 'acme.com', operator: 'op@x.com' });
-    expect(moveMock).toHaveBeenCalledTimes(1);
-    expect(r).toMatchObject({ affected: 1, moved: 1, skipped: 0, errors: 0, sourceBackfillStatus: 'written', postCommitStatus: 'ok' });
-    expect(putRepairMarker).toHaveBeenCalledWith(expect.objectContaining({
-      unitType: 'structured', unitKey: 'unresolved-rfq-r1', targetOrgId: 'acme.com', operator: 'op@x.com',
-      sourceType: 'rfq', sourceEntityId: 'r1', affectedEventIds: ['tev-a'], movedCount: 1, contactStatus: 'linked',
-    }));
-    expect(replayStructuredSideEffects).toHaveBeenCalledWith(expect.objectContaining({
-      sourceType: 'rfq', sourceEntityId: 'r1', targetOrgId: 'acme.com', unitKey: 'unresolved-rfq-r1',
-      affectedEventIds: ['tev-a'], movedCount: 1, contactStatus: 'linked',
-    }));
-    expect(deleteRepairMarker).toHaveBeenCalledWith('structured', 'unresolved-rfq-r1');
+  it('empty unit read (already linked/raced) → alreadyLinked, NO transaction, NO marker', async () => {
+    mockRepresentativeGet(validRep); unitEvents = [];
+    const out = await linkStructuredUnit({ representativeEventId: 'tev-1', targetOrgId: 'acme.com', operator: 'op' });
+    expect(out).toMatchObject({ alreadyLinked: true, affected: 0, moved: 0 });
+    expect(transactCalls()).toHaveLength(0);
+    expect(sealMarker).not.toHaveBeenCalled();
+    expect(deleteRepairMarkerFenced).not.toHaveBeenCalled();
   });
 
-  it('a source_conflict from replay is surfaced but does not delete the marker (finding 3, moved layer)', async () => {
-    orgExistsMock.mockResolvedValueOnce(true);
-    mockSend
-      .mockResolvedValueOnce({ Items: [unresolvedEvent] })
-      .mockResolvedValueOnce({ Item: { PK: 'RFQ#r1', SK: 'META', email: 'a@acme.com' } });
-    moveMock.mockResolvedValueOnce({ moved: true, skipped: false, contactStatus: 'linked' });
-    replayStructuredSideEffects.mockResolvedValueOnce({ ok: false, errorType: 'source_conflict', backfillStatus: 'conflict' });
-    const r = await linkStructuredUnit({ sourceType: 'rfq', sourceEntityId: 'r1', targetOrgId: 'acme.com', operator: 'op' });
-    expect(r.sourceBackfillStatus).toBe('conflict');
-    expect(r.postCommitStatus).toBe('post_commit_failed');
-    expect(deleteRepairMarker).not.toHaveBeenCalled();
+  it('first move rides ONE TransactWriteItems: [org-active check, event move, marker] (R6 fence)', async () => {
+    arrangeUnitWithEvents([ev1, ev2]);
+    await linkStructuredUnit({ representativeEventId: ev1.id, targetOrgId: 'acme.com', operator: 'op' });
+    const tx = transactCalls()[0].input.TransactItems;
+    expect(tx).toHaveLength(3);
+    expect(tx[0].ConditionCheck.ConditionExpression).toBe('#s = :active');          // position 0 = org fence, ALWAYS
+    expect(tx[1].Put.ConditionExpression).toContain('resolutionStatus = :unres');
+    expect(tx[1].Put.ConditionExpression).toContain('voided = :false');
+    expect(tx[1].Put.ConditionExpression).toContain('#source = :src');
+    expect(tx[2].Put.ConditionExpression).toBe('attribute_not_exists(PK)');
   });
 
-  it('all events condition-fail (raced) → moved:0, NO source backfill, NO marker (finding 2)', async () => {
-    orgExistsMock.mockResolvedValueOnce(true);
-    mockSend
-      .mockResolvedValueOnce({ Items: [unresolvedEvent] })
-      .mockResolvedValueOnce({ Item: { PK: 'RFQ#r1', SK: 'META', email: 'a@acme.com' } });
-    moveMock.mockResolvedValueOnce({ moved: false, skipped: true, contactStatus: 'missing_email' });
-    const r = await linkStructuredUnit({ sourceType: 'rfq', sourceEntityId: 'r1', targetOrgId: 'acme.com', operator: 'op' });
-    expect(r).toMatchObject({ moved: 0, skipped: 1 });
-    expect(auditMock).not.toHaveBeenCalled();
-    expect(putRepairMarker).not.toHaveBeenCalled();
-    const updates = mockSend.mock.calls.filter((c) => c[0].constructor?.name === 'UpdateCommand');
-    expect(updates.length).toBe(0);
+  it('subsequent moves are fenced too: [org-active check, event move]; positional classification', async () => {
+    arrangeUnitWithEvents([ev1, ev2, ev3]);
+    await linkStructuredUnit({ representativeEventId: ev1.id, targetOrgId: 'acme.com', operator: 'op' });
+    const later = transactCalls().slice(1);
+    expect(later.length).toBeGreaterThan(0);
+    for (const call of later) {
+      expect(call.input.TransactItems).toHaveLength(2);
+      expect(call.input.TransactItems[0].ConditionCheck.ConditionExpression).toBe('#s = :active');
+    }
   });
 
-  it('per-event isolation: one move throws → errors+1, loop continues, the other event still moves', async () => {
-    orgExistsMock.mockResolvedValueOnce(true);
-    const evA = { ...unresolvedEvent, id: 'tev-a' };
-    const evB = { ...unresolvedEvent, id: 'tev-b' };
-    mockSend
-      .mockResolvedValueOnce({ Items: [evA, evB] })                                 // synthetic partition query (2 events)
-      .mockResolvedValueOnce({ Item: { PK: 'RFQ#r1', SK: 'META', email: 'a@acme.com' } }); // readSourceEmail GET
-    moveMock
-      .mockRejectedValueOnce(new Error('move boom'))                                // evA throws
-      .mockResolvedValueOnce({ moved: true, skipped: false, contactStatus: 'linked' }); // evB moves
-    const r = await linkStructuredUnit({ sourceType: 'rfq', sourceEntityId: 'r1', targetOrgId: 'acme.com', operator: 'op' });
-    expect(moveMock).toHaveBeenCalledTimes(2);            // loop did NOT abort after the throw
-    expect(r).toMatchObject({ affected: 2, moved: 1, errors: 1 });
-    // moved>0 so the marker + replay DID run, scoped to only the moved event
-    expect(putRepairMarker).toHaveBeenCalledWith(expect.objectContaining({ affectedEventIds: ['tev-b'], movedCount: 1 }));
-    expect(replayStructuredSideEffects).toHaveBeenCalledWith(expect.objectContaining({ affectedEventIds: ['tev-b'], movedCount: 1 }));
+  it('FOREGROUND org-fence failure (position 0) aborts with an explicit merged-org error — no silent redirect', async () => {
+    arrangeUnitWithEvents([ev1]);
+    rejectTransactWithCancellation(['ConditionalCheckFailed', 'None', 'None']);     // index 0 = the ORG check
+    await expect(linkStructuredUnit({ representativeEventId: ev1.id, targetOrgId: 'acme.com', operator: 'op' }))
+      .rejects.toThrow(/being merged|not active/i);
+    expect(sealMarker).not.toHaveBeenCalled();                                       // nothing created
   });
 
-  it('F2: paginates the GSI2 query and moves events from BOTH pages', async () => {
-    orgExistsMock.mockResolvedValueOnce(true);
-    const evA = { ...unresolvedEvent, id: 'tev-a' }; const evB = { ...unresolvedEvent, id: 'tev-b' };
-    mockSend
-      .mockResolvedValueOnce({ Items: [evA], LastEvaluatedKey: { k: 1 } })            // page 1
-      .mockResolvedValueOnce({ Items: [evB] })                                        // page 2 (no LEK)
-      .mockResolvedValueOnce({ Item: { PK: 'RFQ#r1', SK: 'META', email: 'a@acme.com' } }); // readSourceEmail
-    moveMock.mockResolvedValue({ moved: true, skipped: false, contactStatus: 'linked' });
-    const r = await linkStructuredUnit({ sourceType: 'rfq', sourceEntityId: 'r1', targetOrgId: 'acme.com', operator: 'op' });
-    expect(moveMock).toHaveBeenCalledTimes(2);      // both pages moved
-    expect(r).toMatchObject({ affected: 2, moved: 2 });
-    // the second call had ExclusiveStartKey from page 1's LastEvaluatedKey
-    const q2 = mockSend.mock.calls[1][0].input;
-    expect(q2.ExclusiveStartKey).toEqual({ k: 1 });
+  it('EVENT-condition failure (position 1) is the loser path, NOT the fence path', async () => {
+    arrangeUnitWithEvents([ev1]);
+    rejectTransactWithCancellation(['None', 'ConditionalCheckFailed', 'None']);      // index 1 = the move
+    const out = await linkStructuredUnit({ representativeEventId: ev1.id, targetOrgId: 'acme.com', operator: 'op' });
+    expect(out.moved).toBe(0);                                                       // alreadyLinked-style return
   });
 
-  it('F3: a source-enrichment failure is isolated — events still move with enrichmentError', async () => {
-    orgExistsMock.mockResolvedValueOnce(true);
-    mockSend
-      .mockResolvedValueOnce({ Items: [unresolvedEvent] })                            // query
-      .mockRejectedValueOnce(new Error('source read boom'));                          // readSourceEmail GET throws
-    moveMock.mockResolvedValueOnce({ moved: true, skipped: false, contactStatus: 'enrichment_error' });
-    const r = await linkStructuredUnit({ sourceType: 'rfq', sourceEntityId: 'r1', targetOrgId: 'acme.com', operator: 'op' });
-    expect(moveMock).toHaveBeenCalledWith(expect.objectContaining({ email: null, enrichmentError: true }));
-    expect(r).toMatchObject({ moved: 1 });
+  it('loser: transaction cancelled on the MOVE condition (index 1 — index 0 is the org fence) → alreadyLinked-style return, NO marker, no further moves', async () => {
+    arrangeUnitWithEvents([ev1]);
+    rejectTransactWithCancellation(['None', 'ConditionalCheckFailed', 'None']);   // [org fence, MOVE, marker]
+    const out = await linkStructuredUnit({ representativeEventId: ev1.id, targetOrgId: 'acme.com', operator: 'op' });
+    expect(out.moved).toBe(0);
+    expect(sealMarker).not.toHaveBeenCalled();
   });
 
-  it('a marker-put failure does NOT fail the mutation (moves already durable)', async () => {
-    orgExistsMock.mockResolvedValueOnce(true);
-    mockSend
-      .mockResolvedValueOnce({ Items: [unresolvedEvent] })                            // query
-      .mockResolvedValueOnce({ Item: { PK: 'RFQ#r1', SK: 'META', email: 'a@acme.com' } }); // readSourceEmail
-    moveMock.mockResolvedValueOnce({ moved: true, skipped: false, contactStatus: 'linked' });
-    putRepairMarker.mockRejectedValueOnce(new Error('marker put boom'));
-    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    const r = await linkStructuredUnit({ sourceType: 'rfq', sourceEntityId: 'r1', targetOrgId: 'acme.com', operator: 'op' }); // must NOT throw
-    expect(r).toMatchObject({ moved: 1, postCommitStatus: 'post_commit_failed' });
-    expect(errSpy).toHaveBeenCalled();
-    expect(replayStructuredSideEffects).toHaveBeenCalled();   // still runs despite the marker-put failure
-    errSpy.mockRestore();
+  it('missing/malformed CancellationReasons → classified other → error propagates (never guessed into loser/fence)', async () => {
+    arrangeUnitWithEvents([ev1]);
+    rejectTransactWithNoReasons();                                                // TransactionCanceledException without the array
+    await expect(linkStructuredUnit({ representativeEventId: ev1.id, targetOrgId: 'acme.com', operator: 'op' })).rejects.toThrow();
   });
 
-  // --- Task 5 cases (repair marker + shared replay wiring) ---
+  it('ineligible siblings are skipped, never moved (per-event eligibility)', async () => {
+    arrangeUnitWithEvents([ev1, { ...ev2, voided: true }, { ...ev3, source: 'manual' }]);
+    const out = await linkStructuredUnit({ representativeEventId: ev1.id, targetOrgId: 'acme.com', operator: 'op' });
+    expect(out.moved).toBe(1);
+    expect(out.skipped).toBeGreaterThanOrEqual(2);
+    expect(transactCalls()).toHaveLength(1);           // only the first-move transaction — no write for ineligibles
+  });
 
-  it('writes a repair marker AFTER commit then deletes it on replay ok', async () => {
-    orgExistsMock.mockResolvedValueOnce(true);
-    const ev = { ...unresolvedEvent, orgId: 'unresolved-rfq-1', sourceEntityId: '1' };
-    mockSend
-      .mockResolvedValueOnce({ Items: [ev] })                                          // synthetic partition query
-      .mockResolvedValueOnce({ Item: { PK: 'RFQ#1', SK: 'META', email: 'a@acme.com' } }); // readSourceEmail GET
-    moveMock.mockResolvedValueOnce({ moved: true, skipped: false, contactStatus: 'linked' });
-    const out = await linkStructuredUnit({ sourceType: 'rfq', sourceEntityId: '1', targetOrgId: 'acme.com', operator: 'op' });
-    expect(putRepairMarker).toHaveBeenCalledWith(expect.objectContaining({ unitType: 'structured', targetOrgId: 'acme.com' }));
-    expect(replayStructuredSideEffects).toHaveBeenCalled();
-    expect(deleteRepairMarker).toHaveBeenCalledWith('structured', 'unresolved-rfq-1');
+  it('replay ok → fenced delete; replay not-ok → seal building→pending (exactly one of the two)', async () => {
+    arrangeUnitWithEvents([ev1]);
+    replayStructuredSideEffects.mockResolvedValueOnce({ ok: false, errorType: 'transient' });
+    const out = await linkStructuredUnit({ representativeEventId: ev1.id, targetOrgId: 'acme.com', operator: 'op' });
+    expect(sealMarker).toHaveBeenCalled();
+    expect(deleteRepairMarkerFenced).not.toHaveBeenCalled();
+    expect(out.postCommitStatus).toBe('post_commit_failed');
+  });
+
+  it('replay ok → fenced delete only, postCommitStatus ok', async () => {
+    arrangeUnitWithEvents([ev1]);
+    const out = await linkStructuredUnit({ representativeEventId: ev1.id, targetOrgId: 'acme.com', operator: 'op' });
+    expect(deleteRepairMarkerFenced).toHaveBeenCalled();
+    expect(sealMarker).not.toHaveBeenCalled();
     expect(out.postCommitStatus).toBe('ok');
   });
 
-  it('keeps the marker (no delete) + post_commit_failed when replay is not ok', async () => {
-    orgExistsMock.mockResolvedValueOnce(true);
-    const ev = { ...unresolvedEvent, orgId: 'unresolved-rfq-1', sourceEntityId: '1' };
-    mockSend
-      .mockResolvedValueOnce({ Items: [ev] })
-      .mockResolvedValueOnce({ Item: { PK: 'RFQ#1', SK: 'META', email: 'a@acme.com' } });
-    moveMock.mockResolvedValueOnce({ moved: true, skipped: false, contactStatus: 'linked' });
-    replayStructuredSideEffects.mockResolvedValueOnce({ ok: false, errorType: 'transient', backfillStatus: 'written' });
-    const out = await linkStructuredUnit({ sourceType: 'rfq', sourceEntityId: '1', targetOrgId: 'acme.com', operator: 'op' });
-    expect(deleteRepairMarker).not.toHaveBeenCalled();
+  it('fenced delete lost → success + post_commit_failed (another actor owns the marker now)', async () => {
+    arrangeUnitWithEvents([ev1]);
+    deleteRepairMarkerFenced.mockResolvedValueOnce({ lost: true });
+    const out = await linkStructuredUnit({ representativeEventId: ev1.id, targetOrgId: 'acme.com', operator: 'op' });
     expect(out.postCommitStatus).toBe('post_commit_failed');
+    expect(sealMarker).not.toHaveBeenCalled();
   });
 
-  it('moved===0 does NOT put a marker', async () => {
-    orgExistsMock.mockResolvedValueOnce(true);
-    const ev = { ...unresolvedEvent, orgId: 'unresolved-rfq-1', sourceEntityId: '1' };
-    mockSend
-      .mockResolvedValueOnce({ Items: [ev] })
-      .mockResolvedValueOnce({ Item: { PK: 'RFQ#1', SK: 'META', email: 'a@acme.com' } });
-    moveMock.mockResolvedValueOnce({ moved: false, skipped: true, contactStatus: 'missing_email' });
-    const out = await linkStructuredUnit({ sourceType: 'rfq', sourceEntityId: '1', targetOrgId: 'acme.com', operator: 'op' });
-    expect(out.moved).toBe(0);
-    expect(putRepairMarker).not.toHaveBeenCalled();
+  it('accumulate version-fence lost → ABORT immediately: no further moves, no replay, post_commit_failed', async () => {
+    arrangeUnitWithEvents([ev1, ev2, ev3]);
+    accumulateMarker.mockResolvedValueOnce({ lost: true });      // after ev2's move
+    const out = await linkStructuredUnit({ representativeEventId: ev1.id, targetOrgId: 'acme.com', operator: 'op' });
+    expect(out.postCommitStatus).toBe('post_commit_failed');
+    expect(transactCalls()).toHaveLength(2);                     // ev3 never attempted
+    expect(replayStructuredSideEffects).not.toHaveBeenCalled();
+    expect(sealMarker).not.toHaveBeenCalled();
   });
 
-  it('empty synthetic partition (alreadyLinked) does NOT put a marker', async () => {
-    orgExistsMock.mockResolvedValueOnce(true);
-    mockSend.mockResolvedValueOnce({ Items: [] });
-    const out = await linkStructuredUnit({ sourceType: 'rfq', sourceEntityId: '1', targetOrgId: 'acme.com', operator: 'op' });
-    expect(out.alreadyLinked).toBe(true);
-    expect(putRepairMarker).not.toHaveBeenCalled();
+  it('audit + contact + backfill all receive THIS generation', async () => {
+    arrangeUnitWithEvents([ev1]);
+    await linkStructuredUnit({ representativeEventId: ev1.id, targetOrgId: 'acme.com', operator: 'op' });
+    expect(replayStructuredSideEffects).toHaveBeenCalledWith(expect.objectContaining({ generation: expect.stringMatching(/^[0-9A-HJKMNP-TV-Z]{26}$/) }));
   });
 
-  it('marker still written when link-time backfillTargetPk throws (logistics), with backfillPk null', async () => {
-    orgExistsMock.mockResolvedValueOnce(true);
-    const ev = { id: 'tev-l', orgId: 'unresolved-logistics-lc1', kind: 'logistics_created', source: 'logistics', sourceEntityType: 'logistics', sourceEntityId: 'lc1', occurredAt: 't', resolutionStatus: 'unresolved' };
-    mockSend
-      .mockResolvedValueOnce({ Items: [ev] })                 // synthetic partition query
-      .mockResolvedValueOnce({});                              // readSourceEmailForUnit's internal LOGISTICS META Get (no relatedOrderId)
-    moveMock.mockResolvedValueOnce({ moved: true, skipped: false, contactStatus: 'missing_email' });
-    backfillTargetPkMock.mockRejectedValueOnce(new Error('logistics get boom'));  // link-time caching call throws
-    const out = await linkStructuredUnit({ sourceType: 'logistics', sourceEntityId: 'lc1', targetOrgId: 'acme.com', operator: 'op' });
-    expect(putRepairMarker).toHaveBeenCalledWith(expect.objectContaining({ backfillPk: null, sourceType: 'logistics' }));
+  it('stamps linkGeneration on every moved item (transact first move AND subsequent moves) matching the action generation', async () => {
+    arrangeUnitWithEvents([ev1, ev2]);
+    transactSucceedsOnce(); transactSucceedsOnce();
+    await linkStructuredUnit({ representativeEventId: ev1.id, targetOrgId: 'acme.com', operator: 'op' });
+    const calls = transactCalls();
+    const firstItem = calls[0].input.TransactItems[1].Put.Item;
+    const secondItem = calls[1].input.TransactItems[1].Put.Item;
+    expect(firstItem.linkGeneration).toMatch(ULID_REGEX);
+    expect(secondItem.linkGeneration).toBe(firstItem.linkGeneration);
+    const markerItem = calls[0].input.TransactItems[2].Put.Item;
+    expect(markerItem.generation).toBe(firstItem.linkGeneration);
+    expect(replayStructuredSideEffects).toHaveBeenCalledWith(expect.objectContaining({ generation: firstItem.linkGeneration }));
+  });
+
+  it('marker rides the transaction built by buildStructuredMarkerPut with the unit metadata + customerEmail', async () => {
+    arrangeUnitWithEvents([ev1]);
+    await linkStructuredUnit({ representativeEventId: ev1.id, targetOrgId: 'acme.com', operator: 'op@x.com' });
+    const markerItem = transactCalls()[0].input.TransactItems[2].Put.Item;
+    expect(markerItem).toMatchObject({
+      unitType: 'structured', unitKey: 'unresolved-gmail-a@acme.com', targetOrgId: 'acme.com', operator: 'op@x.com',
+      sourceType: 'gmail', sourceEntityId: 'msg-1', status: 'building', version: 1,
+      customerEmail: 'a@acme.com', movedCount: 1, affectedEventIdsSample: ['tev-1'],
+    });
+    expect(replayStructuredSideEffects).toHaveBeenCalledWith(expect.objectContaining({
+      sourceType: 'gmail', sourceEntityId: 'msg-1', targetOrgId: 'acme.com', unitKey: 'unresolved-gmail-a@acme.com',
+      customerEmail: 'a@acme.com', movedCount: 1,
+    }));
+  });
+
+  it('backfillTargetPk throw is isolated — marker still built with backfillPk null (drainer re-resolves)', async () => {
+    arrangeUnitWithEvents([ev1]);
+    backfillTargetPkMock.mockRejectedValueOnce(new Error('logistics get boom'));
+    const out = await linkStructuredUnit({ representativeEventId: ev1.id, targetOrgId: 'acme.com', operator: 'op' });
+    const markerItem = transactCalls()[0].input.TransactItems[2].Put.Item;
+    expect(markerItem.backfillPk).toBeNull();
     expect(out.moved).toBe(1);
   });
 
-  it('deleteRepairMarker failure ⇒ success + post_commit_failed (drainer will re-drive)', async () => {
-    orgExistsMock.mockResolvedValueOnce(true);
-    const ev = { ...unresolvedEvent, orgId: 'unresolved-rfq-1', sourceEntityId: '1' };
-    mockSend
-      .mockResolvedValueOnce({ Items: [ev] })
-      .mockResolvedValueOnce({ Item: { PK: 'RFQ#1', SK: 'META', email: 'a@acme.com' } });
-    moveMock.mockResolvedValueOnce({ moved: true, skipped: false, contactStatus: 'linked' });
-    deleteRepairMarker.mockRejectedValueOnce(new Error('delete boom'));
-    const out = await linkStructuredUnit({ sourceType: 'rfq', sourceEntityId: '1', targetOrgId: 'acme.com', operator: 'op' });
-    expect(out.postCommitStatus).toBe('post_commit_failed');
-  });
-
-  it('quote marker always caches backfillPk (order) from in-memory events', async () => {
-    orgExistsMock.mockResolvedValueOnce(true);
-    const ev = { id: 'tev-q', orgId: 'unresolved-quote-q1', kind: 'quote_created', source: 'quote', sourceEntityType: 'quote', sourceEntityId: 'q1', occurredAt: 't', resolutionStatus: 'unresolved', payload: { orderId: 'o9' } };
-    mockSend
-      .mockResolvedValueOnce({ Items: [ev] })   // synthetic partition query
-      .mockResolvedValueOnce({});                // readSourceEmailForUnit's internal ORDER#o9 META Get (no email fields)
-    moveMock.mockResolvedValueOnce({ moved: true, skipped: false, contactStatus: 'missing_email' });
-    backfillTargetPkMock.mockResolvedValueOnce('ORDER#o9');  // link-time caching call
-    await linkStructuredUnit({ sourceType: 'quote', sourceEntityId: 'q1', targetOrgId: 'acme.com', operator: 'op' });
-    expect(putRepairMarker).toHaveBeenCalledWith(expect.objectContaining({ backfillPk: 'ORDER#o9' }));
+  it('per-event isolation: a subsequent move throwing (transient, non-transact) → errors+1, loop continues', async () => {
+    arrangeUnitWithEvents([ev1, ev2, ev3]);
+    transactSucceedsOnce();                                       // first move ok
+    transactScript.push(Object.assign(new Error('network boom'), { name: 'ServiceUnavailable' }));  // ev2 throws
+    transactSucceedsOnce();                                       // ev3 ok
+    const out = await linkStructuredUnit({ representativeEventId: ev1.id, targetOrgId: 'acme.com', operator: 'op' });
+    expect(out).toMatchObject({ affected: 3, moved: 2, errors: 1 });
+    expect(replayStructuredSideEffects).toHaveBeenCalled();
   });
 });

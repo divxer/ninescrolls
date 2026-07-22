@@ -1012,6 +1012,70 @@ describe('order-api handler', () => {
             }));
         });
 
+        it('P2C-T8b: matchedOrgId backfill write carries a ConditionExpression that refuses to overwrite a stamped or real-org record', async () => {
+            mockPut.mockResolvedValue({});
+            mockUpdate.mockResolvedValue({});
+            mockGet.mockResolvedValueOnce({ Item: { ...SAMPLE_ORDER, source: 'MANUAL' } });
+            mockQuery.mockResolvedValueOnce({ Items: [SAMPLE_CONTACT] });
+            mockInvokeOrgApi.mockResolvedValueOnce({ matchedOrgId: 'org-stanford' });
+
+            await handler(
+                makeAppSyncEvent('createOrder', {
+                    input: JSON.stringify({
+                        institution: 'Stanford University',
+                        productModel: 'TL-ICP-300',
+                        primaryContact: {
+                            contactName: 'Dr. Jane Smith',
+                            contactEmail: 'jane@stanford.edu',
+                            role: 'PI',
+                        },
+                    }),
+                }, 'Mutation'),
+                {} as any,
+                vi.fn(),
+            );
+
+            const backfillCall = mockSend.mock.calls.find((c: unknown[]) => {
+                const arg = c[0] as { Key?: { SK?: string }; UpdateExpression?: string };
+                return arg.Key?.SK === 'META' && (arg.UpdateExpression ?? '').includes('matchedOrgId');
+            });
+            expect(backfillCall).toBeDefined();
+            const params = backfillCall![0] as { ConditionExpression?: string; ExpressionAttributeValues: Record<string, string> };
+            expect(params.ConditionExpression).toContain('attribute_not_exists(matchedOrgLinkGeneration)');
+            expect(params.ConditionExpression).toContain('attribute_type(matchedOrgId, :nullType)');
+            expect(params.ConditionExpression).toMatch(/attribute_not_exists\(matchedOrgId\)|matchedOrgId = :empty|begins_with\(matchedOrgId, :unres\)/);
+            expect(params.ExpressionAttributeValues[':nullType']).toBe('NULL');
+            expect(params.ExpressionAttributeValues[':empty']).toBe('');
+            expect(params.ExpressionAttributeValues[':unres']).toBe('unresolved-');
+        });
+
+        it('P2C-T8b: a CCFE on the matchedOrgId backfill is swallowed as a no-op — createOrder still returns the order', async () => {
+            mockPut.mockResolvedValue({});
+            mockGet.mockResolvedValueOnce({ Item: { ...SAMPLE_ORDER, source: 'MANUAL' } });
+            mockQuery.mockResolvedValueOnce({ Items: [SAMPLE_CONTACT] });
+            mockInvokeOrgApi.mockResolvedValueOnce({ matchedOrgId: 'org-stanford' });
+            mockUpdate.mockRejectedValueOnce(Object.assign(new Error('linked'), { name: 'ConditionalCheckFailedException' }));
+
+            const result = await handler(
+                makeAppSyncEvent('createOrder', {
+                    input: JSON.stringify({
+                        institution: 'Stanford University',
+                        productModel: 'TL-ICP-300',
+                        primaryContact: {
+                            contactName: 'Dr. Jane Smith',
+                            contactEmail: 'jane@stanford.edu',
+                            role: 'PI',
+                        },
+                    }),
+                }, 'Mutation'),
+                {} as any,
+                vi.fn(),
+            );
+
+            expect(result).toBeDefined();
+            expect(result.orderId).toBeDefined();
+        });
+
         it('skips org invoke when no primary contact email and emits with null matchedOrgId', async () => {
             // Force a missing primary email by stubbing validation? createOrder requires contactEmail,
             // so we simulate the no-email path by ensuring org-api is not called for an empty email.
@@ -1072,6 +1136,36 @@ describe('order-api handler', () => {
                 kind: 'order_created',
                 resolveInput: expect.objectContaining({ matchedOrgId: undefined }),
             }));
+        });
+
+        it('P2C-T8b (creation-path pin): the initial ORDER Put sets matchedOrgId unconditionally on a fresh PK — no guard needed or applied', async () => {
+            mockPut.mockResolvedValue({});
+            mockGet.mockResolvedValueOnce({ Item: { ...SAMPLE_ORDER, source: 'MANUAL' } });
+            mockQuery.mockResolvedValueOnce({ Items: [SAMPLE_CONTACT] });
+
+            await handler(
+                makeAppSyncEvent('createOrder', {
+                    input: JSON.stringify({
+                        institution: 'Stanford University',
+                        productModel: 'TL-ICP-300',
+                        primaryContact: {
+                            contactName: 'Dr. Jane Smith',
+                            contactEmail: '   ',
+                            role: 'PI',
+                        },
+                    }),
+                }, 'Mutation'),
+                {} as any,
+                vi.fn(),
+            );
+
+            const creationPut = mockSend.mock.calls.find((c: unknown[]) => {
+                const arg = c[0] as { Item?: { SK?: string; matchedOrgId?: unknown }; ConditionExpression?: string };
+                return arg.Item?.SK === 'META' && arg.Item?.matchedOrgId === '';
+            });
+            expect(creationPut).toBeDefined();
+            // A fresh PK Put — no ConditionExpression exists to guard, and none is added by Task 8b.
+            expect((creationPut![0] as { ConditionExpression?: string }).ConditionExpression).toBeUndefined();
         });
     });
 
@@ -1572,6 +1666,36 @@ describe('order-api handler', () => {
                 {} as any,
                 vi.fn(),
             )).rejects.toThrow('RFQ is already converted');
+        });
+
+        it('P2C-T8b (creation-path pin): matchedOrgId is set only on the initial ORDER Put (fresh PK) — this resolver never backfills/updates it', async () => {
+            mockGet.mockResolvedValueOnce({ Item: SAMPLE_RFQ });
+            mockPut.mockResolvedValue({});
+            mockUpdate.mockResolvedValue({});
+            mockGet.mockResolvedValueOnce({
+                Item: { ...SAMPLE_ORDER, source: 'RFQ_WEBSITE', rfqId: 'rfq-20260310-abc123' },
+            });
+            mockQuery.mockResolvedValueOnce({ Items: [SAMPLE_CONTACT] });
+
+            await handler(
+                makeAppSyncEvent('convertRfqToOrder', { rfqId: 'rfq-20260310-abc123' }, 'Mutation'),
+                {} as any,
+                vi.fn(),
+            );
+
+            const creationPut = mockSend.mock.calls.find((c: unknown[]) => {
+                const arg = c[0] as { Item?: { SK?: string; matchedOrgId?: unknown } };
+                return arg.Item?.SK === 'META' && arg.Item?.matchedOrgId === SAMPLE_RFQ.matchedOrgId;
+            });
+            expect(creationPut).toBeDefined();
+            expect((creationPut![0] as { ConditionExpression?: string }).ConditionExpression).toBeUndefined();
+
+            // No UpdateCommand ever touches matchedOrgId in this resolver — it is creation-only.
+            const matchedOrgIdUpdate = mockSend.mock.calls.find((c: unknown[]) => {
+                const arg = c[0] as { UpdateExpression?: string };
+                return (arg.UpdateExpression ?? '').includes('matchedOrgId');
+            });
+            expect(matchedOrgIdUpdate).toBeUndefined();
         });
     });
 

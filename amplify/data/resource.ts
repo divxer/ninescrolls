@@ -380,6 +380,7 @@ const schema = a.schema({
   NeedsLinkingItem: a.customType({
     unitKey: a.string().required(), linkUnitType: a.string().required(), source: a.string().required(),
     kind: a.string().required(), occurredAt: a.string().required(), eventCount: a.integer().required(),
+    representativeEventId: a.string().required(),
     sourceEntityId: a.string(), visitorId: a.string(), signal: a.ref('NeedsLinkingSignal').required(),
   }),
   NeedsLinkingConnection: a.customType({
@@ -405,6 +406,8 @@ const schema = a.schema({
   CrmHealthResult: a.customType({
     repairPending: a.ref('RepairBucket').required(),
     repairStuck: a.ref('RepairBucket').required(),
+    mergeNeedsReviewCount: a.integer(),
+    mergeReviewMarkers: a.json(),
     lastRepairSummary: a.json(),
     lastHotSweep: a.json(),
     lastColdSweep: a.json(),
@@ -1496,7 +1499,7 @@ const schema = a.schema({
 
   linkStructuredUnit: a
     .mutation()
-    .arguments({ sourceType: a.string().required(), sourceEntityId: a.string().required(), targetOrgId: a.string().required() })
+    .arguments({ representativeEventId: a.string().required(), targetOrgId: a.string().required() })
     .returns(a.ref('LinkStructuredResult').required())
     .handler(a.handler.function(crmApi))
     .authorization((allow) => [allow.authenticated()]),
@@ -1512,6 +1515,18 @@ const schema = a.schema({
     .mutation()
     .arguments({ limit: a.integer() })
     .returns(a.ref('RunCrmRepairResult').required())
+    .handler(a.handler.function(crmApi))
+    .authorization((allow) => [allow.authenticated()]),
+
+  // Task 13 (R9): needs_review → acknowledged. fromOrgId/toOrgId identify the MERGE_RECON marker;
+  // the actor is ALWAYS server-derived from the caller's identity (never a client argument, same
+  // invariant as linkStructuredUnit/linkVisitor's operator). Returns a.json() — {ok:true} on the
+  // fenced flip, {ok:false, raced:true} on a lost version fence, {ok:false, notFound:true} when no
+  // marker exists for the pair.
+  acknowledgeMergeRecon: a
+    .mutation()
+    .arguments({ fromOrgId: a.string().required(), toOrgId: a.string().required() })
+    .returns(a.json())
     .handler(a.handler.function(crmApi))
     .authorization((allow) => [allow.authenticated()]),
 

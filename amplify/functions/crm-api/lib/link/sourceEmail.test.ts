@@ -23,4 +23,10 @@ describe('sourceEmail helpers', () => {
     expect(await backfillTargetPk('quote', 'doc1', [{ payload: { orderId: 'o3' } }] as never)).toBe('ORDER#o3');
   });
   it('sourceDomain extracts the domain', () => { expect(sourceDomain('x@nanofab.com')).toBe('nanofab.com'); });
+  it('gmail reads payload.customerEmail from the representative event', async () => {
+    expect(await readSourceEmailForUnit('gmail', 'mid', [{ payload: { customerEmail: 'x@example.com' } }] as never)).toBe('x@example.com');
+  });
+  it('gmail returns null when payload.customerEmail is absent', async () => {
+    expect(await readSourceEmailForUnit('gmail', 'mid', [{ payload: {} }] as never)).toBeNull();
+  });
 });

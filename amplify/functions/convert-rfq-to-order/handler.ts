@@ -9,6 +9,12 @@ import { invokeOrganizationApi } from '../../lib/organization/invoke-org-api';
 import { computeOrderScore } from '../../lib/organization/lead-score';
 import { emitTimelineEventToCrm } from '../../lib/crm/invoke-crm-api';
 import { buildOrderCreatedEmitArgs } from '../../lib/crm/emit-builders';
+import {
+    MATCHED_ORG_WRITE_GUARD_CONDITION,
+    MATCHED_ORG_WRITE_GUARD_VALUES,
+    isConditionalCheckFailed,
+    logMatchedOrgWriteSuperseded,
+} from '../../lib/crm/matched-org-write-guard';
 
 // ---------------------------------------------------------------------------
 // Clients
@@ -198,16 +204,29 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
                     orderValueUSD: req.quoteAmount,
                 });
                 if (orgResult.matchedOrgId && !rfq.matchedOrgId) {
-                    await docClient.send(new UpdateCommand({
-                        TableName: TABLE_NAME(),
-                        Key: { PK: `ORDER#${orderId}`, SK: 'META' },
-                        UpdateExpression: 'SET matchedOrgId = :id, GSI2PK = :gsi2, GSI2SK = :gsi2sk',
-                        ExpressionAttributeValues: {
-                            ':id': orgResult.matchedOrgId,
-                            ':gsi2': `ORG#${orgResult.matchedOrgId}`,
-                            ':gsi2sk': `ORDER#${now}`,
-                        },
-                    }));
+                    // R10/critical (Task 8b): this write is DELAYED relative to the order's own
+                    // creation (it waits on the org-api round-trip above), so an admin link can land
+                    // in between and stamp matchedOrgLinkGeneration. Guard so this backfill can never
+                    // clobber that decision — a CCFE here is caught below and logged as a no-op
+                    // (distinct from the generic 'org-upsert-failed' log the outer catch would emit);
+                    // any other error still propagates to that outer catch unchanged.
+                    try {
+                        await docClient.send(new UpdateCommand({
+                            TableName: TABLE_NAME(),
+                            Key: { PK: `ORDER#${orderId}`, SK: 'META' },
+                            UpdateExpression: 'SET matchedOrgId = :id, GSI2PK = :gsi2, GSI2SK = :gsi2sk',
+                            ConditionExpression: MATCHED_ORG_WRITE_GUARD_CONDITION,
+                            ExpressionAttributeValues: {
+                                ':id': orgResult.matchedOrgId,
+                                ':gsi2': `ORG#${orgResult.matchedOrgId}`,
+                                ':gsi2sk': `ORDER#${now}`,
+                                ...MATCHED_ORG_WRITE_GUARD_VALUES,
+                            },
+                        }));
+                    } catch (err) {
+                        if (!isConditionalCheckFailed(err)) throw err;
+                        logMatchedOrgWriteSuperseded('convert-rfq-to-order.matched_org_backfill', { orderId, attemptedOrgId: orgResult.matchedOrgId });
+                    }
                 }
             } catch (err) {
                 console.error(JSON.stringify({

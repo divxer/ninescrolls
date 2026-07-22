@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import crypto from 'node:crypto';
 import { generateAuditId, deterministicAuditId } from './idGenerators';
 
 describe('crm-api id generators', () => {
@@ -21,5 +22,16 @@ describe('deterministicAuditId', () => {
   it('differs by reason (structured vs analytics)', () => {
     expect(deterministicAuditId('manual_link_unit', 'v1', 'acme.com'))
       .not.toBe(deterministicAuditId('manual_link_visitor', 'v1', 'acme.com'));
+  });
+  it('WITHOUT generation: byte-identical to the legacy 16-hex id (existing audit rows depend on it)', () => {
+    const legacy = `audit-${crypto.createHash('sha256').update('manual_link_unit|u1|acme.com').digest('hex').slice(0, 16)}`;
+    expect(deterministicAuditId('manual_link_unit', 'u1', 'acme.com')).toBe(legacy);
+  });
+  it('WITH generation: 32-hex id that varies by generation (every manual action = own row)', () => {
+    const a = deterministicAuditId('manual_link_unit', 'u1', 'acme.com', '01J0AAAAAAAAAAAAAAAAAAAAAA');
+    const b = deterministicAuditId('manual_link_unit', 'u1', 'acme.com', '01J0BBBBBBBBBBBBBBBBBBBBBB');
+    expect(a).toMatch(/^audit-[0-9a-f]{32}$/);
+    expect(a).not.toBe(b);
+    expect(a).toBe(deterministicAuditId('manual_link_unit', 'u1', 'acme.com', '01J0AAAAAAAAAAAAAAAAAAAAAA')); // replay-stable
   });
 });

@@ -203,6 +203,36 @@ describe('submit-lead handler', () => {
         expect(backfillParams.ExpressionAttributeValues[':gsi2']).toBe('ORG#stanford.edu');
     });
 
+    it('P2C-T8b: matchedOrgId backfill write carries a ConditionExpression that refuses to overwrite a stamped or real-org record', async () => {
+        mockInvokeOrgApi.mockResolvedValueOnce({ matchedOrgId: 'stanford.edu' });
+        const event = makeEvent(VALID_CONTACT);
+        await handler(event, {} as never, (() => {}) as never);
+
+        const backfillCall = (UpdateCommand as unknown as ReturnType<typeof vi.fn>).mock.calls
+            .find((c: { Item?: unknown }[]) => {
+                const params = c[0] as { UpdateExpression?: string };
+                return (params.UpdateExpression ?? '').includes('matchedOrgId');
+            });
+        expect(backfillCall).toBeDefined();
+        const params = backfillCall![0] as { ConditionExpression?: string; ExpressionAttributeValues: Record<string, string> };
+        expect(params.ConditionExpression).toContain('attribute_not_exists(matchedOrgLinkGeneration)');
+        expect(params.ConditionExpression).toContain('attribute_type(matchedOrgId, :nullType)');
+        expect(params.ConditionExpression).toMatch(/attribute_not_exists\(matchedOrgId\)|matchedOrgId = :empty|begins_with\(matchedOrgId, :unres\)/);
+        expect(params.ExpressionAttributeValues[':nullType']).toBe('NULL');
+        expect(params.ExpressionAttributeValues[':empty']).toBe('');
+        expect(params.ExpressionAttributeValues[':unres']).toBe('unresolved-');
+    });
+
+    it('P2C-T8b: a CCFE on the matchedOrgId backfill is swallowed as a no-op — the lead submission itself still succeeds', async () => {
+        mockInvokeOrgApi.mockResolvedValueOnce({ matchedOrgId: 'stanford.edu' });
+        mockUpdate.mockRejectedValueOnce(Object.assign(new Error('linked'), { name: 'ConditionalCheckFailedException' }));
+        const event = makeEvent(VALID_CONTACT);
+        const result = await handler(event, {} as never, (() => {}) as never);
+
+        expect((result as { statusCode: number }).statusCode).toBe(200);
+        expect(JSON.parse((result as { body: string }).body).success).toBe(true);
+    });
+
     it.each([
         { name: 'contact', body: VALID_CONTACT, summaryRe: /Contact/i },
         { name: 'download_gate', body: VALID_DOWNLOAD_GATE, summaryRe: /Downloaded/i },

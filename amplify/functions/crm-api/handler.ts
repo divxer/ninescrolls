@@ -10,12 +10,14 @@ import { linkStructuredUnit } from './lib/link/linkStructuredUnit';
 import { linkVisitor } from './lib/link/linkVisitor';
 import { reconcileRepair } from './lib/repair/reconcileRepair';
 import { crmHealth } from './lib/repair/crmHealth';
+import { acknowledgeMergeReconFenced } from './lib/repair/repairMarker';
+import { requireAdmin } from './lib/authz';
 
 type AppSyncEvent = {
   info?: { fieldName?: string; parentTypeName?: string };
   fieldName?: string;
   arguments?: Record<string, unknown>;
-  identity?: { sub?: string; claims?: { email?: string } };
+  identity?: { sub?: string; groups?: string[]; claims?: { email?: string; 'cognito:groups'?: string[] | string } };
 };
 
 // HARD invariant: operator is ALWAYS derived server-side from the caller's identity, never from
@@ -27,6 +29,7 @@ type DirectInvokeEvent = { action: string; args?: unknown; mode?: 'hot' | 'cold'
 
 const resolvers: Record<string, (e: AppSyncEvent) => Promise<unknown>> = {
   timelineByOrg: async (e) => {
+    requireAdmin(e);
     const a = (e.arguments ?? {}) as { orgId?: string; limit?: number; nextToken?: string; includeInternalOnly?: boolean };
     const { items, nextToken } = await timelineByOrg({
       orgId: a.orgId ?? '', limit: a.limit, nextToken: a.nextToken, includeInternalOnly: a.includeInternalOnly ?? false,
@@ -34,21 +37,41 @@ const resolvers: Record<string, (e: AppSyncEvent) => Promise<unknown>> = {
     return { items: items.map(toOrganizationTimelineItem), nextToken: nextToken ?? null };
   },
   needsLinkingQueue: async (e) => {
+    requireAdmin(e);
     const a = (e.arguments ?? {}) as { limit?: number; nextToken?: string };
     return needsLinkingQueue({ limit: a.limit, nextToken: a.nextToken });
   },
   linkStructuredUnit: async (e) => {
-    const a = (e.arguments ?? {}) as { sourceType?: string; sourceEntityId?: string; targetOrgId?: string };
-    return linkStructuredUnit({ sourceType: a.sourceType ?? '', sourceEntityId: a.sourceEntityId ?? '', targetOrgId: a.targetOrgId ?? '', operator: operatorOf(e) });
+    requireAdmin(e);
+    // Task 13: the legacy sourceType/sourceEntityId shape (and its server-side derivation
+    // adapter) is REMOVED — schema + UI now speak representativeEventId exclusively.
+    const a = (e.arguments ?? {}) as { representativeEventId?: string; targetOrgId?: string };
+    if (!a.representativeEventId) {
+      throw new Error('linkStructuredUnit requires representativeEventId (legacy sourceType/sourceEntityId args are no longer supported)');
+    }
+    return linkStructuredUnit({ representativeEventId: a.representativeEventId, targetOrgId: a.targetOrgId ?? '', operator: operatorOf(e) });
   },
   linkVisitor: async (e) => {
+    requireAdmin(e);
     const a = (e.arguments ?? {}) as { visitorId?: string; targetOrgId?: string };
     return linkVisitor({ visitorId: a.visitorId ?? '', targetOrgId: a.targetOrgId ?? '', operator: operatorOf(e) });
   },
-  crmHealth: async () => crmHealth(),
+  crmHealth: async (e) => {
+    requireAdmin(e);
+    return crmHealth();
+  },
   runCrmRepair: async (e) => {
+    requireAdmin(e);
     const a = (e.arguments ?? {}) as { limit?: number };
     return reconcileRepair({ limit: a.limit });
+  },
+  // Task 13 (R9): needs_review → acknowledged. requireAdmin runs BEFORE the store fn touches
+  // DynamoDB (guarded set); actor is the server-derived operator — a client-supplied actor arg
+  // is impossible by contract (acknowledgeMergeReconFenced never accepts one).
+  acknowledgeMergeRecon: async (e) => {
+    requireAdmin(e);
+    const a = (e.arguments ?? {}) as { fromOrgId?: string; toOrgId?: string };
+    return acknowledgeMergeReconFenced(a.fromOrgId ?? '', a.toOrgId ?? '', operatorOf(e));
   },
 };
 

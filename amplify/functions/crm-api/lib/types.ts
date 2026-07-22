@@ -55,6 +55,7 @@ export interface ContactItem {
   orgId: string; source: string;
   firstSeenAt: string; lastSeenAt: string;
   linkLocked: boolean;
+  lastLinkGeneration: string | null;
   createdAt: string; updatedAt: string;
 }
 

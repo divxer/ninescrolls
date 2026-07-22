@@ -64,3 +64,43 @@ describe('writeLinkAuditLog idempotent id', () => {
     await expect(writeLinkAuditLog({ operator: 'op', reason: 'manual_link_unit', timestamp: '2026-07-08T00:00:00.000Z', newOrgId: 'acme.com' })).rejects.toThrow();
   });
 });
+
+// Task 8: R5 write-time fence — the generational replay's audit put rides a TransactWriteItems
+// whose element 0 is the org-active ConditionCheck; cancellations map POSITIONALLY.
+describe('writeLinkAuditLog activeOrgFence', () => {
+  const fencedArgs = {
+    id: 'audit-deadbeef00000000deadbeef000000', operator: 'op@x', reason: 'manual_link_unit',
+    timestamp: '2026-07-08T00:00:00.000Z', newOrgId: 'acme.com', activeOrgFence: true,
+  };
+
+  it('rides ONE TransactWriteItems: [org-active ConditionCheck, immutable Put]', async () => {
+    mockSend.mockResolvedValueOnce({});
+    const returned = await writeLinkAuditLog(fencedArgs);
+    expect(returned).toBe('audit-deadbeef00000000deadbeef000000');
+    const tx = mockSend.mock.calls.at(-1)![0].input.TransactItems;
+    expect(tx).toHaveLength(2);
+    expect(tx[0].ConditionCheck.Key).toEqual({ PK: 'ORG#acme.com', SK: 'META' });
+    expect(tx[0].ConditionCheck.ConditionExpression).toBe('#s = :active');
+    expect(tx[1].Put.Item.PK).toBe('AUDIT#audit-deadbeef00000000deadbeef000000');
+    expect(tx[1].Put.ConditionExpression).toBe('attribute_not_exists(PK)');
+  });
+
+  it('fence cancellation (index 0) throws OrgInactiveError — caller re-resolves the successor', async () => {
+    mockSend.mockRejectedValueOnce(Object.assign(new Error('cancelled'), {
+      name: 'TransactionCanceledException', CancellationReasons: [{ Code: 'ConditionalCheckFailed' }, { Code: 'None' }],
+    }));
+    await expect(writeLinkAuditLog(fencedArgs)).rejects.toMatchObject({ name: 'OrgInactiveError' });
+  });
+
+  it('duplicate-row cancellation (index 1) on a deterministic id is an idempotent success', async () => {
+    mockSend.mockRejectedValueOnce(Object.assign(new Error('cancelled'), {
+      name: 'TransactionCanceledException', CancellationReasons: [{ Code: 'None' }, { Code: 'ConditionalCheckFailed' }],
+    }));
+    await expect(writeLinkAuditLog(fencedArgs)).resolves.toBe('audit-deadbeef00000000deadbeef000000');
+  });
+
+  it('missing CancellationReasons propagates the raw error (never guessed)', async () => {
+    mockSend.mockRejectedValueOnce(Object.assign(new Error('cancelled'), { name: 'TransactionCanceledException' }));
+    await expect(writeLinkAuditLog(fencedArgs)).rejects.toThrow('cancelled');
+  });
+});

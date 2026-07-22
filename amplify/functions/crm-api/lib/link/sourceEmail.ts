@@ -23,6 +23,10 @@ export async function backfillTargetPk(sourceType: string, sourceEntityId: strin
 }
 
 export async function readSourceEmailForUnit(sourceType: string, sourceEntityId: string, events: TimelineEventItem[]): Promise<string | null> {
+  if (sourceType === 'gmail') {
+    const p = (events[0]?.payload ?? {}) as Record<string, unknown>;
+    return (p.customerEmail as string | undefined) ?? null;      // durable field, stamped at emit — no re-derivation
+  }
   if (sourceType === 'rfq' || sourceType === 'lead') {
     const res = await docClient.send(new GetCommand({ TableName: TABLE_NAME(), Key: { PK: `${sourceType.toUpperCase()}#${sourceEntityId}`, SK: 'META' } }));
     return ((res.Item as Record<string, unknown> | undefined)?.email as string | undefined) ?? null;

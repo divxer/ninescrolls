@@ -31,7 +31,7 @@ const baseEvt = {
 describe('emitTimelineEvent', () => {
   it('create path: put(rollupApplied=false) → bump → mark applied', async () => {
     resolveLinks.mockResolvedValueOnce({ orgId: 'org-df', contactId: null, resolutionStatus: 'resolved', resolutionReason: 'email_domain_exact', confidence: 0.95 });
-    upsertContact.mockResolvedValueOnce('ct-terry');
+    upsertContact.mockResolvedValueOnce({ contactId: 'ct-terry', outcome: 'written' });
     mockSend.mockResolvedValueOnce({}); // conditional put (new)
     mockSend.mockResolvedValueOnce({}); // set rollupApplied=true
     await emitTimelineEvent(baseEvt);
@@ -53,7 +53,7 @@ describe('emitTimelineEvent', () => {
   });
   it('re-emit (link moved): writes dirty (false + pending old org) FIRST, recomputes both, then marks clean', async () => {
     resolveLinks.mockResolvedValueOnce({ orgId: 'org-NEW', contactId: null, resolutionStatus: 'manually_linked', resolutionReason: 'manual', confidence: 1 });
-    upsertContact.mockResolvedValueOnce('ct-terry');
+    upsertContact.mockResolvedValueOnce({ contactId: 'ct-terry', outcome: 'written' });
     mockSend.mockRejectedValueOnce(Object.assign(new Error('dup'), { name: 'ConditionalCheckFailedException' })); // conditional put
     getTimelineEvent.mockResolvedValueOnce({ id: 'tev-rfq-rfq-1-submitted', orgId: 'org-OLD', createdAt: '2026-01-01T00:00:00Z', rollupApplied: true });
     mockSend.mockResolvedValueOnce({}); // dirty overwrite put
@@ -73,7 +73,7 @@ describe('emitTimelineEvent', () => {
   });
   it('re-emit where original rollup never landed (rollupApplied=false), same org: recomputes once, then marks clean', async () => {
     resolveLinks.mockResolvedValueOnce({ orgId: 'org-df', contactId: null, resolutionStatus: 'resolved', resolutionReason: 'email_domain_exact', confidence: 0.95 });
-    upsertContact.mockResolvedValueOnce('ct-terry');
+    upsertContact.mockResolvedValueOnce({ contactId: 'ct-terry', outcome: 'written' });
     mockSend.mockRejectedValueOnce(Object.assign(new Error('dup'), { name: 'ConditionalCheckFailedException' }));
     getTimelineEvent.mockResolvedValueOnce({ id: 'tev-rfq-rfq-1-submitted', orgId: 'org-df', kind: 'rfq_submitted', occurredAt: '2026-06-19T10:00:00Z', isInternalOnly: false, voided: false, createdAt: '2026-01-01T00:00:00Z', rollupApplied: false });
     mockSend.mockResolvedValueOnce({}); // dirty overwrite
@@ -86,7 +86,7 @@ describe('emitTimelineEvent', () => {
   });
   it('re-emit same org with a rollup-affecting change (voided) recomputes once, even if rollupApplied was true', async () => {
     resolveLinks.mockResolvedValueOnce({ orgId: 'org-df', contactId: null, resolutionStatus: 'resolved', resolutionReason: 'email_domain_exact', confidence: 0.95 });
-    upsertContact.mockResolvedValueOnce('ct-terry');
+    upsertContact.mockResolvedValueOnce({ contactId: 'ct-terry', outcome: 'written' });
     mockSend.mockRejectedValueOnce(Object.assign(new Error('dup'), { name: 'ConditionalCheckFailedException' }));
     getTimelineEvent.mockResolvedValueOnce({ id: 'tev-rfq-rfq-1-submitted', orgId: 'org-df', kind: 'rfq_submitted', occurredAt: '2026-06-19T10:00:00Z', isInternalOnly: false, voided: false, createdAt: '2026-01-01T00:00:00Z', rollupApplied: true });
     mockSend.mockResolvedValueOnce({}); // dirty overwrite
@@ -98,7 +98,7 @@ describe('emitTimelineEvent', () => {
   });
   it('re-emit recovers a crashed attempt: existing rollupApplied=false + rollupPendingOrgId recomputes BOTH pending and current org', async () => {
     resolveLinks.mockResolvedValueOnce({ orgId: 'org-NEW', contactId: null, resolutionStatus: 'manually_linked', resolutionReason: 'manual', confidence: 1 });
-    upsertContact.mockResolvedValueOnce('ct-1');
+    upsertContact.mockResolvedValueOnce({ contactId: 'ct-1', outcome: 'written' });
     mockSend.mockRejectedValueOnce(Object.assign(new Error('dup'), { name: 'ConditionalCheckFailedException' }));
     // a prior link-move crashed after the dirty write: row already on org-NEW, org-OLD still pending
     getTimelineEvent.mockResolvedValueOnce({ id: 'tev-rfq-rfq-1-submitted', orgId: 'org-NEW', kind: 'rfq_submitted', occurredAt: '2026-06-19T10:00:00Z', isInternalOnly: false, voided: false, createdAt: '2026-01-01T00:00:00Z', rollupApplied: false, rollupPendingOrgId: 'org-OLD' });
@@ -110,7 +110,7 @@ describe('emitTimelineEvent', () => {
   });
   it('re-emit with no rollup-affecting change stays clean (overwrite rollupApplied=true, no recompute, no markClean)', async () => {
     resolveLinks.mockResolvedValueOnce({ orgId: 'org-df', contactId: null, resolutionStatus: 'resolved', resolutionReason: 'email_domain_exact', confidence: 0.95 });
-    upsertContact.mockResolvedValueOnce('ct-terry');
+    upsertContact.mockResolvedValueOnce({ contactId: 'ct-terry', outcome: 'written' });
     mockSend.mockRejectedValueOnce(Object.assign(new Error('dup'), { name: 'ConditionalCheckFailedException' }));
     getTimelineEvent.mockResolvedValueOnce({ id: 'tev-rfq-rfq-1-submitted', orgId: 'org-df', kind: 'rfq_submitted', occurredAt: '2026-06-19T10:00:00Z', isInternalOnly: false, voided: false, createdAt: '2026-01-01T00:00:00Z', rollupApplied: true, rollupPendingOrgId: null });
     mockSend.mockResolvedValueOnce({}); // single clean overwrite
@@ -119,5 +119,35 @@ describe('emitTimelineEvent', () => {
     expect(recomputeRollupsForOrg).not.toHaveBeenCalled();
     expect(bumpOrgRollupOnCreate).not.toHaveBeenCalled();
     expect(mockSend).toHaveBeenCalledTimes(2); // reject + clean overwrite only
+  });
+  it('persists comms fields when provided', async () => {
+    resolveLinks.mockResolvedValueOnce({ orgId: 'org-df', contactId: null, resolutionStatus: 'resolved', resolutionReason: 'email_domain_exact', confidence: 0.95 });
+    upsertContact.mockResolvedValueOnce({ contactId: 'ct-terry', outcome: 'written' });
+    mockSend.mockResolvedValueOnce({}); // conditional put (new)
+    mockSend.mockResolvedValueOnce({}); // set rollupApplied=true
+    await emitTimelineEvent({
+      ...baseEvt,
+      direction: 'inbound', externalId: 'mid@x', threadId: 't1',
+      from: 'a@ext.com', to: 'info@ninescrolls.com', subject: 'Hi', bodySnippet: 'snippet…',
+    } as never);
+    const item = mockSend.mock.calls[0][0].input.Item;
+    expect(item.direction).toBe('inbound');
+    expect(item.externalId).toBe('mid@x');
+    expect(item.threadId).toBe('t1');
+    expect(item.from).toBe('a@ext.com');
+    expect(item.to).toBe('info@ninescrolls.com');
+    expect(item.subject).toBe('Hi');
+    expect(item.bodySnippet).toBe('snippet…');
+  });
+  it('still writes null comms fields when omitted (existing channels byte-identical)', async () => {
+    resolveLinks.mockResolvedValueOnce({ orgId: 'org-df', contactId: null, resolutionStatus: 'resolved', resolutionReason: 'email_domain_exact', confidence: 0.95 });
+    upsertContact.mockResolvedValueOnce({ contactId: 'ct-terry', outcome: 'written' });
+    mockSend.mockResolvedValueOnce({});
+    mockSend.mockResolvedValueOnce({});
+    await emitTimelineEvent(baseEvt);
+    const item = mockSend.mock.calls[0][0].input.Item;
+    for (const f of ['direction', 'externalId', 'threadId', 'from', 'to', 'subject', 'bodySnippet']) {
+      expect(item[f]).toBeNull();
+    }
   });
 });

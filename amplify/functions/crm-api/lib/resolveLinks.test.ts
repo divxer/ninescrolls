@@ -51,4 +51,22 @@ describe('resolveLinks ladder (P1: resolve existing orgs only, never create)', (
     expect(await resolveLinks({ ...base }))
       .toMatchObject({ orgId: 'unresolved-rfq-rfq-1', resolutionReason: 'unresolved', resolutionStatus: 'unresolved', confidence: 0 });
   });
+  it("gmail unresolved collapses by normalized customer email, not sourceEntityId", async () => {
+    getContactByEmail.mockResolvedValueOnce(null);
+    findExistingOrgIdByEmail.mockResolvedValueOnce(null);
+    const r = await resolveLinks({ sourceEntityType: 'gmail', sourceEntityId: 'mid-123',
+      channel: 'gmail', email: '  Bob@Gmail.Com ' } as never);
+    expect(r.orgId).toBe('unresolved-gmail-bob@gmail.com');
+    expect(r.resolutionStatus).toBe('unresolved');
+  });
+  it('gmail unresolved WITHOUT an email falls back to the sourceEntityId form (defensive)', async () => {
+    const r = await resolveLinks({ sourceEntityType: 'gmail', sourceEntityId: 'mid-9', channel: 'gmail' } as never);
+    expect(r.orgId).toBe('unresolved-gmail-mid-9');
+  });
+  it('non-gmail unresolved id is unchanged', async () => {
+    getContactByEmail.mockResolvedValueOnce(null);
+    findExistingOrgIdByEmail.mockResolvedValueOnce(null);
+    const r = await resolveLinks({ sourceEntityType: 'rfq', sourceEntityId: 'r1', channel: 'rfq', email: 'x@nohit.com' } as never);
+    expect(r.orgId).toBe('unresolved-rfq-r1');
+  });
 });

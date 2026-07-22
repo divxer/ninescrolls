@@ -6,7 +6,7 @@ import { useNeedsLinkingQueue } from '../../hooks/useNeedsLinkingQueue';
 import * as svc from '../../services/organizationAdminService';
 import { NeedsLinkingPage } from './NeedsLinkingPage';
 
-const structuredUnit = { unitKey: 'unresolved-rfq-r1', linkUnitType: 'structured', source: 'rfq', kind: 'rfq_submitted', occurredAt: '2026-03-01T00:00:00Z', eventCount: 1, sourceEntityId: 'r1', signal: { email: 'j@nanofab.com', domain: 'nanofab.com', enrichmentStatus: 'ok' } };
+const structuredUnit = { unitKey: 'unresolved-rfq-r1', linkUnitType: 'structured', source: 'rfq', kind: 'rfq_submitted', occurredAt: '2026-03-01T00:00:00Z', eventCount: 1, sourceEntityId: 'r1', representativeEventId: 'tev-1', signal: { email: 'j@nanofab.com', domain: 'nanofab.com', enrichmentStatus: 'ok' } };
 const analyticsUnit = { unitKey: 'v1', linkUnitType: 'analytics', source: 'analytics', kind: 'site_visit_session', occurredAt: '2026-03-02T00:00:00Z', eventCount: 3, visitorId: 'v1', signal: { orgNameDisplay: 'Verizon Business', country: 'US', enrichmentStatus: 'ok' } };
 
 beforeEach(() => vi.resetAllMocks());
@@ -31,7 +31,7 @@ describe('NeedsLinkingPage', () => {
     fireEvent.change(screen.getByRole('textbox', { name: /search organizations/i }), { target: { value: 'nanofab' } });
     fireEvent.click(await screen.findByText('NanoFab Solutions Inc'));
     fireEvent.click(screen.getByRole('button', { name: /link/i }));
-    await waitFor(() => expect(svc.linkStructuredUnit).toHaveBeenCalledWith({ sourceType: 'rfq', sourceEntityId: 'r1', targetOrgId: 'nanofabsolutions.com' }));
+    await waitFor(() => expect(svc.linkStructuredUnit).toHaveBeenCalledWith({ representativeEventId: 'tev-1', targetOrgId: 'nanofabsolutions.com' }));
     await waitFor(() => expect(evictUnit).toHaveBeenCalledWith('unresolved-rfq-r1'));
   });
 

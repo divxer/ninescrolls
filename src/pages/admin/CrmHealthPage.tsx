@@ -1,4 +1,4 @@
-import { useCrmHealth } from '../../hooks/useCrmHealth';
+import { useCrmHealth, type MergeReviewMarker } from '../../hooks/useCrmHealth';
 
 type Sample = { unitType: string; unitKey: string; targetOrgId: string; attemptCount?: number; stuckReason?: string | null; lastError?: string | null; createdAt: string };
 type Bucket = { count: number; more: boolean; sample: Sample[] };
@@ -25,6 +25,55 @@ function BucketCard({ title, bucket }: { title: string; bucket?: Bucket | null }
   );
 }
 
+function MergeReviewSection({
+  markers, ackInFlight, ackError, onAcknowledge,
+}: {
+  markers: MergeReviewMarker[];
+  ackInFlight: string | null;
+  ackError: string | null;
+  onAcknowledge: (fromOrgId: string, toOrgId: string) => void;
+}) {
+  return (
+    <section style={{ border: '1px solid #ddd', borderRadius: 8, padding: 16, marginBottom: 16 }}>
+      <h3 style={{ margin: '0 0 8px' }}>Merge review: {markers.length}</h3>
+      {ackError && <p style={{ color: '#b91c1c', fontSize: 13 }}>{ackError}</p>}
+      {markers.length === 0 ? <p style={{ color: '#6b7280' }}>None</p> : (
+        <table style={{ width: '100%', fontSize: 13, borderCollapse: 'collapse' }}>
+          <thead>
+            <tr>
+              <th align="left">From → To</th><th align="left">Residuals</th><th align="left">Sample count</th>
+              <th align="left">Probed at</th><th align="left"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {markers.map((m) => {
+              const key = `${m.fromOrgId}|${m.toOrgId}`;
+              const inFlight = ackInFlight === key;
+              return (
+                <tr key={key}>
+                  <td>{m.fromOrgId} → {m.toOrgId}</td>
+                  <td>{m.residualsDetected ? 'yes' : 'no'}</td>
+                  <td>{m.residualSamples?.length ?? 0}</td>
+                  <td>{m.probedAt ?? ''}</td>
+                  <td>
+                    <button
+                      type="button"
+                      disabled={inFlight}
+                      onClick={() => onAcknowledge(m.fromOrgId, m.toOrgId)}
+                    >
+                      {inFlight ? 'Acknowledging…' : 'Acknowledge'}
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      )}
+    </section>
+  );
+}
+
 function SummaryCard({ title, summary }: { title: string; summary?: unknown }) {
   // a.json() fields arrive from AppSync as JSON *strings*; parse before pretty-printing so the card
   // shows readable JSON instead of a double-encoded escaped string. Objects (tests/mocks) pass through.
@@ -41,7 +90,7 @@ function SummaryCard({ title, summary }: { title: string; summary?: unknown }) {
 }
 
 export function CrmHealthPage() {
-  const { data, loading, error, runMsg, runRepair } = useCrmHealth();
+  const { data, loading, error, runMsg, runRepair, mergeReviewMarkers, ackInFlight, ackError, acknowledge } = useCrmHealth();
   return (
     <div style={{ padding: 24, maxWidth: 900 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -55,6 +104,12 @@ export function CrmHealthPage() {
         <>
           <BucketCard title="Pending repairs" bucket={data.repairPending as Bucket} />
           <BucketCard title="Stuck repairs (needs attention)" bucket={data.repairStuck as Bucket} />
+          <MergeReviewSection
+            markers={mergeReviewMarkers}
+            ackInFlight={ackInFlight}
+            ackError={ackError}
+            onAcknowledge={(fromOrgId, toOrgId) => { void acknowledge(fromOrgId, toOrgId); }}
+          />
           <SummaryCard title="Last repair run" summary={data.lastRepairSummary} />
           <SummaryCard title="Last hot sweep" summary={data.lastHotSweep} />
           <SummaryCard title="Last cold sweep" summary={data.lastColdSweep} />

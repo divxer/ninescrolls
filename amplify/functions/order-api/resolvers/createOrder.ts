@@ -8,6 +8,12 @@ import { invokeOrganizationApi } from '../../../lib/organization/invoke-org-api.
 import { computeOrderScore } from '../../../lib/organization/lead-score.js';
 import { emitTimelineEventToCrm } from '../../../lib/crm/invoke-crm-api.js';
 import { buildOrderCreatedEmitArgs } from '../../../lib/crm/emit-builders.js';
+import {
+    MATCHED_ORG_WRITE_GUARD_CONDITION,
+    MATCHED_ORG_WRITE_GUARD_VALUES,
+    isConditionalCheckFailed,
+    logMatchedOrgWriteSuperseded,
+} from '../../../lib/crm/matched-org-write-guard.js';
 
 interface CreateOrderInput {
     quoteNumber?: string;
@@ -158,16 +164,28 @@ export async function createOrder(event: AppSyncEvent) {
             });
             matchedOrgId = orgResult?.matchedOrgId ?? null;
             if (matchedOrgId) {
-                await docClient.send(new UpdateCommand({
-                    TableName: TABLE_NAME(),
-                    Key: { PK: `ORDER#${orderId}`, SK: 'META' },
-                    UpdateExpression: 'SET matchedOrgId = :id, GSI2PK = :gsi2, GSI2SK = :gsi2sk',
-                    ExpressionAttributeValues: {
-                        ':id': matchedOrgId,
-                        ':gsi2': `ORG#${matchedOrgId}`,
-                        ':gsi2sk': `ORDER#${now}`,
-                    },
-                }));
+                // R10/critical (Task 8b): this write is DELAYED relative to the order's own creation
+                // (it waits on the org-api round-trip above), so an admin link can land in between and
+                // stamp matchedOrgLinkGeneration. Guard so this backfill can never clobber that
+                // decision — a CCFE here is caught below and logged as a no-op, same as any other
+                // org-upsert failure: the order is already committed either way.
+                try {
+                    await docClient.send(new UpdateCommand({
+                        TableName: TABLE_NAME(),
+                        Key: { PK: `ORDER#${orderId}`, SK: 'META' },
+                        UpdateExpression: 'SET matchedOrgId = :id, GSI2PK = :gsi2, GSI2SK = :gsi2sk',
+                        ConditionExpression: MATCHED_ORG_WRITE_GUARD_CONDITION,
+                        ExpressionAttributeValues: {
+                            ':id': matchedOrgId,
+                            ':gsi2': `ORG#${matchedOrgId}`,
+                            ':gsi2sk': `ORDER#${now}`,
+                            ...MATCHED_ORG_WRITE_GUARD_VALUES,
+                        },
+                    }));
+                } catch (err) {
+                    if (!isConditionalCheckFailed(err)) throw err;
+                    logMatchedOrgWriteSuperseded('order.matched_org_backfill', { orderId, attemptedOrgId: matchedOrgId });
+                }
             }
         } catch (err) {
             console.error(JSON.stringify({
