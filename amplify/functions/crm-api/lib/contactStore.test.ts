@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { PutCommand, TransactWriteCommand } from '@aws-sdk/lib-dynamodb';
+import { PutCommand, UpdateCommand, TransactWriteCommand } from '@aws-sdk/lib-dynamodb';
 const mockSend = vi.fn();
 vi.mock('./dynamodb', () => ({ docClient: { send: (...a: unknown[]) => mockSend(...a) }, TABLE_NAME: () => 'T' }));
 import { upsertContact } from './contactStore';
@@ -219,21 +219,31 @@ describe('upsertContact same-generation successor migration (migrateFromOrgs)', 
     lastLinkGeneration: GEN, firstSeenAt: 't0', lastSeenAt: 't0', createdAt: 't0', source: 'rfq',
   };
 
-  it('migrates: same stamp + org listed in migrateFromOrgs → org moves, stamp UNCHANGED; CAS pins the FULL authorizing state', async () => {
+  it('migrates: NARROW UpdateCommand — only orgId + org-derived keys + updatedAt; CAS pins the full authorizing state, absent-linkLocked tolerated', async () => {
     mockGetByEmail(existingAtB);
-    mockSend.mockResolvedValueOnce({});   // put
+    mockSend.mockResolvedValueOnce({});   // the migration update
     const r = await upsertContact({ email: 'b@x.com', orgId: 'c.com', source: 'rfq', occurredAt: 't1',
       linkGeneration: GEN, migrateFromOrgs: ['a.com', 'b.com'] });
     expect(r.outcome).toBe('migrated');
-    const p = putInput();
-    expect(p.Item.orgId).toBe('c.com');
-    expect(p.Item.lastLinkGeneration).toBe(GEN);                        // stamp untouched
-    // Round-4: the write condition pins EVERY fact that authorized the migration — the observed
-    // predecessor org, the exact stamp, and unlocked — and REJECTS a missing row: a racing admin
-    // lock, same-generation org move, or deletion must CCFE, never be clobbered or resurrected.
-    expect(p.ConditionExpression).toBe('attribute_exists(PK) AND orgId = :obsOrg AND lastLinkGeneration = :obsGen AND linkLocked = :false');
-    expect(p.ConditionExpression).not.toContain('attribute_not_exists');   // a deleted row is never resurrected by this write
-    expect(p.ExpressionAttributeValues).toEqual({ ':obsOrg': 'b.com', ':obsGen': GEN, ':false': false });
+    // Round-5 (Issue 2): the migration is a NARROW UpdateCommand, never a full-item Put — a
+    // concurrent metadata write that leaves org+generation+lock unchanged must survive it.
+    const u = mockSend.mock.calls[1][0];
+    expect(u).toBeInstanceOf(UpdateCommand);
+    expect(u.input.Key).toEqual({ PK: 'CONTACT#ct-x', SK: 'A' });
+    expect(u.input.UpdateExpression).toBe('SET orgId = :eff, GSI2PK = :gsi2pk, GSI2SK = :gsi2sk, updatedAt = :now');
+    for (const notOwned of ['name', 'phone', 'title', 'role', 'firstSeenAt', 'lastSeenAt', 'lastLinkGeneration']) {
+      expect(u.input.UpdateExpression).not.toContain(notOwned);          // migration owns org + keys + updatedAt ONLY
+    }
+    // Round-4 condition retained; Round-5 (Issue 1): absent linkLocked (legacy P1-era rows) must
+    // pass the lock clause — DynamoDB equality on an absent attribute is FALSE, so the clause is
+    // the parenthesized OR, not a bare equality.
+    expect(u.input.ConditionExpression).toBe('attribute_exists(PK) AND orgId = :obsOrg AND lastLinkGeneration = :obsGen AND (attribute_not_exists(linkLocked) OR linkLocked = :false)');
+    expect(u.input.ConditionExpression).toContain('(attribute_not_exists(linkLocked) OR linkLocked = :false)');
+    expect(u.input.ExpressionAttributeValues).toEqual({
+      ':eff': 'c.com', ':gsi2pk': 'ORG#c.com', ':gsi2sk': 'CONTACT#b@x.com',   // mirrors contactKeys()
+      ':now': expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
+      ':obsOrg': 'b.com', ':obsGen': GEN, ':false': false,
+    });
   });
   it('absent migrateFromOrgs: byte-identical same-generation semantics — superseded no-op, NO write', async () => {
     mockGetByEmail(existingAtB);

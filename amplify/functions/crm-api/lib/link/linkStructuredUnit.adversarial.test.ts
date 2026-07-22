@@ -99,6 +99,11 @@ const rfqBase = {
 
 type TxInput = { TransactItems?: Array<{ Update?: { Key?: { PK?: string } }; Put?: { Item?: { PK?: string } }; ConditionCheck?: { Key?: any } }> };
 
+// The contact write differs by branch — full-item Put (create/normal upsert) vs narrow migration
+// Update — so contact-race gates park EITHER form (first contact write after registration).
+const contactWriteGate = (cmd: { constructor: { name: string } }) =>
+  cmd.constructor.name === 'PutCommand' || cmd.constructor.name === 'UpdateCommand';
+
 afterEach(() => { activeHarness()?.clearGates(); });
 
 describe('linkStructuredUnit adversarial suite (stateful harness, real functions)', () => {
@@ -252,7 +257,7 @@ describe('linkStructuredUnit adversarial suite (stateful harness, real functions
   it('migration vs CONCURRENT ADMIN LOCK: the stale migration Put loses; re-decide returns locked; the lock and org stand', async () => {
     const store = seedStore([]);
     await upsertContact({ email: 'r@x.com', orgId: 'b.com', source: 'rfq', occurredAt: T1, linkGeneration: GEN_1 });
-    const gate = store.gateOn((cmd) => cmd.constructor.name === 'PutCommand');    // parks the migration Put
+    const gate = store.gateOn(contactWriteGate);                                    // parks the migration write
     const pMig = upsertContact({ email: 'r@x.com', orgId: 'c.com', source: 'rfq', occurredAt: T2,
       linkGeneration: GEN_1, migrateFromOrgs: ['b.com'] });
     await store.idle();                                                            // read authorized the migration; write parked
@@ -268,7 +273,7 @@ describe('linkStructuredUnit adversarial suite (stateful harness, real functions
   it('migration vs SAME-GENERATION ORG MOVE by another actor: CCFE → superseded; the other actor\'s org stands', async () => {
     const store = seedStore([]);
     await upsertContact({ email: 'r@x.com', orgId: 'b.com', source: 'rfq', occurredAt: T1, linkGeneration: GEN_1 });
-    const gate = store.gateOn((cmd) => cmd.constructor.name === 'PutCommand');
+    const gate = store.gateOn(contactWriteGate);
     const pMig = upsertContact({ email: 'r@x.com', orgId: 'c.com', source: 'rfq', occurredAt: T2,
       linkGeneration: GEN_1, migrateFromOrgs: ['b.com'] });
     await store.idle();
@@ -284,7 +289,7 @@ describe('linkStructuredUnit adversarial suite (stateful harness, real functions
     const store = seedStore([]);
     await upsertContact({ email: 'r@x.com', orgId: 'b.com', source: 'rfq', occurredAt: T1, linkGeneration: GEN_1 });
     const contactPk = store.contactPkOf('r@x.com');
-    const gate = store.gateOn((cmd) => cmd.constructor.name === 'PutCommand');
+    const gate = store.gateOn(contactWriteGate);
     const pMig = upsertContact({ email: 'r@x.com', orgId: 'c.com', source: 'rfq', occurredAt: T2,
       linkGeneration: GEN_1, migrateFromOrgs: ['b.com'] });
     await store.idle();
@@ -299,6 +304,57 @@ describe('linkStructuredUnit adversarial suite (stateful harness, real functions
     expect(c.lastLinkGeneration).toBe(GEN_1);
     expect(c.firstSeenAt).toBe(T2);                                                // FRESH item (T2), not the stale B-item (would carry T1)
     expect(c.linkLocked).toBe(false);
+  });
+
+  // Round-5 ISSUE 1 — legacy P1-era contacts may LACK the linkLocked attribute entirely. The
+  // decide step treats absent as unlocked, so the CAS must too (DynamoDB equality on an absent
+  // attribute is FALSE) — otherwise a legitimate migration CCFEs three times and the contact
+  // effect fails forever (stuck marker).
+  it('migration succeeds for a legacy predecessor contact LACKING the linkLocked attribute', async () => {
+    const store = seedStore([]);
+    await upsertContact({ email: 'l@x.com', orgId: 'b.com', source: 'rfq', occurredAt: T1, linkGeneration: GEN_1 });
+    const legacy = store.contactByEmail('l@x.com');
+    delete legacy.linkLocked;                                                      // simulate the P1-era row shape
+    store.put(store.contactPkOf('l@x.com'), legacy);
+    const r = await upsertContact({ email: 'l@x.com', orgId: 'c.com', source: 'rfq', occurredAt: T2,
+      linkGeneration: GEN_1, migrateFromOrgs: ['b.com'] });
+    expect(r.outcome).toBe('migrated');
+    const c = store.contactByEmail('l@x.com');
+    expect(c.orgId).toBe('c.com');
+    expect(c.lastLinkGeneration).toBe(GEN_1);
+  });
+  it('migration succeeds identically for an explicit linkLocked:false predecessor', async () => {
+    const store = seedStore([]);
+    await upsertContact({ email: 'f@x.com', orgId: 'b.com', source: 'rfq', occurredAt: T1, linkGeneration: GEN_1 });
+    expect(store.contactByEmail('f@x.com').linkLocked).toBe(false);                // explicit false in the stored row
+    const r = await upsertContact({ email: 'f@x.com', orgId: 'c.com', source: 'rfq', occurredAt: T2,
+      linkGeneration: GEN_1, migrateFromOrgs: ['b.com'] });
+    expect(r.outcome).toBe('migrated');
+    expect(store.contactByEmail('f@x.com').orgId).toBe('c.com');
+  });
+
+  // Round-5 ISSUE 2 — the migration write must be a NARROW update owning only org + org-derived
+  // keys + updatedAt: a concurrent metadata write (org/gen/lock unchanged) satisfies the CAS, so
+  // a stale FULL-item Put would silently clobber the newer metadata. Both must survive.
+  it('migration vs CONCURRENT METADATA UPDATE: the narrow migration write preserves the newer metadata alongside the org move', async () => {
+    const store = seedStore([]);
+    await upsertContact({ email: 'm@x.com', orgId: 'b.com', source: 'rfq', occurredAt: T1, linkGeneration: GEN_1 });
+    const gate = store.gateOn(contactWriteGate);                                   // parks the migration write
+    const pMig = upsertContact({ email: 'm@x.com', orgId: 'c.com', source: 'rfq', occurredAt: T2,
+      linkGeneration: GEN_1, migrateFromOrgs: ['b.com'] });
+    await store.idle();                                                            // read authorized the migration; write parked
+    // non-generational metadata update lands: new name + later lastSeenAt; org+gen+lock unchanged
+    await upsertContact({ email: 'm@x.com', orgId: 'b.com', source: 'order', occurredAt: T3, name: 'Newer Name' });
+    expect(store.contactByEmail('m@x.com').name).toBe('Newer Name');
+    gate.release();
+    const r = await pMig;
+    expect(r.outcome).toBe('migrated');                                            // CAS still true — org/gen/lock unchanged
+    const c = store.contactByEmail('m@x.com');
+    expect(c.orgId).toBe('c.com');                                                 // the org move landed
+    expect(c.GSI2PK).toBe('ORG#c.com');                                            // org-derived key follows (contactKeys mirror)
+    expect(c.name).toBe('Newer Name');                                             // and the newer metadata SURVIVES
+    expect(c.lastSeenAt).toBe(T3);
+    expect(c.lastLinkGeneration).toBe(GEN_1);
   });
 
   it('a linkLocked contact is NEVER re-orged by the interleaved non-generational writer', async () => {
