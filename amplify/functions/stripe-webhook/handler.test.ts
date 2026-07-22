@@ -94,14 +94,12 @@ function makeApiGatewayEvent() {
     };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let handler: (event: any) => Promise<{ statusCode: number; body: string }>;
 
 beforeAll(async () => {
     // Module-level table wiring reads process.env at import time
     process.env.STRIPE_WEBHOOK_EVENTS_TABLE = 'events-table';
     process.env.STRIPE_ORDERS_TABLE = 'orders-table';
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     handler = (await import('./handler')).handler as any;
 });
 
