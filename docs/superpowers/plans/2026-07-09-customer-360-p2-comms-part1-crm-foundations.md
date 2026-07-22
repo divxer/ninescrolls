@@ -1210,8 +1210,8 @@ git commit -m "feat(comms-p1): queue representativeEventId + gmail customerEmail
 ### Task 12: Drainer v2 — generations, building-aging, superseded/locked, contact retry
 
 **Files:**
-- Modify: `amplify/functions/crm-api/lib/repair/reconcileRepair.ts`
-- Test: `amplify/functions/crm-api/lib/repair/reconcileRepair.test.ts` (extend)
+- Modify: `amplify/functions/crm-api/lib/repair/reconcileRepair.ts`, `amplify/functions/crm-api/lib/repair/crmHealth.ts` (the `mergeNeedsReviewCount` + `mergeReviewMarkers` read)
+- Test: `amplify/functions/crm-api/lib/repair/reconcileRepair.test.ts` (extend), `amplify/functions/crm-api/lib/repair/crmHealth.test.ts` (extend)
 
 - [ ] **Step 1: Failing tests (append):**
 ```ts
@@ -1277,7 +1277,7 @@ Tests: (a) replay returning `{ok:false, errorType:'target_unavailable', reason}`
 
 - [ ] **Step 5: Commit**
 ```bash
-git add amplify/functions/crm-api/lib/repair/reconcileRepair.ts amplify/functions/crm-api/lib/repair/reconcileRepair.test.ts
+git add amplify/functions/crm-api/lib/repair/reconcileRepair.ts amplify/functions/crm-api/lib/repair/reconcileRepair.test.ts amplify/functions/crm-api/lib/repair/crmHealth.ts amplify/functions/crm-api/lib/repair/crmHealth.test.ts
 git commit -m "feat(comms-p1): drainer v2 — generation draining, building-aging, superseded/locked, contact retry"
 ```
 
@@ -1294,7 +1294,7 @@ git commit -m "feat(comms-p1): drainer v2 — generation draining, building-agin
 - [ ] **Step 2: Implement.** `data/resource.ts`: `NeedsLinkingItem` gains `representativeEventId: a.string().required()`; `linkStructuredUnit` mutation arguments become `{ representativeEventId: a.string().required(), targetOrgId: a.string().required() }`. Handler: **delete `deriveRepresentativeEventId` and the legacy branch** (schema + UI now speak the new shape, so the transitional window closes in the same commit). Service `linkStructuredUnit(args: { representativeEventId: string; targetOrgId: string })`. Page/`handleLink` passes `unit.representativeEventId` for structured units (analytics path unchanged). Update the page/unit-list tests' fixtures and delete the adapter's handler tests (replaced by the throw test).
 
 - [ ] **Step 2b (R9): `acknowledgeMergeRecon` mutation — the spec's `needs_review → acknowledged` transition.** Schema: `acknowledgeMergeRecon: a.mutation().arguments({ fromOrgId: a.string().required(), toOrgId: a.string().required() }).returns(a.json()).authorization(allow => [allow.authenticated()]).handler(...)` (crm-api). Handler resolver: `requireAdmin(e)` (it joins the guarded set — **add it to Task 6's `describe.each(GUARDED)` list, now seven resolvers**); actor = `operatorOf(e)` (server-derived, never a client arg); version-fenced flip: `SET #st=:ack, GSI1PK=:ackPk, acknowledgedBy=:actor, acknowledgedAt=:now, updatedAt=:now, version=version+:one` conditioned `'#st = :review AND version = :v'` (read the marker first for the version); CCFE ⇒ `{ ok:false, raced:true }`. Retention: acknowledged markers are KEPT indefinitely (evidence for the future merge-integrity arc — no delete, no TTL; documented in the code). **Executable files/contracts (R10-final-gate — this step names its files like every other task):**
-  - Modify: `amplify/data/resource.ts` (the mutation + `CrmHealthSummary` gains `mergeNeedsReviewCount` + `mergeReviewMarkers: a.json()`), `amplify/functions/crm-api/handler.ts` + `handler.test.ts` (resolver + GUARDED entry), `amplify/functions/crm-api/lib/repair/repairMarker.ts` (+test — `acknowledgeMergeReconFenced(fromOrgId, toOrgId)` store fn doing the strong read + fenced flip), `src/services/crmHealthService.ts` (+its test if present — locate 3C's actual service/hook file names via `git grep -n "crmHealth" src/`; add `acknowledgeMergeRecon(fromOrgId, toOrgId)`), `src/hooks/useCrmHealth.ts` (surface `mergeReviewMarkers` + an `acknowledge` callback that refetches on success), `src/pages/admin/CrmHealthPage.tsx` + its test (merge-review section: one row per marker — from→to, `residualsDetected`, sample count, probedAt — with an Acknowledge button per row, disabled while in flight).
+  - Modify: `amplify/data/resource.ts` (the mutation + `CrmHealthSummary` gains `mergeNeedsReviewCount` + `mergeReviewMarkers: a.json()`), `amplify/functions/crm-api/handler.ts` + `handler.test.ts` (resolver + GUARDED entry), `amplify/functions/crm-api/lib/repair/repairMarker.ts` (+test — `acknowledgeMergeReconFenced(fromOrgId, toOrgId)` store fn doing the strong read + fenced flip), `src/services/organizationAdminService.ts` (**the EXISTING home of the CRM Health service calls — final-gate correction: there is no `crmHealthService.ts`; add `acknowledgeMergeRecon(fromOrgId, toOrgId)` there**, next to the existing `crmHealth`/`runCrmRepair` fns; do NOT create a new module), `src/hooks/useCrmHealth.ts` (surface `mergeReviewMarkers` + an `acknowledge` callback that refetches on success), `src/pages/admin/CrmHealthPage.tsx` + its test (merge-review section: one row per marker — from→to, `residualsDetected`, sample count, probedAt — with an Acknowledge button per row, disabled while in flight).
   - The commit block for Task 13 stages ALL of these files explicitly.
 Tests: authz (via Task 6's matrix), fenced flip + raced path (`{ok:false,raced:true}` rendered as a non-fatal refetch), server-derived actor (client-supplied actor arg impossible by contract), acknowledged marker excluded from `mergeNeedsReviewCount` AND absent from `mergeReviewMarkers`, page renders rows from the hook and fires the service on click.
 
@@ -1302,7 +1302,7 @@ Tests: authz (via Task 6's matrix), fenced flip + raced path (`{ok:false,raced:t
 
 - [ ] **Step 4: Commit**
 ```bash
-git add amplify/data/resource.ts amplify/functions/crm-api/handler.ts amplify/functions/crm-api/handler.test.ts amplify/functions/crm-api/lib/repair/repairMarker.ts amplify/functions/crm-api/lib/repair/repairMarker.test.ts src/services/organizationAdminService.ts src/services/crmHealthService.ts src/hooks/useCrmHealth.ts src/hooks/useNeedsLinkingQueue.ts src/pages/admin/NeedsLinkingPage.tsx src/pages/admin/NeedsLinkingPage.test.tsx src/pages/admin/CrmHealthPage.tsx src/pages/admin/CrmHealthPage.test.tsx src/components/admin/needslinking
+git add amplify/data/resource.ts amplify/functions/crm-api/handler.ts amplify/functions/crm-api/handler.test.ts amplify/functions/crm-api/lib/repair/repairMarker.ts amplify/functions/crm-api/lib/repair/repairMarker.test.ts src/services/organizationAdminService.ts src/hooks/useCrmHealth.ts src/hooks/useNeedsLinkingQueue.ts src/pages/admin/NeedsLinkingPage.tsx src/pages/admin/NeedsLinkingPage.test.tsx src/pages/admin/CrmHealthPage.tsx src/pages/admin/CrmHealthPage.test.tsx src/components/admin/needslinking
 git commit -m "feat(comms-p1): representativeEventId link contract + acknowledgeMergeRecon across schema/handler/service/UI"
 ```
 
@@ -1516,17 +1516,27 @@ it('recovery finds the target_unavailable marker regardless of unrelated stuck b
 it('A→B crash-after-archive, then B→C, then retry A→B: phases finish against C', async () => {
   const store = seedStore([rfqRecord('RFQ#a1', { matchedOrgId: 'a.com' }),
     orgItem('a.com', { status: 'active' }), orgItem('b.com', { status: 'active' }), orgItem('c.com', { status: 'active' })]);
-  const gate = store.gateOn((cmd, input, n) => n === 2);            // parks A→B right after its archive transaction
+  // DETERMINISTIC crash point (final-gate fix): gate on the FIRST identifiable post-archive PHASE
+  // write — the re-point of RFQ#a1 — not on an ordinal command count (which could catch a read).
+  const gate = store.gateOn((cmd, input) =>
+    cmd.constructor.name === 'TransactWriteCommand'
+    && input.TransactItems?.some((t) => t.Update?.Key?.PK === 'RFQ#a1'));
   const pAB = mergeOrganization('a.com', 'b.com');
-  await store.idle();                                               // A archived (mergePhase 'archived'), marker written, phases NOT run
+  await store.idle();
+  // Assert the pre-crash state BEFORE releasing (the archive transaction committed; phases did not):
+  expect(store.get(orgKeyOf('a.com')).status).toBe('archived');
+  expect(store.get(orgKeyOf('a.com')).mergePhase).toBe('archived');
+  expect(store.get(reconKeyOf('a.com', 'b.com'))).toBeDefined();     // visibility marker exists
+  expect(store.get('RFQ#a1').matchedOrgId).toBe('a.com');            // no phase write landed yet
   const abMarkerVersion = store.get(reconKeyOf('a.com', 'b.com')).version;
-  gate.releaseWithCrash();                                          // harness: the parked call rejects — simulated crash
+  gate.releaseWithCrash();                                           // harness: the parked call rejects — simulated crash
   await expect(pAB).rejects.toThrow();
-  await mergeOrganization('b.com', 'c.com');                        // B→C completes fully
-  const retry = await mergeOrganization('a.com', 'b.com');          // the R9 resume path
-  expect(retry.resumedAgainst).toBe('c.com');                       // phases ran against the ACTIVE successor
-  expect(store.get('RFQ#a1').matchedOrgId).toBe('c.com');
-  expect(store.get(orgKeyOf('a.com')).mergedInto).toBe('b.com');    // historical truth preserved
+  await mergeOrganization('b.com', 'c.com');                         // B→C completes fully
+  await mergeOrganization('a.com', 'b.com');                         // the R9 resume path
+  // Effective targeting asserted from STORED STATE + captured commands (no bespoke return field):
+  expect(store.get('RFQ#a1').matchedOrgId).toBe('c.com');            // phases ran against the ACTIVE successor
+  expect(store.commandsFor('RFQ#a1').at(-1).TransactItems[0].ConditionCheck.Key).toEqual(orgKeyOf('c.com'));  // fenced on C
+  expect(store.get(orgKeyOf('a.com')).mergedInto).toBe('b.com');     // historical truth preserved
   expect(store.get(orgKeyOf('a.com')).mergePhase).toBe('complete');
   expect(store.get(reconKeyOf('a.com', 'b.com')).version).toBe(abMarkerVersion);  // upsert NOT re-executed on resume
 });
