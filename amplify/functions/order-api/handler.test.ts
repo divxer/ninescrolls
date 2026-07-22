@@ -9,6 +9,7 @@ const mockUpdate = vi.fn();
 const mockQuery = vi.fn();
 const mockDelete = vi.fn();
 const mockScan = vi.fn();
+const mockTransact = vi.fn();
 
 const mockSend = vi.fn().mockImplementation((cmd: unknown) => {
     const name = (cmd as { constructor: { name: string } }).constructor.name;
@@ -18,6 +19,7 @@ const mockSend = vi.fn().mockImplementation((cmd: unknown) => {
     if (name === 'QueryCommand') return mockQuery(cmd);
     if (name === 'DeleteCommand') return mockDelete();
     if (name === 'ScanCommand') return mockScan();
+    if (name === 'TransactWriteCommand') return mockTransact(cmd);
     return Promise.resolve({});
 });
 
@@ -34,6 +36,7 @@ vi.mock('@aws-sdk/lib-dynamodb', () => ({
     QueryCommand: vi.fn().mockImplementation((p) => ({ ...p, constructor: { name: 'QueryCommand' } })),
     DeleteCommand: vi.fn().mockImplementation((p) => ({ ...p, constructor: { name: 'DeleteCommand' } })),
     ScanCommand: vi.fn().mockImplementation((p) => ({ ...p, constructor: { name: 'ScanCommand' } })),
+    TransactWriteCommand: vi.fn().mockImplementation((p) => ({ ...p, constructor: { name: 'TransactWriteCommand' } })),
 }));
 
 const mockS3Send = vi.fn().mockResolvedValue({});
@@ -1104,8 +1107,13 @@ describe('order-api handler', () => {
             return { fieldName: 'createStripeOrder', arguments: { input } };
         }
 
-        it('creates a paid order directly at PO_RECEIVED with source STRIPE', async () => {
-            mockPut.mockResolvedValue({});
+        function transactItems(call: unknown[]): Record<string, unknown>[] {
+            const arg = call[0] as { TransactItems?: Array<{ Put?: { Item: Record<string, unknown> } }> };
+            return (arg.TransactItems ?? []).map((t) => t.Put?.Item ?? {});
+        }
+
+        it('creates marker + order + contact + log in ONE atomic transaction', async () => {
+            mockTransact.mockResolvedValueOnce({});
             // buildFullOrderResponse
             mockGet.mockResolvedValueOnce({
                 Item: { ...SAMPLE_ORDER, status: 'PO_RECEIVED', source: 'STRIPE' },
@@ -1119,15 +1127,18 @@ describe('order-api handler', () => {
             );
 
             expect(result).toBeDefined();
-            // SESSION marker + ORDER META + CONTACT + LOG
-            expect(mockPut).toHaveBeenCalledTimes(4);
+            // No standalone Puts — everything durable goes through the transaction
+            expect(mockPut).not.toHaveBeenCalled();
+            expect(mockTransact).toHaveBeenCalledTimes(1);
 
-            const metaPut = mockSend.mock.calls.find((c: unknown[]) => {
-                const arg = c[0] as { Item?: Record<string, unknown> };
-                return arg.Item?.SK === 'META' && typeof arg.Item?.PK === 'string' && (arg.Item.PK as string).startsWith('ORDER#');
-            });
-            expect(metaPut).toBeTruthy();
-            const meta = (metaPut![0] as { Item: Record<string, unknown> }).Item;
+            const items = transactItems(mockTransact.mock.calls[0]);
+            expect(items).toHaveLength(4); // marker + META + CONTACT + LOG
+
+            const marker = items.find((it) => it.PK === 'STRIPE_SESSION#cs_live_test123');
+            expect(marker).toBeTruthy();
+            expect(marker!.orderId).toBeDefined();
+
+            const meta = items.find((it) => it.SK === 'META' && String(it.PK).startsWith('ORDER#'))!;
             expect(meta.status).toBe('PO_RECEIVED');
             expect(meta.GSI1PK).toBe('ORDER_STATUS#PO_RECEIVED');
             expect(meta.source).toBe('STRIPE');
@@ -1135,18 +1146,17 @@ describe('order-api handler', () => {
             expect(meta.quoteAmount).toBe(7999);
             expect(meta.poDate).toBe('2026-07-22');
             expect(meta.GSI4PK).toBe('EMAIL#buyer@innatecontrol.com');
+            // Marker and order are bound inside the same transaction
+            expect(marker!.orderId).toBe(meta.orderId);
 
-            const markerPut = mockSend.mock.calls.find((c: unknown[]) => {
-                const arg = c[0] as { Item?: Record<string, unknown> };
-                return arg.Item?.PK === 'STRIPE_SESSION#cs_live_test123';
-            });
-            expect(markerPut).toBeTruthy();
+            expect(items.find((it) => String(it.SK).startsWith('CONTACT#'))).toBeTruthy();
+            expect(items.find((it) => String(it.SK).startsWith('LOG#'))).toBeTruthy();
         });
 
-        it('is idempotent: returns the existing order when the session marker already exists', async () => {
-            const { ConditionalCheckFailedException } = await import('@aws-sdk/client-dynamodb');
-            // Marker put fails → resolver looks up marker → existing order
-            mockPut.mockRejectedValueOnce(new (ConditionalCheckFailedException as any)());
+        it('is idempotent: a cancelled transaction with an existing marker returns the original order', async () => {
+            const cancel = new Error('Transaction cancelled');
+            cancel.name = 'TransactionCanceledException';
+            mockTransact.mockRejectedValueOnce(cancel);
             mockGet
                 .mockResolvedValueOnce({ Item: { PK: 'STRIPE_SESSION#cs_live_test123', orderId: 'ord-20260722-d169' } })
                 .mockResolvedValueOnce({ Item: { ...SAMPLE_ORDER, orderId: 'ord-20260722-d169', status: 'PO_RECEIVED', source: 'STRIPE' } });
@@ -1159,8 +1169,36 @@ describe('order-api handler', () => {
             ) as Record<string, unknown>;
 
             expect(result.orderId).toBe('ord-20260722-d169');
-            // Only the failed marker put — no META/CONTACT/LOG writes
-            expect(mockPut).toHaveBeenCalledTimes(1);
+            // No partial writes on the duplicate path
+            expect(mockPut).not.toHaveBeenCalled();
+        });
+
+        it('rethrows when the transaction is cancelled but no marker exists (transient failure)', async () => {
+            const cancel = new Error('Transaction cancelled');
+            cancel.name = 'TransactionCanceledException';
+            mockTransact.mockRejectedValueOnce(cancel);
+            mockGet.mockResolvedValueOnce({}); // marker lookup → not found
+
+            await expect(handler(
+                makeDirectInvokeEvent(STRIPE_INPUT) as any,
+                {} as any,
+                vi.fn(),
+            )).rejects.toThrow('Transaction cancelled');
+        });
+
+        it('throws when the marker points at a missing order (never reports silent success)', async () => {
+            const cancel = new Error('Transaction cancelled');
+            cancel.name = 'TransactionCanceledException';
+            mockTransact.mockRejectedValueOnce(cancel);
+            mockGet
+                .mockResolvedValueOnce({ Item: { PK: 'STRIPE_SESSION#cs_live_test123', orderId: 'ord-gone' } })
+                .mockResolvedValueOnce({}); // buildFullOrderResponse → order missing
+
+            await expect(handler(
+                makeDirectInvokeEvent(STRIPE_INPUT) as any,
+                {} as any,
+                vi.fn(),
+            )).rejects.toThrow(/missing order/);
         });
 
         it('throws when required fields are missing', async () => {

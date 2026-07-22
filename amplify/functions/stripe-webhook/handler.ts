@@ -185,11 +185,15 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
 
   // Handle different event types
   try {
-    if (stripeEvent.type === 'checkout.session.completed') {
+    if (
+      stripeEvent.type === 'checkout.session.completed'
+      || stripeEvent.type === 'checkout.session.async_payment_succeeded'
+    ) {
       const session = stripeEvent.data.object as Stripe.Checkout.Session;
 
-      console.log('Checkout session completed:', {
+      console.log(`${stripeEvent.type}:`, {
         sessionId: session.id,
+        paymentStatus: session.payment_status,
         customerEmail: session.customer_details?.email,
         amountTotal: session.amount_total,
         currency: session.currency,
@@ -199,6 +203,21 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
       const fullSession = await stripe.checkout.sessions.retrieve(session.id, {
         expand: ['line_items', 'line_items.data.price.product'],
       });
+
+      // Delayed-notification payment methods (e.g. ACH) fire
+      // checkout.session.completed with payment_status 'unpaid'. Do NOT treat
+      // the session as an order yet — checkout.session.async_payment_succeeded
+      // re-enters this block once the payment actually settles.
+      if (fullSession.payment_status !== 'paid') {
+        console.log('Session not paid yet — skipping order processing:', {
+          sessionId: fullSession.id,
+          paymentStatus: fullSession.payment_status,
+        });
+        return {
+          statusCode: 200,
+          body: JSON.stringify({ received: true }),
+        };
+      }
 
       const orderResult = await persistOrder(fullSession);
       if (orderResult === 'created') {
@@ -219,7 +238,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
       // Idempotent per session (createStripeOrder guards on STRIPE_SESSION#<id>),
       // so we run it on every delivery. A failure propagates to a 500 so Stripe
       // retries — that's the recovery path for a transient bridge outage.
-      await bridgeToAdminOrder(fullSession);
+      await bridgeToAdminOrder(fullSession, stripeEvent.created);
 
     } else if (stripeEvent.type === 'payment_intent.succeeded') {
       const paymentIntent = stripeEvent.data.object as Stripe.PaymentIntent;
@@ -255,8 +274,12 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
  * admin order list never reads.
  *
  * Throws on bridge failure so the webhook returns 500 and Stripe retries.
+ *
+ * `eventCreatedEpoch` is the Stripe event's `created` timestamp (seconds) —
+ * a stable payment-time approximation that survives delayed webhook delivery
+ * and replays, unlike processing-time `new Date()`.
  */
-async function bridgeToAdminOrder(session: Stripe.Checkout.Session): Promise<void> {
+async function bridgeToAdminOrder(session: Stripe.Checkout.Session, eventCreatedEpoch: number): Promise<void> {
   const customerEmail = session.metadata?.contactEmail || session.customer_details?.email || '';
   const amountTotalCents = session.amount_total ?? 0;
   if (!customerEmail || !amountTotalCents) {
@@ -314,7 +337,7 @@ async function bridgeToAdminOrder(session: Stripe.Checkout.Session): Promise<voi
     quantity: line?.quantity ?? 1,
     shippingAddress,
     notes: session.metadata?.notes || '',
-    paidAt: new Date().toISOString(),
+    paidAt: new Date(eventCreatedEpoch * 1000).toISOString(),
   });
   console.log('Bridged paid Stripe order into admin order system:', session.id);
 }

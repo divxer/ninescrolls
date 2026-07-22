@@ -1,5 +1,4 @@
-import { ConditionalCheckFailedException } from '@aws-sdk/client-dynamodb';
-import { PutCommand, GetCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { TransactWriteCommand, GetCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient, TABLE_NAME } from '../lib/dynamodb.js';
 import { generateOrderId, generateContactId, generateLogId } from '../lib/idGenerators.js';
 import { buildFullOrderResponse, sendSlackNotification } from '../lib/orderHelper.js';
@@ -19,6 +18,11 @@ import { buildOrderCreatedEmitArgs } from '../../../lib/crm/emit-builders.js';
  * so it is created directly at PO_RECEIVED with all earlier stage dates set to
  * the payment date. Idempotent per Stripe session: a STRIPE_SESSION#<id> marker
  * item guards against webhook retries; a duplicate call returns the original order.
+ *
+ * The marker, ORDER META, CONTACT, and LOG rows are written in ONE
+ * TransactWriteItems — the marker can never exist without its order (a
+ * marker-first partial write would make retries report success for a
+ * missing order).
  */
 
 interface CreateStripeOrderInput {
@@ -67,38 +71,6 @@ export async function createStripeOrder(event: AppSyncEvent) {
         || input.customerName
         || normalizedEmail;
 
-    // 1. Idempotency marker — one admin order per Stripe checkout session.
-    try {
-        await docClient.send(new PutCommand({
-            TableName: TABLE_NAME(),
-            Item: {
-                PK: `STRIPE_SESSION#${input.stripeSessionId}`,
-                SK: 'META',
-                orderId,
-                createdAt: now,
-            },
-            ConditionExpression: 'attribute_not_exists(PK)',
-        }));
-    } catch (err: unknown) {
-        if (err instanceof ConditionalCheckFailedException || (err instanceof Error && err.name === 'ConditionalCheckFailedException')) {
-            const existing = await docClient.send(new GetCommand({
-                TableName: TABLE_NAME(),
-                Key: { PK: `STRIPE_SESSION#${input.stripeSessionId}`, SK: 'META' },
-            }));
-            const existingOrderId = existing.Item?.orderId as string | undefined;
-            if (!existingOrderId) {
-                throw new Error(`Stripe session marker exists but has no orderId: ${input.stripeSessionId}`);
-            }
-            console.log(JSON.stringify({
-                event: 'createStripeOrder.duplicate',
-                stripeSessionId: input.stripeSessionId,
-                orderId: existingOrderId,
-            }));
-            return buildFullOrderResponse(existingOrderId);
-        }
-        throw err;
-    }
-
     const notes = [
         `Stripe checkout order — paid in full: $${amountUsd.toFixed(2)} ${currency} on ${paidDate}.`,
         `Stripe session: ${input.stripeSessionId}`,
@@ -142,44 +114,85 @@ export async function createStripeOrder(event: AppSyncEvent) {
         TTL: 0,
     };
 
-    await docClient.send(new PutCommand({
-        TableName: TABLE_NAME(),
-        Item: orderItem,
-    }));
+    const contactItem = {
+        PK: `ORDER#${orderId}`,
+        SK: `CONTACT#${contactId}`,
+        contactId,
+        contactName,
+        contactEmail: normalizedEmail,
+        contactPhone: input.contactPhone || '',
+        role: 'OTHER',
+        department: '',
+        isPrimary: true,
+        feedbackInvite: true,
+        notes: 'Contact from Stripe checkout form',
+    };
 
-    // 3. Primary contact (from the checkout contact form)
-    await docClient.send(new PutCommand({
-        TableName: TABLE_NAME(),
-        Item: {
-            PK: `ORDER#${orderId}`,
-            SK: `CONTACT#${contactId}`,
-            contactId,
-            contactName,
-            contactEmail: normalizedEmail,
-            contactPhone: input.contactPhone || '',
-            role: 'OTHER',
-            department: '',
-            isPrimary: true,
-            feedbackInvite: true,
-            notes: 'Contact from Stripe checkout form',
-        },
-    }));
+    const logItem = {
+        PK: `ORDER#${orderId}`,
+        SK: `LOG#${now}`,
+        id: generateLogId(),
+        action: 'ORDER_CREATED',
+        fromStatus: null,
+        toStatus: 'PO_RECEIVED',
+        operator: 'stripe-webhook',
+        timestamp: now,
+        detail: `Paid Stripe checkout order — ${input.productName} ($${amountUsd.toFixed(2)} ${currency})`,
+    };
 
-    // 4. ORDER_LOG
-    await docClient.send(new PutCommand({
-        TableName: TABLE_NAME(),
-        Item: {
-            PK: `ORDER#${orderId}`,
-            SK: `LOG#${now}`,
-            id: generateLogId(),
-            action: 'ORDER_CREATED',
-            fromStatus: null,
-            toStatus: 'PO_RECEIVED',
-            operator: 'stripe-webhook',
-            timestamp: now,
-            detail: `Paid Stripe checkout order — ${input.productName} ($${amountUsd.toFixed(2)} ${currency})`,
-        },
-    }));
+    // 3. Atomic write: idempotency marker + ORDER META + CONTACT + LOG in one
+    // transaction. Either the session marker and the complete order exist
+    // together, or nothing was written — a retry after any failure re-runs the
+    // whole transaction.
+    try {
+        await docClient.send(new TransactWriteCommand({
+            TransactItems: [
+                {
+                    Put: {
+                        TableName: TABLE_NAME(),
+                        Item: {
+                            PK: `STRIPE_SESSION#${input.stripeSessionId}`,
+                            SK: 'META',
+                            orderId,
+                            createdAt: now,
+                        },
+                        ConditionExpression: 'attribute_not_exists(PK)',
+                    },
+                },
+                { Put: { TableName: TABLE_NAME(), Item: orderItem } },
+                { Put: { TableName: TABLE_NAME(), Item: contactItem } },
+                { Put: { TableName: TABLE_NAME(), Item: logItem } },
+            ],
+        }));
+    } catch (err: unknown) {
+        const name = err instanceof Error ? err.name : '';
+        if (name !== 'TransactionCanceledException') {
+            throw err;
+        }
+        // The only condition in the transaction is the marker's
+        // attribute_not_exists — a cancellation means another invocation
+        // already created this session's order.
+        const existing = await docClient.send(new GetCommand({
+            TableName: TABLE_NAME(),
+            Key: { PK: `STRIPE_SESSION#${input.stripeSessionId}`, SK: 'META' },
+        }));
+        const existingOrderId = existing.Item?.orderId as string | undefined;
+        if (!existingOrderId) {
+            // Cancelled for another reason (e.g. throttling mid-transaction) —
+            // nothing was written; rethrow so the webhook 500s and Stripe retries.
+            throw err;
+        }
+        const existingOrder = await buildFullOrderResponse(existingOrderId);
+        if (!existingOrder) {
+            throw new Error(`Stripe session marker points to missing order ${existingOrderId} (session ${input.stripeSessionId})`);
+        }
+        console.log(JSON.stringify({
+            event: 'createStripeOrder.duplicate',
+            stripeSessionId: input.stripeSessionId,
+            orderId: existingOrderId,
+        }));
+        return existingOrder;
+    }
 
     // 5. Slack notification — a paid order deserves a loud ping.
     await sendSlackNotification(
