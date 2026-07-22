@@ -385,6 +385,13 @@ export class HarnessStore {
     return clone([...this.items.values()].find((it) => it.entityType === 'CONTACT' && it.email === norm)) as Item;
   }
 
+  /** the stored PK of the contact row for an email (throws if absent — a fixture error) */
+  contactPkOf(email: string): string {
+    const c = this.contactByEmail(email);
+    if (!c) throw new Error(`harness: no contact in store for ${email}`);
+    return String(c.PK);
+  }
+
   auditFor(generation: string): Item {
     return clone([...this.items.values()].find((it) =>
       it.entityType === 'LINK_AUDIT' && (it.details as Item | null)?.generation === generation)) as Item;

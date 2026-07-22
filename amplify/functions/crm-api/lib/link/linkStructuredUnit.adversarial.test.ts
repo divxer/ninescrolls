@@ -17,8 +17,9 @@
  *    marker after its in-process replay succeeds, and the harness records deletion snapshots.
  *  - S4 seeds a source-conflict (RFQ#r1 pre-matched to another org, unstamped) so the foreground
  *    replay fails and the seal transition — the operation under test — actually occurs.
- *  - S10: REAL DIVERGENCE between the plan's expectation and the landed upsertContact — see the
- *    scenario comments; kept as it.fails + a companion test pinning the landed contract.
+ *  - S10 follows the corrected plan/spec contract (spec clarification ratified during execution):
+ *    the stamp is a replay-ordering token, not org-provenance; linkLocked is the admin pin — an
+ *    unlocked contact's org follows latest activity.
  *  - S14b crashes the foreground replay's backfill transact: the landed foreground replay already
  *    follows the merge successor (stronger than the plan assumed), so exercising the plan's
  *    marker-driven drainer convergence requires simulating a crash after the seal-relevant failure.
@@ -225,42 +226,32 @@ describe('linkStructuredUnit adversarial suite (stateful harness, real functions
   });
 
   // Scenario 10 — cross-writer interleaving: non-generational upsertContact lands BETWEEN two
-  // generational writes.
-  //
-  // ⚠️ REAL DIVERGENCE (reported, not test-bent): the plan expects the newest org+stamp PAIR to
-  // survive (orgId 'b.com' + GEN_2 — the fixture org is literally named 'ignored.com'). The LANDED
-  // upsertContact retry rebuilds the org from the WRITER'S OWN args when the contact is not
-  // linkLocked (v1 "contact follows latest activity" semantics; only the stamp is carried forward),
-  // so the delayed non-generational writer re-orgs the contact to 'ignored.com' — overwriting the
-  // GEN_2 admin link's org while keeping its stamp. That is the contact-side analog of the exact
-  // {newOrg, staleGeneration} incoherence Task 8b made unrepresentable for source records.
-  it.fails('interleaved non-generational contact write preserves the newest generation+org pair', async () => {
+  // generational writes. CONTRACT (spec clarification, ratified during execution): the cross-writer
+  // policy protects the STAMP (carried forward, never dropped/mixed) and linkLocked; the ORG of an
+  // UNLOCKED contact follows latest activity (P1 semantics — linkLocked is the admin pin). The
+  // stamp is a replay-ordering token, NOT an org-provenance pair.
+  it('interleaved non-generational contact write preserves the newest STAMP; unlocked org follows activity', async () => {
     const store = seedStore([]);
     await upsertContact({ email: 'b@x.com', orgId: 'a.com', source: 'rfq', occurredAt: T1, linkGeneration: GEN_1 });
     const gate = store.gateOn((cmd) => cmd.constructor.name === 'PutCommand');      // parks the non-generational Put
-    const pNonGen = upsertContact({ email: 'b@x.com', orgId: 'ignored.com', source: 'order', occurredAt: T2 });  // reads GEN_1, parks
+    const pNonGen = upsertContact({ email: 'b@x.com', orgId: 'late.com', source: 'order', occurredAt: T2 });  // reads GEN_1, parks
     await store.idle();
     await upsertContact({ email: 'b@x.com', orgId: 'b.com', source: 'rfq', occurredAt: T3, linkGeneration: GEN_2 }); // newer generational write lands
     gate.release();
     await pNonGen;                                                                   // CASes on stale GEN_1 → CCFE → re-read → retry on fresh state
     const c = store.contactByEmail('b@x.com');
-    expect(c.orgId).toBe('b.com');                                                   // newest org survives (plan expectation — FAILS on landed code)
-    expect(c.lastLinkGeneration).toBe(GEN_2);                                        // newest stamp survives
+    expect(c.lastLinkGeneration).toBe(GEN_2);                                        // newest stamp survives (the cross-writer guarantee)
+    expect(c.orgId).toBe('late.com');                                                // unlocked contact follows the latest activity's org
   });
 
-  // Companion: pins the LANDED contract for the same schedule so any future change is visible.
-  it('interleaved non-generational retry carries the fresh stamp but re-orgs to its own org (landed contract)', async () => {
+  it('a linkLocked contact is NEVER re-orged by the interleaved non-generational writer', async () => {
     const store = seedStore([]);
-    await upsertContact({ email: 'b@x.com', orgId: 'a.com', source: 'rfq', occurredAt: T1, linkGeneration: GEN_1 });
-    const gate = store.gateOn((cmd) => cmd.constructor.name === 'PutCommand');
-    const pNonGen = upsertContact({ email: 'b@x.com', orgId: 'ignored.com', source: 'order', occurredAt: T2 });
-    await store.idle();
-    await upsertContact({ email: 'b@x.com', orgId: 'b.com', source: 'rfq', occurredAt: T3, linkGeneration: GEN_2 });
-    gate.release();
-    await pNonGen;
-    const c = store.contactByEmail('b@x.com');
-    expect(c.lastLinkGeneration).toBe(GEN_2);       // the stamp is NEVER mixed with the stale first read
-    expect(c.orgId).toBe('ignored.com');            // landed semantics: an unlocked contact follows the latest writer
+    await upsertContact({ email: 'c@x.com', orgId: 'b.com', source: 'rfq', occurredAt: T1, linkGeneration: GEN_2 });
+    store.put(store.contactPkOf('c@x.com'), { ...store.contactByEmail('c@x.com'), linkLocked: true });
+    await upsertContact({ email: 'c@x.com', orgId: 'late.com', source: 'order', occurredAt: T2 });
+    const c = store.contactByEmail('c@x.com');
+    expect(c.orgId).toBe('b.com');                                                   // the admin pin holds
+    expect(c.lastLinkGeneration).toBe(GEN_2);
   });
 
   // Scenario 11 — DELAYED SOURCE WRITER (Task 8b, store-level): a late creation-path matchedOrgId
