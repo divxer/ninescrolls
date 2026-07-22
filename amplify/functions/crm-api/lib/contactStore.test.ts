@@ -219,7 +219,7 @@ describe('upsertContact same-generation successor migration (migrateFromOrgs)', 
     lastLinkGeneration: GEN, firstSeenAt: 't0', lastSeenAt: 't0', createdAt: 't0', source: 'rfq',
   };
 
-  it('migrates: same stamp + org listed in migrateFromOrgs → org moves, stamp UNCHANGED, equality CAS (not <)', async () => {
+  it('migrates: same stamp + org listed in migrateFromOrgs → org moves, stamp UNCHANGED; CAS pins the FULL authorizing state', async () => {
     mockGetByEmail(existingAtB);
     mockSend.mockResolvedValueOnce({});   // put
     const r = await upsertContact({ email: 'b@x.com', orgId: 'c.com', source: 'rfq', occurredAt: 't1',
@@ -228,8 +228,12 @@ describe('upsertContact same-generation successor migration (migrateFromOrgs)', 
     const p = putInput();
     expect(p.Item.orgId).toBe('c.com');
     expect(p.Item.lastLinkGeneration).toBe(GEN);                        // stamp untouched
-    expect(p.ConditionExpression).toBe('attribute_not_exists(PK) OR lastLinkGeneration = :obs');
-    expect(p.ExpressionAttributeValues).toEqual({ ':obs': GEN });
+    // Round-4: the write condition pins EVERY fact that authorized the migration — the observed
+    // predecessor org, the exact stamp, and unlocked — and REJECTS a missing row: a racing admin
+    // lock, same-generation org move, or deletion must CCFE, never be clobbered or resurrected.
+    expect(p.ConditionExpression).toBe('attribute_exists(PK) AND orgId = :obsOrg AND lastLinkGeneration = :obsGen AND linkLocked = :false');
+    expect(p.ConditionExpression).not.toContain('attribute_not_exists');   // a deleted row is never resurrected by this write
+    expect(p.ExpressionAttributeValues).toEqual({ ':obsOrg': 'b.com', ':obsGen': GEN, ':false': false });
   });
   it('absent migrateFromOrgs: byte-identical same-generation semantics — superseded no-op, NO write', async () => {
     mockGetByEmail(existingAtB);

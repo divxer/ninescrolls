@@ -245,6 +245,62 @@ describe('linkStructuredUnit adversarial suite (stateful harness, real functions
     expect(c.orgId).toBe('late.com');                                                // unlocked contact follows the latest activity's org
   });
 
+  // Scenario 10b (round-4 review fix) — the CONTACT MIGRATION write races: migration was
+  // authorized by a read observing {predecessor org, generation G, !linkLocked}; the CAS must pin
+  // ALL of it (and reject a missing row), so any racing change between read and write CCFEs into
+  // the loop's fresh re-decide instead of being clobbered/resurrected by the stale Put.
+  it('migration vs CONCURRENT ADMIN LOCK: the stale migration Put loses; re-decide returns locked; the lock and org stand', async () => {
+    const store = seedStore([]);
+    await upsertContact({ email: 'r@x.com', orgId: 'b.com', source: 'rfq', occurredAt: T1, linkGeneration: GEN_1 });
+    const gate = store.gateOn((cmd) => cmd.constructor.name === 'PutCommand');    // parks the migration Put
+    const pMig = upsertContact({ email: 'r@x.com', orgId: 'c.com', source: 'rfq', occurredAt: T2,
+      linkGeneration: GEN_1, migrateFromOrgs: ['b.com'] });
+    await store.idle();                                                            // read authorized the migration; write parked
+    store.put(store.contactPkOf('r@x.com'), { ...store.contactByEmail('r@x.com'), linkLocked: true });  // admin locks (org/stamp unchanged)
+    gate.release();
+    const r = await pMig;
+    expect(r.outcome).toBe('locked');
+    const c = store.contactByEmail('r@x.com');
+    expect(c.linkLocked).toBe(true);                                               // untouched by the stale Put
+    expect(c.orgId).toBe('b.com');
+    expect(c.lastLinkGeneration).toBe(GEN_1);
+  });
+  it('migration vs SAME-GENERATION ORG MOVE by another actor: CCFE → superseded; the other actor\'s org stands', async () => {
+    const store = seedStore([]);
+    await upsertContact({ email: 'r@x.com', orgId: 'b.com', source: 'rfq', occurredAt: T1, linkGeneration: GEN_1 });
+    const gate = store.gateOn((cmd) => cmd.constructor.name === 'PutCommand');
+    const pMig = upsertContact({ email: 'r@x.com', orgId: 'c.com', source: 'rfq', occurredAt: T2,
+      linkGeneration: GEN_1, migrateFromOrgs: ['b.com'] });
+    await store.idle();
+    store.put(store.contactPkOf('r@x.com'), { ...store.contactByEmail('r@x.com'), orgId: 'd.com', GSI2PK: 'ORG#d.com' });  // stamp STILL G
+    gate.release();
+    const r = await pMig;
+    expect(r.outcome).toBe('superseded');                                          // d.com not in migrateFromOrgs → falls out of the guard
+    const c = store.contactByEmail('r@x.com');
+    expect(c.orgId).toBe('d.com');                                                 // the other actor's move stands
+    expect(c.lastLinkGeneration).toBe(GEN_1);
+  });
+  it('migration vs CONCURRENT DELETION: the stale Put never resurrects; re-decide creates FRESH at the effective org', async () => {
+    const store = seedStore([]);
+    await upsertContact({ email: 'r@x.com', orgId: 'b.com', source: 'rfq', occurredAt: T1, linkGeneration: GEN_1 });
+    const contactPk = store.contactPkOf('r@x.com');
+    const gate = store.gateOn((cmd) => cmd.constructor.name === 'PutCommand');
+    const pMig = upsertContact({ email: 'r@x.com', orgId: 'c.com', source: 'rfq', occurredAt: T2,
+      linkGeneration: GEN_1, migrateFromOrgs: ['b.com'] });
+    await store.idle();
+    store.remove(contactPk);                                                       // row deleted under the parked write
+    gate.release();                                                                // attribute_exists(PK) fails → stale item NOT written
+    const r = await pMig;
+    // Documented loop outcome: the fresh re-decide finds NO row and takes the normal generational
+    // CREATE branch at the EFFECTIVE org — ordinary replay semantics, not stale-state resurrection.
+    expect(r.outcome).toBe('written');
+    const c = store.contactByEmail('r@x.com');
+    expect(c.orgId).toBe('c.com');
+    expect(c.lastLinkGeneration).toBe(GEN_1);
+    expect(c.firstSeenAt).toBe(T2);                                                // FRESH item (T2), not the stale B-item (would carry T1)
+    expect(c.linkLocked).toBe(false);
+  });
+
   it('a linkLocked contact is NEVER re-orged by the interleaved non-generational writer', async () => {
     const store = seedStore([]);
     await upsertContact({ email: 'c@x.com', orgId: 'b.com', source: 'rfq', occurredAt: T1, linkGeneration: GEN_2 });

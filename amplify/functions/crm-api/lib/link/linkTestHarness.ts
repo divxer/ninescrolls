@@ -348,6 +348,13 @@ export class HarnessStore {
     this.items.set(HarnessStore.k(PK, SK), clone(HarnessStore.strip({ ...item, PK, SK })));
   }
 
+  /** remove an item directly (as a competing writer's committed delete would) */
+  remove(key: string | { PK: string; SK?: string }): void {
+    const PK = typeof key === 'string' ? key : key.PK;
+    const SK = (typeof key === 'object' && key.SK !== undefined ? key.SK : undefined) ?? 'A';
+    this.items.delete(HarnessStore.k(PK, SK));
+  }
+
   seed(item: Item): void {
     if (item.PK === undefined || item.SK === undefined) throw new Error('harness: seeded items need PK and SK');
     this.items.set(HarnessStore.k(item.PK, item.SK), clone(HarnessStore.strip(item)));

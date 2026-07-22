@@ -72,10 +72,19 @@ export async function upsertContact(args: {
 
     const put = migrate
       ? new PutCommand({ TableName: TABLE_NAME(), Item: item,
-          // migration CAS: EQUALITY on the exact observed stamp (not `<` — the stamp is unchanged);
-          // a racing write of any kind flips the observed stamp/state and this CCFEs into the loop.
-          ConditionExpression: 'attribute_not_exists(PK) OR lastLinkGeneration = :obs',
-          ExpressionAttributeValues: { ':obs': observed } })
+          // Round-4 review fix — the migration CAS pins EVERY fact that AUTHORIZED the migration:
+          // the observed predecessor org, the exact stamp (equality, not `<` — it is unchanged),
+          // and unlocked; and it REQUIRES the row to still exist. A racing admin lock, a racing
+          // same-generation org move, or a racing deletion between read and write therefore CCFEs
+          // into the loop instead of being clobbered/resurrected by this stale item. On CCFE the
+          // loop re-reads and re-decides on FRESH state, which naturally yields: freshly locked →
+          // 'locked'; moved to a non-predecessor org (same gen) → falls out of the migration
+          // guard → 'superseded'; row deleted → the normal generational CREATE branch. That
+          // create — at the caller's EFFECTIVE org, built from fresh (empty) state — is ordinary
+          // replay semantics; the migration write itself can never resurrect a deleted contact
+          // (deliberately NO attribute_not_exists(PK) alternate here).
+          ConditionExpression: 'attribute_exists(PK) AND orgId = :obsOrg AND lastLinkGeneration = :obsGen AND linkLocked = :false',
+          ExpressionAttributeValues: { ':obsOrg': existing!.orgId, ':obsGen': observed, ':false': false } })
       : args.linkGeneration
       ? new PutCommand({ TableName: TABLE_NAME(), Item: item,
           // store-enforced monotonicity — a racing NEWER generation makes this CCFE.
