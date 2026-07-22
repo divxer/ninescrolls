@@ -227,4 +227,49 @@ describe('convert-rfq-to-order handler', () => {
         // finalMatchedOrgId = rfq.matchedOrgId (org-api returned null)
         expect(emitArg.resolveInput.matchedOrgId).toBe('org-stanford');
     });
+
+    it('P2C-T8b: matchedOrgId backfill write carries a ConditionExpression that refuses to overwrite a stamped or real-org record', async () => {
+        mockGet.mockResolvedValue({ Item: { ...PENDING_RFQ, matchedOrgId: undefined } });
+        mockInvokeOrgApi.mockResolvedValueOnce({ matchedOrgId: 'org-stanford-upserted' });
+
+        const event = makeEvent({ rfqId: 'rfq-20260310-abc123', operator: 'admin' });
+        await handler(event, {} as never, (() => {}) as never);
+
+        const backfillCall = mockSend.mock.calls.find((c: unknown[]) => {
+            const arg = c[0] as { Key?: { SK?: string }; UpdateExpression?: string };
+            return arg.Key?.SK === 'META' && (arg.UpdateExpression ?? '').includes('matchedOrgId');
+        });
+        expect(backfillCall).toBeDefined();
+        const params = backfillCall![0] as { ConditionExpression?: string; ExpressionAttributeValues: Record<string, string> };
+        expect(params.ConditionExpression).toContain('attribute_not_exists(matchedOrgLinkGeneration)');
+        expect(params.ConditionExpression).toContain('attribute_type(matchedOrgId, :nullType)');
+        expect(params.ConditionExpression).toMatch(/attribute_not_exists\(matchedOrgId\)|matchedOrgId = :empty|begins_with\(matchedOrgId, :unres\)/);
+        expect(params.ExpressionAttributeValues[':nullType']).toBe('NULL');
+        expect(params.ExpressionAttributeValues[':empty']).toBe('');
+        expect(params.ExpressionAttributeValues[':unres']).toBe('unresolved-');
+    });
+
+    it('P2C-T8b: a CCFE on the matchedOrgId backfill is swallowed as a no-op — the conversion itself still succeeds', async () => {
+        mockGet.mockResolvedValue({ Item: { ...PENDING_RFQ, matchedOrgId: undefined } });
+        mockInvokeOrgApi.mockResolvedValueOnce({ matchedOrgId: 'org-stanford-upserted' });
+        mockUpdate.mockRejectedValueOnce(Object.assign(new Error('linked'), { name: 'ConditionalCheckFailedException' }));
+
+        const event = makeEvent({ rfqId: 'rfq-20260310-abc123', operator: 'admin' });
+        const result = await handler(event, {} as never, (() => {}) as never);
+
+        expect((result as { statusCode: number }).statusCode).toBe(200);
+        expect(JSON.parse((result as { body: string }).body).success).toBe(true);
+    });
+
+    it('P2C-T8b (creation-path pin): the initial ORDER Put sets matchedOrgId unconditionally on a fresh PK — no guard needed or applied', async () => {
+        const event = makeEvent({ rfqId: 'rfq-20260310-abc123', operator: 'admin' });
+        await handler(event, {} as never, (() => {}) as never);
+
+        const creationPut = mockSend.mock.calls.find((c: unknown[]) => {
+            const arg = c[0] as { Item?: { SK?: string; matchedOrgId?: unknown } };
+            return arg.Item?.SK === 'META' && arg.Item?.matchedOrgId === PENDING_RFQ.matchedOrgId;
+        });
+        expect(creationPut).toBeDefined();
+        expect((creationPut![0] as { ConditionExpression?: string }).ConditionExpression).toBeUndefined();
+    });
 });

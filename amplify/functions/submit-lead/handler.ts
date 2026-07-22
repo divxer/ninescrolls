@@ -6,6 +6,12 @@ import { computeLeadScore } from '../../lib/organization/lead-score';
 import { emitTimelineEventToCrm, invokeCrmAction } from '../../lib/crm/invoke-crm-api';
 import { buildLeadEmitArgs } from '../../lib/crm/emit-builders';
 import { toSend, upsertVisitorBridge } from '../../lib/crm/visitor-bridge';
+import {
+    MATCHED_ORG_WRITE_GUARD_CONDITION,
+    MATCHED_ORG_WRITE_GUARD_VALUES,
+    isConditionalCheckFailed,
+    logMatchedOrgWriteSuperseded,
+} from '../../lib/crm/matched-org-write-guard';
 import { z } from 'zod';
 import crypto from 'node:crypto';
 
@@ -672,15 +678,26 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
         }
 
         if (matchedOrgId) {
-            await docClient.send(new UpdateCommand({
-                TableName: TABLE_NAME(),
-                Key: { PK: `LEAD#${leadId}`, SK: 'META' },
-                UpdateExpression: 'SET matchedOrgId = :id, GSI2PK = :gsi2',
-                ExpressionAttributeValues: {
-                    ':id': matchedOrgId,
-                    ':gsi2': `ORG#${matchedOrgId}`,
-                },
-            }));
+            // R10/critical (Task 8b): this write is DELAYED relative to the lead's own creation (it
+            // waits on the org-api round-trip above), so an admin link can land in between and stamp
+            // matchedOrgLinkGeneration. Guard so this backfill can never clobber that decision — a
+            // CCFE here means the admin decision already stands, which is success for the submission.
+            try {
+                await docClient.send(new UpdateCommand({
+                    TableName: TABLE_NAME(),
+                    Key: { PK: `LEAD#${leadId}`, SK: 'META' },
+                    UpdateExpression: 'SET matchedOrgId = :id, GSI2PK = :gsi2',
+                    ConditionExpression: MATCHED_ORG_WRITE_GUARD_CONDITION,
+                    ExpressionAttributeValues: {
+                        ':id': matchedOrgId,
+                        ':gsi2': `ORG#${matchedOrgId}`,
+                        ...MATCHED_ORG_WRITE_GUARD_VALUES,
+                    },
+                }));
+            } catch (err) {
+                if (!isConditionalCheckFailed(err)) throw err;
+                logMatchedOrgWriteSuperseded('submit-lead.matched_org_backfill', { leadId, attemptedOrgId: matchedOrgId });
+            }
         }
 
         // 2C-analytics: VISITOR# identity bridge + retro-resolve fire (non-fatal; upgrade-only).
