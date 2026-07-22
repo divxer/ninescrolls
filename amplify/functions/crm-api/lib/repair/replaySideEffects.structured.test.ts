@@ -94,7 +94,7 @@ describe('replayStructuredSideEffects (generational)', () => {
   let orgReadRejects: Error[];
   let transactBehaviors: Array<{ reject?: unknown }>;
   let getBehaviors: Array<Record<string, unknown>>;
-  let timelinePages: Map<string, Array<Record<string, unknown>>>;
+  let timelinePages: Map<string, Array<Array<Record<string, unknown>>>>;
 
   function mockOrg(orgId: string, attrs: Record<string, unknown> | null) {
     const q = orgStates.get(orgId) ?? [];
@@ -111,8 +111,12 @@ describe('replayStructuredSideEffects (generational)', () => {
   function rejectTransactWithNoReasons() {
     transactBehaviors.push({ reject: Object.assign(new Error('cancelled'), { name: 'TransactionCanceledException' }) });
   }
+  // each call queues ONE query result page for the org partition; a query on an exhausted queue
+  // returns [] (matches DynamoDB: nothing left under the key condition)
   function mockTimelinePage(orgId: string, events: Array<Record<string, unknown>>) {
-    timelinePages.set(`ORG#${orgId}`, events);
+    const q = timelinePages.get(`ORG#${orgId}`) ?? [];
+    q.push(events);
+    timelinePages.set(`ORG#${orgId}`, q);
   }
   function evStamped(id: string, gen: string) {
     return { PK: `TLEVENT#${id}`, SK: 'A', id, orgId: 'a.com', linkGeneration: gen,
@@ -140,8 +144,7 @@ describe('replayStructuredSideEffects (generational)', () => {
       }
       if (cmd instanceof RealQueryCommand) {
         const pk = String((cmd.input.ExpressionAttributeValues as Record<string, unknown>)?.[':pk'] ?? '');
-        const evs = timelinePages.get(pk) ?? [];
-        timelinePages.delete(pk);
+        const evs = timelinePages.get(pk)?.shift() ?? [];
         return Promise.resolve({ Items: evs });
       }
       return Promise.resolve({}); // UpdateCommand etc.
@@ -307,6 +310,38 @@ describe('replayStructuredSideEffects (generational)', () => {
     for (const c of transactCalls()) {
       expect((c[0].input.TransactItems as Array<Record<string, unknown>>)[0].ConditionCheck).toBeDefined();
     }
+  });
+
+  // Finding-2 regression: replay redirects requested A → effective B, moves SOME events A→B, then
+  // B is merged into C mid-redirect (write fence cancels). The single re-resolve retry must page
+  // EVERY org this replay has targeted so far — A AND B — or the events already moved to B (now
+  // archived) are stranded there while the marker completes.
+  it('REDIRECT RETRY AFTER MID-MOVE FENCE LOSS: the retry pages BOTH prior targets and moves B-stranded events to C', async () => {
+    mockOrg('a.com', { status: 'archived', mergedInto: 'b.com' });
+    mockOrg('b.com', { status: 'active' });                                        // first resolve: eff = B
+    mockOrg('b.com', { status: 'archived', mergedInto: 'c.com' });                 // re-resolve sees the merge
+    mockOrg('c.com', { status: 'active' });
+    // first redirect pass at A→B: tev-1 moves, tev-2's fenced move cancels (B archived mid-move)
+    mockTimelinePage('a.com', [evStamped('tev-1', GEN_A), evStamped('tev-2', GEN_A)]);
+    transactSucceeds();                                                            // backfill at B
+    transactSucceeds();                                                            // move tev-1 A→B
+    rejectTransactWithCancellation(['ConditionalCheckFailed', 'None']);            // move tev-2: org fence lost
+    // retry pass at C: A still holds tev-2; B holds the previously-moved tev-1 (stranded)
+    mockTimelinePage('a.com', [evStamped('tev-2', GEN_A)]);
+    mockTimelinePage('b.com', [{ ...evStamped('tev-1', GEN_A), orgId: 'b.com', GSI2PK: 'ORG#b.com' }]);
+    const r = await replayStructuredSideEffects({ ...base, targetOrgId: 'a.com', generation: GEN_A });
+    expect(r.ok).toBe(true);
+    // the retry queried BOTH source partitions (requested A and abandoned intermediate B)
+    const queriedPks = send.mock.calls.filter((c) => c[0] instanceof RealQueryCommand)
+      .map((c) => String((c[0].input.ExpressionAttributeValues as Record<string, unknown>)[':pk']));
+    expect(queriedPks).toEqual(['ORG#a.com', 'ORG#a.com', 'ORG#b.com']);
+    // every stranded event converged on C, each move conditioned on ITS OWN source org
+    const moves = updatesTo('TLEVENT#').filter((mv) => mv.Item?.orgId === 'c.com');
+    expect(moves.map((mv) => [mv.Item.id, mv.ExpressionAttributeValues[':src']]).sort()).toEqual([
+      ['tev-1', 'b.com'], ['tev-2', 'a.com'],
+    ]);
+    for (const mv of moves) expect(mv.ConditionExpression).toBe('orgId = :src AND linkGeneration = :gen');
+    expect(dirtyRollupCalls().map((c) => c.orgId).sort()).toEqual(['a.com', 'b.com', 'c.com']);
   });
 
   // ---- contact effect (Task 7 API) -----------------------------------------------------------

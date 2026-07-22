@@ -97,8 +97,7 @@ const rfqBase = {
   affectedEventIds: ['tev-1'], movedCount: 1, contactStatus: 'missing_email',
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type TxInput = { TransactItems?: Array<{ Update?: { Key?: { PK?: string } }; ConditionCheck?: { Key?: any } }> };
+type TxInput = { TransactItems?: Array<{ Update?: { Key?: { PK?: string } }; Put?: { Item?: { PK?: string } }; ConditionCheck?: { Key?: any } }> };
 
 afterEach(() => { activeHarness()?.clearGates(); });
 
@@ -170,7 +169,9 @@ describe('linkStructuredUnit adversarial suite (stateful harness, real functions
     expect(out.moved).toBe(130);
     const m = store.markersHistoryFor('unresolved-rfq-r1')[0];      // harness records deleted markers too
     expect(m.movedCount).toBe(130);
-    expect((m.affectedEventIdsSample as string[]).length).toBeLessThanOrEqual(100);
+    // Finding-3 regression: the sample is EXACTLY the first 100 moved event ids in move order —
+    // a stale accumulate handle collapses it to ~[first, latest] instead of growing to the cap.
+    expect(m.affectedEventIdsSample).toEqual(Array.from({ length: 100 }, (_, i) => `tev-${i}`));
     expect(store.get('RFQ#r1').matchedOrgId).toBe('acme.com');      // the replay completed off the marker inputs
   });
 
@@ -284,6 +285,32 @@ describe('linkStructuredUnit adversarial suite (stateful harness, real functions
     const r = await pReplay;
     expect(r.ok).toBe(true);
     expect(store.get('RFQ#1').matchedOrgId).toBe('b.com');            // fence cancelled → re-resolved → successor
+  });
+
+  // Scenario 12b (Finding-2 regression) — REDIRECT RETRY vs MID-REDIRECT MERGE: the drainer's
+  // replay redirects requested A → effective B, moves one event A→B, then a REAL merge archives
+  // B→C mid-redirect (the parked move's fence cancels). The single re-resolve retry must page
+  // EVERY org the replay has targeted so far (A AND B) so the event already moved to B is not
+  // stranded under the archived intermediate while the marker completes.
+  it('mid-redirect merge: the retry drains BOTH the requested org and the abandoned intermediate; full convergence at C', async () => {
+    const store = seedStore([rfqRecord('RFQ#1', { matchedOrgId: '' }),
+      orgItem('a.com', { status: 'archived', mergedInto: 'b.com' }), orgItem('b.com'), orgItem('c.com'),
+      movedEvent('tev-1', { orgId: 'a.com', linkGeneration: GEN_1 }),
+      movedEvent('tev-2', { orgId: 'a.com', linkGeneration: GEN_1 })]);
+    putPendingMarker(store, { unitKey: 'unresolved-rfq-r1', generation: GEN_1, targetOrgId: 'a.com' });
+    const gate = store.gateOn((cmd, input) => cmd.constructor.name === 'TransactWriteCommand'
+      && Boolean((input as TxInput).TransactItems?.some((t) => t.Put?.Item?.PK === 'TLEVENT#tev-2')));  // parks the SECOND redirect move
+    const pDrain = reconcileRepair({});
+    await store.idle();                                               // parked mid-redirect
+    expect(store.get('TLEVENT#tev-1').orgId).toBe('b.com');           // first move already committed at B
+    expect(store.markersFor('unresolved-rfq-r1')).toHaveLength(1);    // marker NOT deleted before convergence
+    await mergeOrganization('b.com', 'c.com');                        // the REAL merge archives B mid-redirect
+    gate.release();
+    const s = await pDrain;
+    expect(s.repaired).toBe(1);
+    expect(store.get('TLEVENT#tev-1').orgId).toBe('c.com');           // the B-stranded event converged
+    expect(store.get('TLEVENT#tev-2').orgId).toBe('c.com');           // and the A-remainder followed too
+    expect(store.markersFor('unresolved-rfq-r1')).toHaveLength(0);    // deleted only after full convergence
   });
 
   // Scenario 13 — >100-event unit REDIRECT: the paginated redirect pass moves all 130, rollups dirty.

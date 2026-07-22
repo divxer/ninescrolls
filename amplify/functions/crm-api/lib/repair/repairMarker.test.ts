@@ -133,6 +133,32 @@ describe('repairMarker v2 (structured)', () => {
     expect(u.ExpressionAttributeValues[':v']).toBe(3);
     expect(u.ExpressionAttributeValues[':sample'].length).toBeLessThanOrEqual(100);
   });
+  // Finding-3 regression: a successful accumulate must sync the in-memory handle with the row it
+  // just wrote — otherwise every subsequent accumulate rebuilds its sample from the ORIGINAL array
+  // and the stored sample collapses to ~original+latest-delta instead of growing to the cap.
+  it('accumulate: success updates the handle, so sequential accumulates GROW the sample to the cap', async () => {
+    const ids = (from: number, n: number) => Array.from({ length: n }, (_, i) => `e${from + i}`);
+    const m = markerAt(1);
+    await accumulateMarker(m, { movedCountDelta: 40, newSampleIds: ids(0, 40), contactStatus: 'linked' }, 't1');
+    await accumulateMarker(m, { movedCountDelta: 40, newSampleIds: ids(40, 40) }, 't2');
+    await accumulateMarker(m, { movedCountDelta: 40, newSampleIds: ids(80, 40) }, 't3');
+    const third = send.mock.calls[2][0].input;
+    expect(third.ExpressionAttributeValues[':sample']).toEqual(ids(0, 100));  // EXACTLY the first 100, in order
+    expect(third.ExpressionAttributeValues[':v']).toBe(3);                    // fence advanced per write
+    expect(m.affectedEventIdsSample).toEqual(ids(0, 100));                    // handle mirrors the stored row
+    expect(m.movedCount).toBe(120);
+    expect(m.contactStatus).toBe('linked');
+  });
+  it('accumulate: a LOST fence leaves the handle untouched (no phantom local state)', async () => {
+    const m = markerAt(2);
+    send.mockRejectedValueOnce(Object.assign(new Error('ccfe'), { name: 'ConditionalCheckFailedException' }));
+    const r = await accumulateMarker(m, { movedCountDelta: 5, newSampleIds: ['x1'], contactStatus: 'linked' }, 't1');
+    expect(r.lost).toBe(true);
+    expect(m.affectedEventIdsSample).toEqual([]);
+    expect(m.movedCount).toBe(0);
+    expect(m.contactStatus).toBe('missing_email');
+    expect(m.version).toBe(2);
+  });
   it('accumulate: CCFE surfaces as lost=true and does not throw', async () => {
     send.mockRejectedValueOnce(Object.assign(new Error('ccfe'), { name: 'ConditionalCheckFailedException' }));
     const r = await accumulateMarker(markerAt(3), { movedCountDelta: 1, newSampleIds: [] }, 'tNow');

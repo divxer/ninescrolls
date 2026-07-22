@@ -141,9 +141,19 @@ const fenced = (m: StructuredMarkerV2) => ({ ':v': m.version });
 
 export async function accumulateMarker(m: StructuredMarkerV2, d: { movedCountDelta: number; newSampleIds: string[]; contactStatus?: string }, nowIso: string): Promise<{ lost: boolean }> {
   const sample = [...m.affectedEventIdsSample, ...d.newSampleIds].slice(0, SAMPLE_CAP);
-  return fencedUpdate(m, 'SET movedCount = movedCount + :d, affectedEventIdsSample = :sample, version = :nv, lastAttemptAt = :now' + (d.contactStatus ? ', contactStatus = :cs' : ''), {
+  const res = await fencedUpdate(m, 'SET movedCount = movedCount + :d, affectedEventIdsSample = :sample, version = :nv, lastAttemptAt = :now' + (d.contactStatus ? ', contactStatus = :cs' : ''), {
     ':d': d.movedCountDelta, ':sample': sample, ':now': nowIso, ...(d.contactStatus ? { ':cs': d.contactStatus } : {}),
   });
+  if (!res.lost) {
+    // Sync the in-memory handle with the EXACT fields just written (version is advanced inside
+    // fencedUpdate): the next accumulate must extend THIS sample, not the original array —
+    // otherwise the stored sample collapses to ~original+latest-delta instead of growing to the cap.
+    m.affectedEventIdsSample = sample;
+    m.movedCount += d.movedCountDelta;
+    m.lastAttemptAt = nowIso;
+    if (d.contactStatus) m.contactStatus = d.contactStatus;
+  }
+  return res;
 }
 export async function sealMarker(m: StructuredMarkerV2, nowIso: string): Promise<{ lost: boolean }> {
   return fencedUpdate(m, 'SET GSI1PK = :g, #s = :st, version = :nv, lastAttemptAt = :now',

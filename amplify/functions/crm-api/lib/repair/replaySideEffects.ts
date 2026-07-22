@@ -171,52 +171,61 @@ export async function replayStructuredSideEffects(args: ReplayStructuredArgs): P
 
 // Timeline-event convergence on redirect (R5 blocker 2 — production merge does NOT move
 // TimelineEvents): when the effective org differs from the requested one, the unit's events may
-// already sit under the archived requested org (the foreground link moved them there). Page the
-// requested org's timeline partition filtered `linkGeneration = :gen` (Task 10 stamps the
-// attribute on every moved event; pre-Task-10 units simply match zero events) and issue a fenced
-// conditional move per event; then dirty/repair BOTH orgs' rollups. All moves are conditional ⇒
-// idempotent on retry.
-async function redirectMovePass(requestedOrgId: string, effectiveOrgId: string, generation: string): Promise<void> {
+// already sit under the archived requested org (the foreground link moved them there) — or, after
+// a mid-redirect merge cancelled the fence, under a PRIOR effective org this same invocation
+// already moved some events to. Page EACH source org's timeline partition filtered
+// `linkGeneration = :gen` (Task 10 stamps the attribute on every moved event; pre-Task-10 units
+// simply match zero events) and issue a fenced conditional move per event; then dirty/repair the
+// touched source orgs' + the effective org's rollups. All moves are conditional ⇒ idempotent on
+// retry. `sourceOrgIds` is bounded (requested + at most one intermediate — one re-resolve per
+// invocation) but written generally over the list.
+async function redirectMovePass(sourceOrgIds: string[], effectiveOrgId: string, generation: string): Promise<void> {
   const nowIso = new Date().toISOString();
   const movedIds: string[] = [];
-  let startKey: Record<string, unknown> | undefined;
-  do {
-    const q = await docClient.send(new QueryCommand({
-      TableName: TABLE_NAME(), IndexName: 'GSI2',
-      KeyConditionExpression: 'GSI2PK = :pk AND begins_with(GSI2SK, :tl)',
-      FilterExpression: 'linkGeneration = :gen',
-      ExpressionAttributeValues: { ':pk': `ORG#${requestedOrgId}`, ':tl': 'TLEVENT#', ':gen': generation },
-      ExclusiveStartKey: startKey,
-    }));
-    for (const ev of (q.Items ?? []) as Array<Record<string, unknown>>) {
-      // The durable dirty mark (rollupApplied:false + rollupPendingOrgId) rides the fenced move
-      // itself; the archived side's repair is legitimately unfenced (its org is archived).
-      const movedItem = {
-        ...ev, orgId: effectiveOrgId, GSI2PK: `ORG#${effectiveOrgId}`,
-        rollupApplied: false, rollupPendingOrgId: requestedOrgId, updatedAt: nowIso,
-      };
-      try {
-        await docClient.send(new TransactWriteCommand({ TransactItems: [
-          orgActiveCheck(effectiveOrgId),
-          { Put: {
-            TableName: TABLE_NAME(), Item: movedItem,
-            ConditionExpression: 'orgId = :requested AND linkGeneration = :gen',   // only THIS unit's events
-            ExpressionAttributeValues: { ':requested': requestedOrgId, ':gen': generation },
-          } },
-        ] }));
-        movedIds.push(String(ev.id));
-      } catch (err) {
-        const cls = classifyLinkCancellation(err, 1);
-        if (cls === 'org_fence') throw new FenceLostError(effectiveOrgId);
-        if (cls === 'move_condition') continue;              // already moved/superseded — idempotent skip
-        throw err;                                            // malformed reasons / non-transact error → transient
+  const dirtySources: string[] = [];
+  for (const src of [...new Set(sourceOrgIds)]) {
+    if (src === effectiveOrgId) continue;                    // never page the current target itself
+    let movedFromSrc = false;
+    let startKey: Record<string, unknown> | undefined;
+    do {
+      const q = await docClient.send(new QueryCommand({
+        TableName: TABLE_NAME(), IndexName: 'GSI2',
+        KeyConditionExpression: 'GSI2PK = :pk AND begins_with(GSI2SK, :tl)',
+        FilterExpression: 'linkGeneration = :gen',
+        ExpressionAttributeValues: { ':pk': `ORG#${src}`, ':tl': 'TLEVENT#', ':gen': generation },
+        ExclusiveStartKey: startKey,
+      }));
+      for (const ev of (q.Items ?? []) as Array<Record<string, unknown>>) {
+        // The durable dirty mark (rollupApplied:false + rollupPendingOrgId) rides the fenced move
+        // itself; the archived side's repair is legitimately unfenced (its org is archived).
+        const movedItem = {
+          ...ev, orgId: effectiveOrgId, GSI2PK: `ORG#${effectiveOrgId}`,
+          rollupApplied: false, rollupPendingOrgId: src, updatedAt: nowIso,
+        };
+        try {
+          await docClient.send(new TransactWriteCommand({ TransactItems: [
+            orgActiveCheck(effectiveOrgId),
+            { Put: {
+              TableName: TABLE_NAME(), Item: movedItem,
+              ConditionExpression: 'orgId = :src AND linkGeneration = :gen',   // only THIS unit's events, from THIS source
+              ExpressionAttributeValues: { ':src': src, ':gen': generation },
+            } },
+          ] }));
+          movedIds.push(String(ev.id)); movedFromSrc = true;
+        } catch (err) {
+          const cls = classifyLinkCancellation(err, 1);
+          if (cls === 'org_fence') throw new FenceLostError(effectiveOrgId);
+          if (cls === 'move_condition') continue;            // already moved/superseded — idempotent skip
+          throw err;                                          // malformed reasons / non-transact error → transient
+        }
       }
-    }
-    startKey = q.LastEvaluatedKey as Record<string, unknown> | undefined;
-  } while (startKey);
+      startKey = q.LastEvaluatedKey as Record<string, unknown> | undefined;
+    } while (startKey);
+    if (movedFromSrc) dirtySources.push(src);
+  }
 
   if (movedIds.length === 0) return;
-  await recomputeRollupsForOrg(requestedOrgId);              // archived side — unfenced by design
+  for (const src of dirtySources) await recomputeRollupsForOrg(src);   // archived sides — unfenced by design
   await recomputeRollupsForOrg(effectiveOrgId);
   for (const id of movedIds) await markRollupApplied(id);
 }
@@ -244,6 +253,10 @@ async function replayStructuredGenerational(args: ReplayStructuredArgs, generati
   // (object wrapper: assignments happen inside effect closures — keeps TS narrowing honest)
   const state = { backfillStatus: 'no_source' as BackfillStatus };
   let fenceRetried = false;
+  // Every org this replay has TARGETED so far: the requested org, plus any prior effective org
+  // abandoned when a fence cancellation forced a re-resolve (events may already have been moved
+  // there mid-redirect — the retry's redirect pass must drain it too, not just the requested org).
+  const redirectSources = [args.targetOrgId];
 
   const effects: Array<() => Promise<void>> = [
     async () => { if (pk) state.backfillStatus = await backfillByPk(pk, eff, generation); },
@@ -271,7 +284,10 @@ async function replayStructuredGenerational(args: ReplayStructuredArgs, generati
         },
       });
     },
-    async () => { if (eff !== args.targetOrgId) await redirectMovePass(args.targetOrgId, eff, generation); },
+    async () => {
+      const sources = redirectSources.filter((s) => s !== eff);
+      if (sources.length > 0) await redirectMovePass(sources, eff, generation);
+    },
   ];
 
   for (let i = 0; i < effects.length; ) {
@@ -285,6 +301,7 @@ async function replayStructuredGenerational(args: ReplayStructuredArgs, generati
         try { re = await resolveEffectiveTarget(args.targetOrgId); }
         catch (e2) { return { ok: false, errorType: 'transient', error: msg(e2), backfillStatus: state.backfillStatus }; }
         if (re.status === 'unavailable') return { ok: false, errorType: 'target_unavailable', reason: re.reason, backfillStatus: state.backfillStatus };
+        if (!redirectSources.includes(eff)) redirectSources.push(eff);   // the abandoned target may hold already-moved events
         eff = re.orgId;
         continue;                                            // retry THIS effect and all remaining at the successor
       }
