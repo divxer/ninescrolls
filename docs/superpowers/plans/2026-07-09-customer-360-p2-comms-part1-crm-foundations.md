@@ -1430,19 +1430,32 @@ it('legacy (no-generation) replay is byte-identical to 3C and converges', async 
   expect(store.get('RFQ#1')).not.toHaveProperty('matchedOrgLinkGeneration');
 });
 // Scenario 10 — cross-writer interleaving: non-generational upsertContact lands BETWEEN two
-// generational writes; the newest org+stamp pair survives.
-it('interleaved non-generational contact write preserves the newest generation+org pair', async () => {
+// generational writes. CONTRACT (corrected during execution — the earlier revision of this
+// scenario over-claimed): the spec's cross-writer policy protects the STAMP (carried forward,
+// never dropped) and linkLocked; the ORG of an UNLOCKED contact follows latest activity
+// (ratified P1 semantics — linkLocked is the admin pin). The stamp is a replay-ordering token,
+// NOT an org-provenance pair.
+it('interleaved non-generational contact write preserves the newest STAMP; unlocked org follows activity', async () => {
   const store = seedStore([]);
   await upsertContact({ email: 'b@x.com', orgId: 'a.com', source: 'rfq', occurredAt: T1, linkGeneration: GEN_1 });
   const gate = store.gateOn((cmd) => cmd.constructor.name === 'PutCommand');      // parks the non-generational Put
-  const pNonGen = upsertContact({ email: 'b@x.com', orgId: 'ignored.com', source: 'order', occurredAt: T2 });  // reads GEN_1, parks
+  const pNonGen = upsertContact({ email: 'b@x.com', orgId: 'late.com', source: 'order', occurredAt: T2 });  // reads GEN_1, parks
   await store.idle();
   await upsertContact({ email: 'b@x.com', orgId: 'b.com', source: 'rfq', occurredAt: T3, linkGeneration: GEN_2 }); // newer generational write lands
   gate.release();
   await pNonGen;                                                                   // CASes on stale GEN_1 → CCFE → re-read → retry on fresh state
   const c = store.contactByEmail('b@x.com');
-  expect(c.orgId).toBe('b.com');                                                   // newest org survives
-  expect(c.lastLinkGeneration).toBe(GEN_2);                                        // newest stamp survives
+  expect(c.lastLinkGeneration).toBe(GEN_2);                                        // newest stamp survives (the cross-writer guarantee)
+  expect(c.orgId).toBe('late.com');                                                // unlocked contact follows the latest activity's org
+});
+it('a linkLocked contact is NEVER re-orged by the interleaved non-generational writer', async () => {
+  const store = seedStore([]);
+  await upsertContact({ email: 'c@x.com', orgId: 'b.com', source: 'rfq', occurredAt: T1, linkGeneration: GEN_2 });
+  store.put(store.contactPkOf('c@x.com'), { ...store.contactByEmail('c@x.com'), linkLocked: true });
+  await upsertContact({ email: 'c@x.com', orgId: 'late.com', source: 'order', occurredAt: T2 });
+  const c = store.contactByEmail('c@x.com');
+  expect(c.orgId).toBe('b.com');                                                   // the admin pin holds
+  expect(c.lastLinkGeneration).toBe(GEN_2);
 });
 // Scenario 11 — DELAYED SOURCE WRITER (Task 8b, store-level): a late creation-path matchedOrgId
 // write cannot overwrite a stamped admin decision (incl. the NULL-typed org case).
