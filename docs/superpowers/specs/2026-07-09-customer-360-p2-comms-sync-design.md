@@ -45,8 +45,9 @@ EventBridge cron (*/10, Stack.of(gmailSync.lambda), !isSandbox, reservedConcurre
 │  • users.messages.get(metadata) │
 │  • direction + customer address │
 │  • dedup key = RFC822 Message-ID│
-│  • advance SSM watermark        │
-│    (only past confirmed msgs)   │
+│  • fenced DDB state item        │
+│    (GMAIL_SYNC#<mailbox>/STATE, │
+│     advance past done records)  │
 └──────────────────────────────┘
 ```
 
@@ -64,7 +65,7 @@ EventBridge cron (*/10, Stack.of(gmailSync.lambda), !isSandbox, reservedConcurre
 ## 4. Sync mechanism — poll history API, durable watermark
 
 - Cron `*/10` (`Stack.of(gmailSync.lambda)`, `!isSandbox`, **`reservedConcurrentExecutions:1`** so a slow run / re-anchor backfill can't overlap a second run — review R1/M1).
-- Per mailbox: read SSM `historyId` watermark → `users.history.list(startHistoryId=watermark, historyTypes=[messageAdded])`, paginate → new message ids (includes **Sent** items → outbound; verify a real Sent item produces a `messageAdded` record during the spike — R1/M4) → `messages.get(format=metadata)` → map.
+- Per mailbox: read the `historyId` watermark from the fenced `GMAIL_SYNC#<mailbox>/STATE` item (§2) → `users.history.list(startHistoryId=watermark, historyTypes=[messageAdded])`, paginate → new message ids (includes **Sent** items → outbound; verify a real Sent item produces a `messageAdded` record during the spike — R1/M4) → `messages.get(format=metadata)` → map.
 - **Durability model (review R1/I2 — gmail has NO sweep heal, because it writes no source-of-truth the 2C existence sweep can re-derive):** emit **synchronously** (`invokeCrmApi {sync:true}`) and confirm projection per message. *(Sync invoke is a deliberate, documented deviation from the "sync = tests/debug only" note in `invoke-crm-api.ts` — justified because gmail has no other durability backstop.)*
 - **Per-message outcome (review R3):** each message resolves to exactly one of `persisted` (sync projection confirmed) · `terminal_skip(reason)` (never succeeds — `messages.get` 404, or filtered by alias/DRAFT/CHAT/internal) · `retryable_failure` (transient). `persisted` and `terminal_skip` let the checkpoint pass the message; `retryable_failure` blocks it.
 - **Checkpoint at HISTORY-RECORD boundaries, not per message (review R3/blocker-3).** `history.list` returns history *records*, each with a `historyId` and possibly **several** `messagesAdded`. A record is done only when **every** message in it is `persisted`/`terminal_skip`. Advance the watermark across the **contiguous prefix of fully-done records**, stopping at the first record holding a `retryable_failure` (so a still-pending sibling in that record is never skipped). On a fully-clean run, commit the response's **top-level `historyId`**. Advancing to one message's position could skip an unprocessed sibling sharing the record.
