@@ -11,10 +11,9 @@ describe('generateUlid', () => {
     const seen = new Set(Array.from({ length: 1000 }, () => generateUlid()));
     expect(seen.size).toBe(1000);
   });
-  it('lexicographic order follows time for calls ≥2ms apart', async () => {
-    const a = generateUlid();
-    await new Promise((r) => setTimeout(r, 3));
-    const b = generateUlid();
+  it('lexicographic order follows time', () => {
+    const a = generateUlid(1000);
+    const b = generateUlid(1003);
     expect(a < b).toBe(true);
   });
 });
