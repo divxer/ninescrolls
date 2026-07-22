@@ -13,4 +13,9 @@ describe('isAdmin', () => {
     expect(isAdmin({} as never)).toBe(false);
     expect(isAdmin({ identity: { claims: {} } } as never)).toBe(false);
   });
+  it('bypass probes rejected: substring, case, and string-typed identity.groups', () => {
+    expect(isAdmin({ identity: { claims: { 'cognito:groups': 'administrator' } } } as never)).toBe(false); // substring ≠ exact match
+    expect(isAdmin({ identity: { claims: { 'cognito:groups': ['Admin'] } } } as never)).toBe(false);       // case-sensitive
+    expect(isAdmin({ identity: { groups: 'admin' as never } } as never)).toBe(false);                       // non-array identity.groups ignored
+  });
 });
