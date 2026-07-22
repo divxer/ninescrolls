@@ -17,7 +17,7 @@
 4. First move + marker in ONE `TransactWriteItems`; marker `attribute_not_exists(PK)`; a loser's transaction aborts → no marker.
 5. Marker lifecycle `building → pending`; drainer sees `pending` only; abandoned `building` ages in; ALL transitions version-fenced; CCFE on a transition = another actor won = skip.
 6. Generations are ULIDs; older generation ⇒ `superseded` SUCCESS no-op on Contact + source; `linkLocked` never re-orged (`locked` = success).
-7. Non-generational writers preserve `lastLinkGeneration`; merge is authoritative (re-stamps atomically); creation-time resolution is generation-absent.
+7. Non-generational writers preserve `lastLinkGeneration`; merge is authoritative (re-stamps a fresh generation atomically — never merely clears, spec R10); creation-time resolution is generation-absent.
 8. Admin-group authorization before ANY DynamoDB access on the guarded resolvers; both `claims['cognito:groups']` (string or array) and `identity.groups` shapes.
 9. Markers/audits bounded: `movedCount` + ≤100-id sample, never full lists.
 10. Post-commit effects never throw out of an orchestrator; failure ⇒ marker survives + `postCommitStatus:'post_commit_failed'`.
@@ -421,7 +421,7 @@ it('linkLocked contact is never re-orged by ANY generation → locked SUCCESS no
 
 - [ ] **Step 2: Run** — FAIL.
 
-- [ ] **Step 3: Implement.** In `types.ts` add `lastLinkGeneration: string | null;` to `ContactItem`. In `contactStore.ts` change `upsertContact` to:
+- [ ] **Step 3: Implement.** In `types.ts` add `lastLinkGeneration: string | null;` to `ContactItem`. In `contactStore.ts` change `upsertContact` to the following — **the ENTIRE function body is one bounded read→decide→build→CAS loop** (plan-review R2 Critical: a retry must rebuild the WHOLE item from a fresh read; re-reading only the stamp would pair a fresh generation with stale org/lock/fields, making stale data authoritative):
 ```ts
 export type ContactUpsertOutcome = 'written' | 'superseded' | 'locked';
 
@@ -431,73 +431,65 @@ export async function upsertContact(args: {
   linkGeneration?: string;                       // generational (link/replay) callers only
 }): Promise<{ contactId: string; outcome: ContactUpsertOutcome }> {
   const email = normalizeEmail(args.email);
-  const existing = await getContactByEmail(email);
-  const contactId = existing?.contactId ?? contactIdForEmail(email);
   const nowIso = new Date().toISOString();
   const occurredAt = args.occurredAt;
 
-  if (args.linkGeneration) {
-    if (existing?.linkLocked) return { contactId, outcome: 'locked' };          // R8: never re-org a locked contact
-    if (existing?.lastLinkGeneration && existing.lastLinkGeneration >= args.linkGeneration) {
-      return { contactId, outcome: 'superseded' };                              // R8: older replay = success no-op
-    }
-  }
-
-  const orgId = args.linkGeneration ? args.orgId : (existing?.linkLocked ? existing.orgId : args.orgId);
-  const firstSeenAt = existing?.firstSeenAt && existing.firstSeenAt < occurredAt ? existing.firstSeenAt : occurredAt;
-  const lastSeenAt = existing?.lastSeenAt && existing.lastSeenAt > occurredAt ? existing.lastSeenAt : occurredAt;
-
-  const item = {
-    ...contactKeys({ contactId, email, orgId }),
-    entityType: 'CONTACT' as const,
-    contactId, email, orgId, source: existing?.source ?? args.source,
-    name: args.name ?? existing?.name ?? null, title: args.title ?? existing?.title ?? null,
-    role: args.role ?? existing?.role ?? null, phone: args.phone ?? existing?.phone ?? null,
-    linkLocked: existing?.linkLocked ?? false,
-    // R9 cross-writer policy: non-generational writes carry the stamp forward, exactly like linkLocked.
-    lastLinkGeneration: args.linkGeneration ?? existing?.lastLinkGeneration ?? null,
-    firstSeenAt, lastSeenAt,
-    createdAt: existing?.createdAt ?? nowIso, updatedAt: nowIso,
-  };
-
-  if (args.linkGeneration) {
-    try {
-      await docClient.send(new PutCommand({
-        TableName: TABLE_NAME(), Item: item,
-        // store-enforced monotonicity — a racing newer generation makes this CCFE ⇒ superseded
-        ConditionExpression: 'attribute_not_exists(PK) OR attribute_not_exists(lastLinkGeneration) OR lastLinkGeneration < :gen',
-        ExpressionAttributeValues: { ':gen': args.linkGeneration },
-      }));
-      return { contactId, outcome: 'written' };
-    } catch (err) {
-      if ((err as { name?: string }).name === 'ConditionalCheckFailedException') return { contactId, outcome: 'superseded' };
-      throw err;
-    }
-  }
-  // NON-generational path (plan-review Critical): a blind Put could race a newer generational
-  // update and RESTORE its stale org+generation. CAS on the generation we observed; on conflict
-  // re-read and retry (bounded) so the carried-forward stamp is always the freshest.
+  // ONE bounded read→decide→build→CAS loop for BOTH paths (plan-review R2 Critical):
+  // every retry starts from a COMPLETELY fresh read, so org/lock/stamp/fields are always coherent.
   for (let attempt = 0; attempt < 3; attempt++) {
-    const observed = attempt === 0 ? (existing?.lastLinkGeneration ?? null) : ((await getContactByEmail(email))?.lastLinkGeneration ?? null);
-    const attemptItem = { ...item, lastLinkGeneration: observed };
-    const put = observed === null
-      ? new PutCommand({ TableName: TABLE_NAME(), Item: attemptItem,
-          ConditionExpression: 'attribute_not_exists(PK) OR attribute_not_exists(lastLinkGeneration) OR lastLinkGeneration = :null',
-          ExpressionAttributeValues: { ':null': null } })
-      : new PutCommand({ TableName: TABLE_NAME(), Item: attemptItem,
-          ConditionExpression: 'attribute_not_exists(PK) OR lastLinkGeneration = :obs',
-          ExpressionAttributeValues: { ':obs': observed } });
+    const existing = await getContactByEmail(email);
+    const contactId = existing?.contactId ?? contactIdForEmail(email);
+
+    if (args.linkGeneration) {
+      if (existing?.linkLocked) return { contactId, outcome: 'locked' };        // R8: never re-org a locked contact
+      if (existing?.lastLinkGeneration && existing.lastLinkGeneration >= args.linkGeneration) {
+        return { contactId, outcome: 'superseded' };                            // R8: older replay = success no-op
+      }
+    }
+
+    const orgId = args.linkGeneration ? args.orgId : (existing?.linkLocked ? existing.orgId : args.orgId);
+    const firstSeenAt = existing?.firstSeenAt && existing.firstSeenAt < occurredAt ? existing.firstSeenAt : occurredAt;
+    const lastSeenAt = existing?.lastSeenAt && existing.lastSeenAt > occurredAt ? existing.lastSeenAt : occurredAt;
+    const observed = existing?.lastLinkGeneration ?? null;
+
+    const item = {
+      ...contactKeys({ contactId, email, orgId }),
+      entityType: 'CONTACT' as const,
+      contactId, email, orgId, source: existing?.source ?? args.source,
+      name: args.name ?? existing?.name ?? null, title: args.title ?? existing?.title ?? null,
+      role: args.role ?? existing?.role ?? null, phone: args.phone ?? existing?.phone ?? null,
+      linkLocked: existing?.linkLocked ?? false,
+      // R9: generational callers set their own stamp; non-generational carry the OBSERVED one forward.
+      lastLinkGeneration: args.linkGeneration ?? observed,
+      firstSeenAt, lastSeenAt,
+      createdAt: existing?.createdAt ?? nowIso, updatedAt: nowIso,
+    };
+
+    const put = args.linkGeneration
+      ? new PutCommand({ TableName: TABLE_NAME(), Item: item,
+          // store-enforced monotonicity — a racing NEWER generation makes this CCFE
+          ConditionExpression: 'attribute_not_exists(PK) OR attribute_not_exists(lastLinkGeneration) OR lastLinkGeneration < :gen',
+          ExpressionAttributeValues: { ':gen': args.linkGeneration } })
+      : (observed === null
+          ? new PutCommand({ TableName: TABLE_NAME(), Item: item,
+              ConditionExpression: 'attribute_not_exists(PK) OR attribute_not_exists(lastLinkGeneration) OR lastLinkGeneration = :null',
+              ExpressionAttributeValues: { ':null': null } })
+          : new PutCommand({ TableName: TABLE_NAME(), Item: item,
+              ConditionExpression: 'attribute_not_exists(PK) OR lastLinkGeneration = :obs',
+              ExpressionAttributeValues: { ':obs': observed } }));
     try {
       await docClient.send(put);
       return { contactId, outcome: 'written' };
     } catch (err) {
       if ((err as { name?: string }).name !== 'ConditionalCheckFailedException') throw err;
-      // generation moved under us — loop re-reads and retries with the fresh stamp
+      // Something changed under us. Generational: loop re-reads — a newer stamp now yields
+      // 'superseded' from the fresh decide step. Non-generational: loop rebuilds on the fresh state.
     }
   }
-  throw new Error('upsertContact: generation moved repeatedly; giving up after 3 attempts');
+  throw new Error('upsertContact: contended repeatedly; giving up after 3 attempts');
 }
 ```
+**Additional required tests (R2 Critical):** (a) after a raced CCFE, the retry's item reflects the FRESH read's org+lock+stamp **as a pair** (assert the final Put's `Item.orgId` AND `Item.lastLinkGeneration` both come from the re-read); (b) a contact that became `linkLocked` between read and write → generational retry returns `locked` (not a write); (c) null→absent stamp transitions in both directions; (d) three consecutive CCFEs → throws the bounded-contention error.
 **Add the race test:**
 ```ts
 it('non-generational write CASes on the observed generation and retries after a racing generational update', async () => {
@@ -557,29 +549,49 @@ it('genuine non-generational real-org mismatch is still conflict', async () => {
 
 - [ ] **Step 2: Run** — FAIL.
 
-- [ ] **Step 3: Implement replay side.** In `replaySideEffects.ts`: `BackfillStatus` gains `'superseded'`; `replayStructuredSideEffects` args gain **OPTIONAL** `generation?: string` + `customerEmail?: string | null` (plan-review fix: callers migrate in Tasks 10/12 — optional params keep every existing caller compiling at THIS task's checkpoint; when `generation` is absent, `backfillByPk` uses the exact pre-existing 3C condition and the audit id omits the generation — legacy behavior byte-identical). `backfillByPk(pk, targetOrgId, generation?)` becomes (generation branch shown; wrap the new condition/values in `generation ? … : <the existing 3C condition>`):
+- [ ] **Step 3: Implement replay side.** In `replaySideEffects.ts`: `BackfillStatus` gains `'superseded'`. The COMPLETE new signature (plan-review R2: shown in full — callers migrate in Tasks 10/12; the optional params keep every existing caller compiling at THIS task's checkpoint):
 ```ts
-async function backfillByPk(pk: string, targetOrgId: string, generation: string): Promise<BackfillStatus> {
+export interface ReplayStructuredArgs {
+  sourceType: 'rfq' | 'lead' | 'order' | 'quote' | 'logistics' | 'gmail';
+  sourceEntityId: string;
+  targetOrgId: string;
+  targetOrgName: string;
+  generation?: string;              // NEW, optional: absent ⇒ legacy 3C semantics, byte-identical
+  customerEmail?: string | null;    // NEW, optional: needed only for gmail units (readSourceEmailForUnit)
+}
+```
+`backfillByPk` — BOTH branches executable, the legacy branch is the verbatim pre-existing 3C code:
+```ts
+async function backfillByPk(pk: string, targetOrgId: string, generation?: string): Promise<BackfillStatus> {
+  const generational = generation !== undefined;
   try {
     await docClient.send(new UpdateCommand({
       TableName: TABLE_NAME(), Key: { PK: pk, SK: 'META' },
-      UpdateExpression: 'SET matchedOrgId = :o, matchedOrgLinkGeneration = :gen',   // R9: atomically, one write
-      ConditionExpression: '(attribute_not_exists(matchedOrgId) OR attribute_type(matchedOrgId, :nullType) OR matchedOrgId = :empty OR begins_with(matchedOrgId, :unres)) OR (attribute_exists(matchedOrgLinkGeneration) AND matchedOrgLinkGeneration < :gen)',
-      ExpressionAttributeValues: { ':o': targetOrgId, ':empty': '', ':unres': 'unresolved-', ':nullType': 'NULL', ':gen': generation },
+      UpdateExpression: generational
+        ? 'SET matchedOrgId = :o, matchedOrgLinkGeneration = :gen'   // R9: org+generation atomically, one write
+        : 'SET matchedOrgId = :o',                                   // legacy 3C shape, unchanged
+      ConditionExpression: generational
+        ? '(attribute_not_exists(matchedOrgId) OR attribute_type(matchedOrgId, :nullType) OR matchedOrgId = :empty OR begins_with(matchedOrgId, :unres)) OR (attribute_exists(matchedOrgLinkGeneration) AND matchedOrgLinkGeneration < :gen)'
+        : 'attribute_not_exists(matchedOrgId) OR attribute_type(matchedOrgId, :nullType) OR matchedOrgId = :empty OR begins_with(matchedOrgId, :unres)',   // exact 3C condition
+      ExpressionAttributeValues: generational
+        ? { ':o': targetOrgId, ':empty': '', ':unres': 'unresolved-', ':nullType': 'NULL', ':gen': generation }
+        : { ':o': targetOrgId, ':empty': '', ':unres': 'unresolved-', ':nullType': 'NULL' },
     }));
     return 'written';
   } catch (err) {
     if ((err as { name?: string }).name !== 'ConditionalCheckFailedException') throw err;
     const cur = (await docClient.send(new GetCommand({ TableName: TABLE_NAME(), Key: { PK: pk, SK: 'META' } }))).Item as Record<string, unknown> | undefined;
     const curGen = cur?.matchedOrgLinkGeneration as string | undefined;
-    if (curGen && curGen >= generation) return 'superseded';            // R8: newer generation already ruled
+    if (generational && curGen && curGen >= generation!) return 'superseded';   // R8: newer generation already ruled
     return (cur?.matchedOrgId as string | undefined) === targetOrgId ? 'already_set' : 'conflict';
   }
 }
 ```
-Decision logic: `superseded` counts as ok (like `already_set`); `conflict` unchanged. The audit call passes `generation` to `deterministicAuditId(..., generation)` and includes `generation` in `details`. Contact step (Task 7's API): call `upsertContact({..., linkGeneration: generation})`; `locked`/`superseded` outcomes are SUCCESS for the contact effect.
+Decision logic: `superseded` counts as ok (like `already_set`); `conflict` unchanged. When `generation` is present the audit call passes it to `deterministicAuditId(..., generation)` and includes it in `details`; when absent, the audit id is computed exactly as today (add a regression test pinning the legacy id for a fixed input). Contact step (Task 7's API): call `upsertContact({..., linkGeneration: generation})`; `locked`/`superseded` outcomes are SUCCESS for the contact effect. Add a test that a NO-generation call produces the identical UpdateCommand input as the current 3C code (snapshot the `.input`).
 
-- [ ] **Step 4: Merge side.** Read the located merge flow; where it re-points a record's `matchedOrgId`, extend that same `UpdateExpression` with `, matchedOrgLinkGeneration = :mergeGen` where `:mergeGen = generateUlid()` computed once per merge run (import from crm-api's `lib/ulid` — if cross-function import is awkward, copy the 20-line util into organization-api with a header comment naming the original). Add a test in the merge test file asserting the re-point write includes `matchedOrgLinkGeneration`.
+- [ ] **Step 4: Merge side.** Read the located merge flow; where it re-points a record's `matchedOrgId`, extend that same `UpdateExpression` with `, matchedOrgLinkGeneration = :mergeGen` where `:mergeGen = generateUlid()` computed once per merge run (import from crm-api's `lib/ulid` — if cross-function import is awkward, copy the 20-line util into organization-api with a header comment naming the original).
+  **Spec R10 note (plan-review R2 Critical 2 resolution):** the spec originally said merge "clears" the stamp; that was amended in the spec (same commit as this plan revision) to **re-stamp with a fresh ULID** — clearing would make the record generation-absent and claimable by an OLDER pending replay (`attribute_not_exists(...)` passes), re-pointing it back to the pre-merge org and breaking merge authority. Re-stamping makes every pre-merge pending generation `superseded`.
+  Tests in the merge test file: (a) the re-point write includes `matchedOrgLinkGeneration` in the SAME UpdateExpression (atomic); (b) end-to-end with Task 8's replay: merge re-stamps, then a replay carrying an OLDER generation returns `backfillStatus: 'superseded'` and the record keeps the merged org.
 
 - [ ] **Step 5: Run** replay tests + merge tests + tsc — PASS/clean.
 
@@ -893,15 +905,29 @@ export async function linkStructuredUnit(args: { representativeEventId: string; 
 ```
 Include the two small helpers in the same file: `buildMoveTransactPut` (the movedItem exactly as `manualMoveTimelineEvent` constructs it, wrapped as a `Put` with the R7 eligibility condition — extract the shared item-construction into an exported `buildMovedItem(event, targetOrgId, email, nowIso)` in `manualMoveTimelineEvent.ts` so the two paths cannot drift) and `isConditionalCancellation` (inspects `err.name === 'TransactionCanceledException'` and `err.CancellationReasons?.some(r => r.Code === 'ConditionalCheckFailed')` — the R7-deferred cancellation mapping).
 
-- [ ] **Step 4 (plan-review fix — compile order): migrate the handler resolver IN THIS TASK.** `handler.ts` calls `linkStructuredUnit` with the old args and would break this checkpoint. Update the resolver here (Task 13 then only handles schema + frontend):
+- [ ] **Step 4 (plan-review R2 fix — SECURE TRANSITIONAL ADAPTER, every commit deployable).** `handler.ts` calls `linkStructuredUnit` with the old args and would break this checkpoint; and the GraphQL schema keeps the LEGACY argument shape until Task 13 — so the handler must serve BOTH shapes in the window, or any deploy of an intermediate commit breaks the live admin UI. Add to `handler.ts`:
 ```ts
+  // TRANSITIONAL (removed in Task 13): serve the deployed legacy arg shape by deriving the
+  // representative SERVER-SIDE. The derived event still passes linkStructuredUnit's full
+  // validation (strong read, unresolved, eligibility, ALLOWED source), so this is no weaker
+  // than the deployed 3B contract it temporarily preserves — and it is admin-gated (Task 6).
+  async function deriveRepresentativeEventId(sourceType: string, sourceEntityId: string): Promise<string> {
+    const ALLOWED = new Set(['rfq', 'lead', 'order', 'quote', 'logistics']);   // legacy shapes only — gmail NEVER via legacy args
+    if (!ALLOWED.has(sourceType) || !sourceEntityId) throw new Error('invalid legacy link args');
+    const events = await queryUnitEvents(`unresolved-${sourceType}-${sourceEntityId}`);
+    if (events.length === 0) throw new Error('no unresolved events for legacy link args');
+    return events[0].id;
+  }
+
   linkStructuredUnit: async (e) => {
     requireAdmin(e);
-    const a = (e.arguments ?? {}) as { representativeEventId?: string; targetOrgId?: string };
-    return linkStructuredUnit({ representativeEventId: a.representativeEventId ?? '', targetOrgId: a.targetOrgId ?? '', operator: operatorOf(e) });
+    const a = (e.arguments ?? {}) as { representativeEventId?: string; sourceType?: string; sourceEntityId?: string; targetOrgId?: string };
+    const representativeEventId = a.representativeEventId
+      ?? await deriveRepresentativeEventId(a.sourceType ?? '', a.sourceEntityId ?? '');
+    return linkStructuredUnit({ representativeEventId, targetOrgId: a.targetOrgId ?? '', operator: operatorOf(e) });
   },
 ```
-Update the handler test's linkStructuredUnit dispatch case accordingly.
+(`queryUnitEvents` is exported from `linkStructuredUnit.ts` — confirm the actual unresolved unit-key format against the 3B queue code (`git grep -n "unresolved-" amplify/functions/crm-api/lib/` ) and use THAT format; do not guess.) Handler tests: (a) new-shape args dispatch directly; (b) legacy-shape args derive then dispatch; (c) legacy shape with `sourceType: 'gmail'` throws (gmail units exist only after this plan, so no legacy caller can name them).
 
 - [ ] **Step 5: Run** the reworked file suite + `manualMoveTimelineEvent.test.ts` (its condition gains the eligibility clauses — update its assertions) + `handler.test.ts` + tsc — PASS/clean.
 
@@ -1006,9 +1032,9 @@ git commit -m "feat(comms-p1): drainer v2 — generation draining, building-agin
 - Modify: `amplify/data/resource.ts`, `amplify/functions/crm-api/handler.ts`, `src/services/organizationAdminService.ts`, `src/pages/admin/NeedsLinkingPage.tsx`, `src/components/admin/needslinking/UnitList.tsx` + `UnitDetail.tsx` (as needed), `src/hooks/useNeedsLinkingQueue.ts` (types flow through)
 - Test: `src/pages/admin/NeedsLinkingPage.test.tsx` (update), handler test (update)
 
-- [ ] **Step 1: Failing tests.** Handler: `linkStructuredUnit` resolver forwards `{ representativeEventId, targetOrgId, operator }` (no sourceType/sourceEntityId args). Frontend: the page's link action calls the service with the unit's `representativeEventId`.
+- [ ] **Step 1: Failing tests.** Handler: `linkStructuredUnit` resolver forwards `{ representativeEventId, targetOrgId, operator }` and legacy-shape args (sourceType/sourceEntityId, no representativeEventId) now **throw** — the Task-10 transitional adapter is deleted here. Frontend: the page's link action calls the service with the unit's `representativeEventId`.
 
-- [ ] **Step 2: Implement.** `data/resource.ts`: `NeedsLinkingItem` gains `representativeEventId: a.string().required()`; `linkStructuredUnit` mutation arguments become `{ representativeEventId: a.string().required(), targetOrgId: a.string().required() }`. Handler resolver maps accordingly (+ keeps `requireAdmin`). Service `linkStructuredUnit(args: { representativeEventId: string; targetOrgId: string })`. Page/`handleLink` passes `unit.representativeEventId` for structured units (analytics path unchanged). Update the page/unit-list tests' fixtures.
+- [ ] **Step 2: Implement.** `data/resource.ts`: `NeedsLinkingItem` gains `representativeEventId: a.string().required()`; `linkStructuredUnit` mutation arguments become `{ representativeEventId: a.string().required(), targetOrgId: a.string().required() }`. Handler: **delete `deriveRepresentativeEventId` and the legacy branch** (schema + UI now speak the new shape, so the transitional window closes in the same commit). Service `linkStructuredUnit(args: { representativeEventId: string; targetOrgId: string })`. Page/`handleLink` passes `unit.representativeEventId` for structured units (analytics path unchanged). Update the page/unit-list tests' fixtures and delete the adapter's handler tests (replaced by the throw test).
 
 - [ ] **Step 3: Run** handler + frontend needslinking tests + `npx tsc --noEmit` (both) + eslint on changed files — PASS/clean.
 
@@ -1058,10 +1084,58 @@ it('two concurrent links: second transaction cancels on the move condition and c
   expect(a.moved).toBe(1);
   expect(b.moved).toBe(0);
 });
-// Scenario 4 — cross-writer: covered by executable tests in contactStore.test.ts (non-generational CAS
-// retry, Task 7) and the merge test (Task 8). Re-run them here as part of this suite's command.
 ```
-(Reuse the Task-10 harness helpers via a small shared `linkTestHarness.ts` in the same dir if duplication exceeds ~30 lines.)
+**Plus these scenarios (plan-review R2 — each fully written in this file, using a STATEFUL fake store):** build `linkTestHarness.ts` with an in-memory item map whose docClient mock actually APPLIES Put/Update/Delete/TransactWrite semantics **including ConditionExpression evaluation for the specific conditions used in this plan** (attribute_not_exists / equality / `< :gen` / begins_with) — assertions then check RESULTING STATE, not just call shapes:
+```ts
+// Scenario 4 — stateful transaction atomicity: after a cancelled transaction, the STORE holds
+// neither the moved event nor the marker (not merely "sealMarker wasn't called").
+it('cancelled transaction leaves the store untouched', async () => {
+  const store = seedStore([unresolvedEvent(ev1)]);
+  linkAgainstStore(store, { representativeEventId: ev1.id, targetOrgId: 'acme.com' });
+  preOccupyEvent(store, ev1.id);                       // makes the move condition fail
+  await linkStructuredUnit({ representativeEventId: ev1.id, targetOrgId: 'acme.com', operator: 'op' });
+  expect(store.get(`TLEVENT#${ev1.id}`).orgId).not.toBe('acme.com');
+  expect(store.keys().filter(k => k.startsWith('CRM_REPAIR#'))).toHaveLength(0);
+});
+// Scenario 5 — OVERLAPPING link + drainer: linker seals building→pending mid-flight while an aged
+// promotion already claimed it; the version fence makes exactly one owner win in the STORE.
+it('seal vs promoteAbandonedBuilding: one version-fenced winner, no duplicate pending markers', async () => {
+  const store = seedStore([unresolvedEvent(ev1)]);
+  const marker = putBuildingMarker(store, { unitKey: unit(ev1), version: 1 });
+  promoteInStore(store, marker);                        // drainer promotes: version 1→2, building→pending
+  const seal = await sealAgainstStore(store, { ...marker, version: 1 });   // linker's stale handle
+  expect(seal.lost).toBe(true);
+  expect(store.markersFor(unit(ev1)).filter(m => m.status === 'pending')).toHaveLength(1);
+});
+// Scenario 6 — >100-event unit: movedCount exact, affectedEventIdsSample capped at 100, replay
+// completes from the marker alone.
+it('130-event unit: full move, bounded sample, marker-driven replay converges', async () => {
+  const events = Array.from({ length: 130 }, (_, i) => unresolvedEvent({ id: `tev-${i}` }));
+  const store = seedStore(events);
+  const out = await linkAgainstStore(store, { representativeEventId: 'tev-0', targetOrgId: 'acme.com' });
+  expect(out.moved).toBe(130);
+  const m = store.markersFor(unit(events[0]))[0];
+  expect(m.movedCount).toBe(130);
+  expect(m.affectedEventIdsSample.length).toBeLessThanOrEqual(100);
+});
+// Scenario 7 — merge vs stale replay (spec R10): merge re-stamps a fresh generation; an OLDER
+// pending replay afterwards lands superseded and the record keeps the merged org.
+it('post-merge older replay is superseded in the store', async () => {
+  const store = seedStore([rfqRecord({ pk: 'RFQ#1', matchedOrgId: 'a.com', matchedOrgLinkGeneration: OLD_GEN })]);
+  mergeInStore(store, { from: 'a.com', to: 'b.com' });   // re-points + re-stamps MERGE_GEN > OLD_GEN
+  const r = await replayAgainstStore(store, { targetOrgId: 'a.com', generation: OLD_GEN, backfillPk: 'RFQ#1' });
+  expect(r.backfillStatus).toBe('superseded');
+  expect(store.get('RFQ#1').matchedOrgId).toBe('b.com');
+});
+// Scenario 8 — RFQ/order regression: a NO-generation legacy replay against the store produces the
+// EXACT pre-plan writes (pin the UpdateCommand input snapshot) and existing rfq/order link flows
+// still converge end-to-end (emit → queue → link → backfill 'written').
+it('legacy rfq and order flows are byte-identical and still converge', async () => { /* full body per above */ });
+// Scenario 9 — cross-writer: non-generational upsertContact between two generational writes never
+// resurrects the older org (STORE-level; complements contactStore.test.ts's call-level tests).
+it('interleaved non-generational contact write preserves the newest generation+org pair', async () => { /* full body: genA write → non-gen write → genB write → assert store contact has orgB+genB */ });
+```
+(The harness is ~150 lines; it is the same in-memory-table idea Part 2's chain test uses — keep it reusable from `amplify/functions/crm-api/lib/link/linkTestHarness.ts`.)
 
 - [ ] **Step 2: Run** `npx vitest run amplify/functions/crm-api/lib/link/linkStructuredUnit.adversarial.test.ts amplify/functions/crm-api/lib/contactStore.test.ts amplify/functions/crm-api/lib/repair/reconcileRepair.test.ts` — ALL pass.
 
@@ -1077,14 +1151,22 @@ git commit -m "test(comms-p1): executable adversarial suite (transaction, crash,
 
 - [ ] **Step 1:** `npx vitest run amplify/functions/crm-api` — ALL pass (expect ≈280+; note count).
 - [ ] **Step 2:** `npx vitest run src/pages/admin/NeedsLinkingPage.test.tsx src/components/admin/needslinking src/hooks` — pass.
-- [ ] **Step 3 (plan-review fix — do NOT chain with `&&`; the app tsc exits non-zero on the pre-existing error and would mask the backend check):**
+- [ ] **Step 3 (plan-review fix — separate commands, NO `&&` chaining, NO `|| true` masking):**
 ```bash
-npx tsc --noEmit -p amplify/tsconfig.json          # expected: clean, exit 0
-npx tsc --noEmit 2>&1 | grep -v "main.tsx" || true # expected: no output besides the filtered pre-existing main.tsx line
+npx tsc --noEmit -p amplify/tsconfig.json
 ```
+Expected: clean, exit 0. Any output = a failure this plan introduced — fix it.
+```bash
+npx tsc --noEmit 2>&1 | grep -cv "main.tsx"
+```
+Expected output: `0` (the ONLY diagnostics are the pre-existing `main.tsx` line(s)). `grep -c` always exits usefully here because we assert on its printed count, not its exit code — a nonzero count means new app-side errors: fix them.
 - [ ] **Step 4:** `npx eslint` across every file this plan touched — clean.
-- [ ] **Step 5:** Re-check the 10 header invariants against the diff; commit any fixups scoped to touched files:
+- [ ] **Step 5:** Re-check the 10 header invariants against the diff. If (and only if) fixups were needed, stage the specific touched files and commit:
 ```bash
-git commit -m "chore(comms-p1): green-bar checkpoint" || echo "nothing to commit"
+git status --short   # decide: any fixup changes?
 ```
+```bash
+git commit -m "chore(comms-p1): green-bar checkpoint"
+```
+(Skip the commit when `git status` shows nothing — do NOT suffix `|| echo`, which would mask a real commit failure.)
 Report test counts + invariant confirmation. Part 1 is then PR-able on its own (pure hardening — deployable before any Gmail code exists).

@@ -203,7 +203,9 @@ describe('gmailClient', () => {
   it('classifyGmailError: expiry ONLY for (historyList, 404, parsed NOT_FOUND/notFound reason); everything else classified strictly', () => {
     expect(classifyGmailError('historyList', 404, { error: { status: 'NOT_FOUND' } })).toBe('history_expired');
     expect(classifyGmailError('historyList', 404, { error: { errors: [{ reason: 'notFound' }] } })).toBe('history_expired');
+    expect(classifyGmailError('historyList', 404, { error: { details: [{ '@type': 'type.googleapis.com/google.rpc.ErrorInfo', reason: 'notFound' }] } })).toBe('history_expired');   // plan-review R2: details[] shape
     expect(classifyGmailError('historyList', 404, {})).toBe('not_found');            // 404 WITHOUT the parsed reason ≠ expiry
+    expect(classifyGmailError('historyList', 404, { error: { details: [{ reason: 'quotaExceeded' }] } })).toBe('not_found');   // wrong details reason ≠ expiry
     expect(classifyGmailError('messagesGet', 404, { error: { status: 'NOT_FOUND' } })).toBe('not_found'); // wrong endpoint ≠ expiry
     expect(classifyGmailError('historyList', 429, {})).toBe('rate_limited');
     expect(classifyGmailError('messagesGet', 500, {})).toBe('transient');
@@ -230,9 +232,12 @@ export type GmailErrorClass = 'history_expired' | 'not_found' | 'rate_limited' |
 
 export function classifyGmailError(endpoint: GmailEndpoint, status: number, body: unknown): GmailErrorClass {
   // plan-review fix: expiry requires the PARSED Google reason, not the status code alone —
-  // (endpoint === historyList) AND (404) AND (error.status NOT_FOUND or errors[].reason notFound).
-  const err = (body as { error?: { status?: string; errors?: { reason?: string }[] } } | undefined)?.error;
-  const looksNotFound = err?.status === 'NOT_FOUND' || err?.errors?.some((e) => e.reason === 'notFound') === true;
+  // (endpoint === historyList) AND (404) AND a notFound reason from ANY of the three shapes Google
+  // uses: legacy error.status, legacy error.errors[].reason, or google.rpc error.details[].reason.
+  const err = (body as { error?: { status?: string; errors?: { reason?: string }[]; details?: { reason?: string; ['@type']?: string }[] } } | undefined)?.error;
+  const looksNotFound = err?.status === 'NOT_FOUND'
+    || err?.errors?.some((e) => e.reason === 'notFound') === true
+    || err?.details?.some((d) => d.reason === 'notFound' || d.reason === 'NOT_FOUND') === true;
   if (endpoint === 'historyList' && status === 404 && looksNotFound) return 'history_expired';  // the ONLY re-anchor signal
   if (status === 404) return 'not_found';
   if (status === 429) return 'rate_limited';
@@ -803,9 +808,16 @@ git commit -m "feat(comms-p2): email rendering — schema fields, mapper case, c
 backend.gmailSync.addEnvironment('GMAIL_SA_SECRET_ARN', GMAIL_SA_SECRET_ARN);       // const near the top; the secret is created manually (runbook) — reference by ARN
 backend.gmailSync.addEnvironment('MAILBOXES', 'info@ninescrolls.com');
 backend.gmailSync.addEnvironment('INTELLIGENCE_TABLE', intelligenceTable.tableName);
-backend.gmailSync.resources.lambda.addToRolePolicy(new PolicyStatement({
-  effect: Effect.ALLOW, actions: ['secretsmanager:GetSecretValue'], resources: [GMAIL_SA_SECRET_ARN],
-}));
+// plan-review R2 — EXACT Secrets Manager pattern: CDK import + grantRead (adds GetSecretValue
+// + DescribeSecret, and kms:Decrypt automatically IF the secret ever moves to a CMK).
+// Import into the gmail-sync stack (Stack.of the lambda) so no cross-stack edge is created.
+// GMAIL_SA_SECRET_ARN must be the COMPLETE arn including the 6-char suffix
+// (arn:aws:secretsmanager:us-east-2:<acct>:secret:<name>-AbCdEf) — fromSecretCompleteArn
+// requires it; the runbook records the full ARN at secret creation.
+import { Secret } from 'aws-cdk-lib/aws-secretsmanager';                             // (top of file)
+const gmailSyncStack = Stack.of(backend.gmailSync.resources.lambda);                 // hoisted — also used by the cron below
+const gmailSaSecret = Secret.fromSecretCompleteArn(gmailSyncStack, 'GmailSaSecret', GMAIL_SA_SECRET_ARN);
+gmailSaSecret.grantRead(backend.gmailSync.resources.lambda);
 backend.gmailSync.resources.lambda.addToRolePolicy(new PolicyStatement({
   effect: Effect.ALLOW,
   actions: ['dynamodb:GetItem', 'dynamodb:PutItem', 'dynamodb:UpdateItem'],
@@ -818,7 +830,7 @@ backend.gmailSync.resources.lambda.addToRolePolicy(new PolicyStatement({
 }));
 backend.gmailSync.addEnvironment('CRM_API_FUNCTION_NAME', backend.crmApi.resources.lambda.functionName);
 if (!isSandbox) {
-  const gmailSyncStack = Stack.of(backend.gmailSync.resources.lambda);
+  // gmailSyncStack hoisted above (shared with the secret import)
   new Rule(gmailSyncStack, 'GmailSyncRule', {
     schedule: Schedule.cron({ minute: '*/10', hour: '*', day: '*', month: '*', year: '*' }),
     targets: [new LambdaFunctionTarget(backend.gmailSync.resources.lambda, {
@@ -846,7 +858,11 @@ describe('gmail-sync IAM source contract', () => {
   });
 });
 ```
-  2. **Console synth** — the deploy pipeline is the binding structural check (nested-stack cycles fail there; watch the first build).
+  2. **Reproducible pre-merge synth (plan-review R2)** — run the sandbox deploy once from the worktree:
+```bash
+npx ampx sandbox --once
+```
+CDK synthesis runs LOCALLY before any deploy, so structural failures — including the nested-stack-cycle class that broke deploys twice before — fail fast on this command pre-merge. (The sandbox cron is `isSandbox`-gated, so no schedules start firing; requires live AWS creds — if SSO is expired, ask the user to re-auth rather than skipping.) The Amplify Console build remains the final binding gate on merge, but it is no longer the FIRST place a synth error can appear.
   3. **Post-deploy IAM assertion** (runbook, exact commands):
 ```bash
 ROLE=$(aws lambda get-function-configuration --function-name <gmail-sync fn name> --query 'Role' --output text | awk -F/ '{print $NF}')
@@ -857,26 +873,32 @@ done
 
 - [ ] **Step 3: Runbook** — write `docs/runbooks/2026-07-09-gmail-sync-setup.md`: dedicated GCP project + SA creation; enable DWD; Admin-console scope authorization for the SA client-id (`gmail.readonly`); create the Secrets Manager secret (name + ARN → `GMAIL_SA_SECRET_ARN`); CloudTrail alarm on `GetSecretValue`; key-rotation cadence; §0 precondition re-check; watermark/backfill-state reset procedure (delete the `GMAIL_SYNC#<mailbox>` item → next run re-seeds); poison-mailbox alarm response; backfill window `N` default 90.
 
-- [ ] **Step 4:** tsc clean; commit:
+- [ ] **Step 4:** tsc clean; run the new source-contract test (`npx vitest run amplify/backend.gmailSync.test.ts` — PASS); commit **including the test file** (plan-review R2: it must be staged, not just written):
 ```bash
-git add amplify/backend.ts docs/runbooks/2026-07-09-gmail-sync-setup.md
-git commit -m "feat(comms-p2): gmail-sync infra — secret, LeadingKeys IAM, cron, env, runbook"
+git add amplify/backend.ts amplify/backend.gmailSync.test.ts docs/runbooks/2026-07-09-gmail-sync-setup.md
+git commit -m "feat(comms-p2): gmail-sync infra — secret grant, LeadingKeys IAM, cron, env, runbook + source-contract test"
 ```
 
 ---
 
-### Task 10: E2E chain test (executable — plan-review fix)
+### Task 10: Cross-part integration chain test (executable — plan-review fix)
 
 **Files:**
-- Create: `amplify/functions/crm-api/lib/link/gmailLinkChain.e2e.test.ts`
+- Create: `amplify/functions/crm-api/lib/link/gmailLinkChain.integration.test.ts`
 
-- [ ] **Step 1: Write the executable chain test** (module-mock in-memory DDB harness; the R3-blocker-1 path end-to-end against the REAL Part-1 functions — mock only `docClient.send` with a stateful in-memory table):
+**Honest scope (plan-review R2):** this is an INTEGRATION test over the real code chain with an in-memory table fake — it is NOT DynamoDB E2E coverage. What the fake cannot prove (real ConditionExpression grammar acceptance, transact semantics, IAM): covered by (a) the fake evaluating the exact condition forms this plan uses (shared harness from Part 1 Task 14), and (b) the post-deploy runbook verification (first real sync + timeline spot-check). Say exactly this in the test file's header comment.
+
+- [ ] **Step 1: Write the executable chain test** — the chain starts at a RAW Gmail API message and crosses the real gmail-sync boundary (plan-review R2: mapper/projector included, not just crm-api internals): `mapMessage` (real, Task 3) → `projectMessage` (real, Task 4) with its `invokeCrmApi` transport mocked to call the REAL crm-api `emitTimelineEvent` against the in-memory table → `needsLinkingQueue` → `linkStructuredUnit` → Contact → second message auto-resolving:
 ```ts
-// In-memory single-table fake driving REAL emitTimelineEvent → needsLinkingQueue → linkStructuredUnit
-// → (contact created) → a SECOND emit auto-resolving via contact_email_exact.
-it('gmail chain: unresolved → queue unit → link by representative → Contact → future exact resolution', async () => {
-  // 1. emit a gmail event for bob@gmail.com (free-mail → resolves unresolved-gmail-bob@gmail.com)
-  await emitTimelineEvent(gmailEmitArgs('m1', 'bob@gmail.com'));
+// RAW Gmail metadata message → REAL mapMessage → REAL projectMessage (transport mocked to the
+// REAL emitTimelineEvent) → needsLinkingQueue → linkStructuredUnit → Contact →
+// a SECOND message auto-resolving via contact_email_exact.
+it('gmail chain: raw message → mapped → emitted unresolved → queue unit → link → Contact → exact resolution', async () => {
+  // 0. the real mapper+projector run on a raw metadata-format message fixture
+  const mapped = mapMessage(rawGmailMetadataMessage('m1', { from: 'Bob <bob@gmail.com>', to: 'info@ninescrolls.com' }), 'info@ninescrolls.com');
+  expect(mapped.kind).toBe('ingest');                       // not skipped by the alias/label rules
+  await projectMessage(mapped, invokeCrmApiToRealEmit);     // transport mock → REAL emitTimelineEvent
+  // 1. the emitted gmail event resolved to the collapse partition (free-mail → unresolved-gmail-<email>)
   expect(table.get('TLEVENT#' + idOf('m1')).orgId).toBe('unresolved-gmail-bob@gmail.com');
   // 2. queue collapses to ONE unit with a representativeEventId
   const q = await needsLinkingQueue({});
@@ -890,20 +912,21 @@ it('gmail chain: unresolved → queue unit → link by representative → Contac
   const contact = table.byGsi4('EMAIL#bob@gmail.com');
   expect(contact.orgId).toBe('acme.com');
   expect(contact.lastLinkGeneration).toMatch(/^[0-9A-HJKMNP-TV-Z]{26}$/);
-  // 4. a SUBSEQUENT email from the same address auto-resolves via contact_email_exact
-  await emitTimelineEvent(gmailEmitArgs('m2', 'bob@gmail.com'));
+  // 4. a SUBSEQUENT raw message from the same address flows mapper→projector→emit and auto-resolves
+  const mapped2 = mapMessage(rawGmailMetadataMessage('m2', { from: 'Bob <bob@gmail.com>', to: 'sales@ninescrolls.com' }), 'info@ninescrolls.com');
+  await projectMessage(mapped2, invokeCrmApiToRealEmit);
   const ev2 = table.get('TLEVENT#' + idOf('m2'));
   expect(ev2.orgId).toBe('acme.com');
   expect(ev2.resolutionReason).toBe('contact_email_exact');
 });
 ```
-Build the small in-memory `table` harness (Get/Put/Update/Query/TransactWrite against a Map keyed on PK|SK, with a GSI1/GSI2/GSI4 secondary map — ~80 lines, lives in the test file; `orgExists` mocked true; rollup/audit fns pass through).
+Harness: **reuse Part 1 Task 14's `linkTestHarness.ts`** (the stateful in-memory table with ConditionExpression evaluation) rather than a second local fake — extend it with the GSI4 email lookup if Task 14 didn't need it. `invokeCrmApiToRealEmit` is a ~10-line adapter: it takes the projector's crm-api payload and calls the real `emitTimelineEvent(payload)` directly (bypassing Lambda transport only). `orgExists` mocked true; rollup/audit fns pass through. Fixture `rawGmailMetadataMessage` returns a realistic `format=metadata` API shape (id, threadId, labelIds, `payload.headers` array) — copy a real (redacted) response shape from the Gmail API docs.
 
-- [ ] **Step 2: Run** `npx vitest run amplify/functions/crm-api/lib/link/gmailLinkChain.e2e.test.ts` — PASS.
+- [ ] **Step 2: Run** `npx vitest run amplify/functions/crm-api/lib/link/gmailLinkChain.integration.test.ts` — PASS.
 - [ ] **Step 3: Commit**
 ```bash
-git add amplify/functions/crm-api/lib/link/gmailLinkChain.e2e.test.ts
-git commit -m "test(comms-p2): executable E2E chain — unresolved → queue → link → Contact → exact resolution"
+git add amplify/functions/crm-api/lib/link/gmailLinkChain.integration.test.ts amplify/functions/crm-api/lib/link/linkTestHarness.ts
+git commit -m "test(comms-p2): executable integration chain — raw message → map → project → emit → link → Contact → exact resolution"
 ```
 
 ---
@@ -912,11 +935,15 @@ git commit -m "test(comms-p2): executable E2E chain — unresolved → queue →
 
 - [ ] **Step 1:** `npx vitest run amplify/functions/gmail-sync amplify/functions/crm-api` — ALL pass.
 - [ ] **Step 2:** frontend timeline + needslinking tests — pass.
-- [ ] **Step 3 (unchained tsc — see Part 1 Task 15):**
+- [ ] **Step 3 (unchained tsc, no masking — same form as Part 1 Task 15):**
 ```bash
-npx tsc --noEmit -p amplify/tsconfig.json          # expected: clean, exit 0
-npx tsc --noEmit 2>&1 | grep -v "main.tsx" || true # expected: nothing beyond the filtered pre-existing line
+npx tsc --noEmit -p amplify/tsconfig.json
 ```
+Expected: clean, exit 0.
+```bash
+npx tsc --noEmit 2>&1 | grep -cv "main.tsx"
+```
+Expected printed count: `0` (only the pre-existing `main.tsx` diagnostics exist). A nonzero count = new errors: fix them.
 eslint clean on all touched files.
 - [ ] **Step 4:** Re-verify the 10 header invariants against the full Part-2 diff.
 - [ ] **Step 5:** Commit fixups scoped to touched files; report counts + invariant confirmation. Post-merge activation (PR body): runbook execution → first `gmail.sync.summary` (backfill) → spot-check an org timeline shows email rows → verify a Sent item produced outbound (spec R1/M4 spike note).
