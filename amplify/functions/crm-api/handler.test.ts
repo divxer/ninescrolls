@@ -77,7 +77,7 @@ describe('handler — timelineByOrg AppSync resolver', () => {
       items: [{ id: 'tev-1', occurredAt: '2026-03-01T00:00:00Z', source: 'order', kind: 'order_created', summary: 'Order created — X', resolutionStatus: 'resolved', resolutionReason: 'existing_matchedOrgId', confidence: 1, isInternalOnly: false, sourceEntityType: 'order', sourceEntityId: 'ord-1', payload: { productModel: 'X' } }],
       nextToken: 'TOK',
     });
-    const res = await handler({ info: { fieldName: 'timelineByOrg' }, arguments: { orgId: 'acme.com', limit: 10, includeInternalOnly: true } } as never) as { items: unknown[]; nextToken?: string };
+    const res = await handler({ info: { fieldName: 'timelineByOrg' }, arguments: { orgId: 'acme.com', limit: 10, includeInternalOnly: true }, identity: { claims: { 'cognito:groups': ['admin'] } } } as never) as { items: unknown[]; nextToken?: string };
     expect(timelineByOrgMock).toHaveBeenCalledWith({ orgId: 'acme.com', limit: 10, nextToken: undefined, includeInternalOnly: true });
     expect(res.nextToken).toBe('TOK');
     expect(res.items[0]).toMatchObject({ id: 'tev-1', sourceFilterGroup: 'order', tone: 'confirmed', primaryLabel: 'Order created — X', productModel: 'X' });
@@ -102,19 +102,19 @@ describe('handler — 3B resolvers', () => {
 
   it('derives operator server-side from identity, ignores any client operator arg', async () => {
     linkStructuredMock.mockResolvedValueOnce({ moved: 1 });
-    await handler({ info: { fieldName: 'linkStructuredUnit' }, arguments: { sourceType: 'rfq', sourceEntityId: 'r1', targetOrgId: 'acme.com', operator: 'ATTACKER' }, identity: { claims: { email: 'admin@x.com' } } } as never);
+    await handler({ info: { fieldName: 'linkStructuredUnit' }, arguments: { sourceType: 'rfq', sourceEntityId: 'r1', targetOrgId: 'acme.com', operator: 'ATTACKER' }, identity: { claims: { email: 'admin@x.com', 'cognito:groups': ['admin'] } } } as never);
     expect(linkStructuredMock).toHaveBeenCalledWith({ sourceType: 'rfq', sourceEntityId: 'r1', targetOrgId: 'acme.com', operator: 'admin@x.com' });
   });
 
   it('falls back to identity.sub then unknown', async () => {
     linkVisitorMock.mockResolvedValueOnce({ sessionsResolved: 2 });
-    await handler({ info: { fieldName: 'linkVisitor' }, arguments: { visitorId: 'v1', targetOrgId: 'acme.com' }, identity: { sub: 'sub-1' } } as never);
+    await handler({ info: { fieldName: 'linkVisitor' }, arguments: { visitorId: 'v1', targetOrgId: 'acme.com' }, identity: { sub: 'sub-1', groups: ['admin'] } } as never);
     expect(linkVisitorMock).toHaveBeenCalledWith({ visitorId: 'v1', targetOrgId: 'acme.com', operator: 'sub-1' });
   });
 
   it('routes needsLinkingQueue', async () => {
     queueMock.mockResolvedValueOnce({ items: [], nextToken: null });
-    const r = await handler({ info: { fieldName: 'needsLinkingQueue' }, arguments: { limit: 25 } } as never);
+    const r = await handler({ info: { fieldName: 'needsLinkingQueue' }, arguments: { limit: 25 }, identity: { claims: { 'cognito:groups': ['admin'] } } } as never);
     expect(queueMock).toHaveBeenCalledWith({ limit: 25, nextToken: undefined });
     expect(r).toEqual({ items: [], nextToken: null });
   });
@@ -136,11 +136,55 @@ describe('handler — 3C repair/health', () => {
     expect(reconcileRepair).toHaveBeenCalledWith({ limit: 50 });
   });
   it('runCrmRepair mutation dispatches to reconcileRepair', async () => {
-    await handler({ info: { fieldName: 'runCrmRepair' }, arguments: { limit: 10 }, identity: { claims: { email: 'a@x' } } } as never);
+    await handler({ info: { fieldName: 'runCrmRepair' }, arguments: { limit: 10 }, identity: { claims: { email: 'a@x', 'cognito:groups': ['admin'] } } } as never);
     expect(reconcileRepair).toHaveBeenCalledWith({ limit: 10 });
   });
   it('crmHealth query dispatches to crmHealth()', async () => {
-    await handler({ info: { fieldName: 'crmHealth' }, arguments: {} } as never);
+    await handler({ info: { fieldName: 'crmHealth' }, arguments: {}, identity: { claims: { 'cognito:groups': ['admin'] } } } as never);
     expect(crmHealthFn).toHaveBeenCalled();
+  });
+});
+
+// Task 6 (spec R6/blocker-1): admin-group guard must run BEFORE any of these six resolvers touch
+// their lib fn. NOTE for Task 13: acknowledgeMergeRecon will become the seventh guarded entry.
+function adminArgsFor(fieldName: string): Record<string, unknown> {
+  switch (fieldName) {
+    case 'timelineByOrg': return { orgId: 'acme.com' };
+    case 'needsLinkingQueue': return {};
+    case 'linkStructuredUnit': return { sourceType: 'rfq', sourceEntityId: 'r1', targetOrgId: 'acme.com' };
+    case 'linkVisitor': return { visitorId: 'v1', targetOrgId: 'acme.com' };
+    case 'crmHealth': return {};
+    case 'runCrmRepair': return { limit: 10 };
+    default: return {};
+  }
+}
+
+const GUARDED: Array<[string, () => ReturnType<typeof vi.fn>]> = [
+  ['timelineByOrg', () => timelineByOrgMock], ['needsLinkingQueue', () => queueMock],
+  ['linkStructuredUnit', () => linkStructuredMock], ['linkVisitor', () => linkVisitorMock],
+  ['crmHealth', () => crmHealthFn], ['runCrmRepair', () => reconcileRepair],
+];
+
+describe.each(GUARDED)('authz on %s', (fieldName, target) => {
+  beforeEach(() => {
+    timelineByOrgMock.mockReset();
+    queueMock.mockReset();
+    linkStructuredMock.mockReset();
+    linkVisitorMock.mockReset();
+    crmHealthFn.mockReset();
+    reconcileRepair.mockReset();
+  });
+
+  it('missing groups → rejected, lib fn NOT called', async () => {
+    await expect(handler({ info: { fieldName }, arguments: {}, identity: { claims: {} } } as never)).rejects.toThrow(/admin/i);
+    expect(target()).not.toHaveBeenCalled();
+  });
+  it('wrong group → rejected, lib fn NOT called', async () => {
+    await expect(handler({ info: { fieldName }, arguments: {}, identity: { claims: { 'cognito:groups': ['staff'] } } } as never)).rejects.toThrow(/admin/i);
+    expect(target()).not.toHaveBeenCalled();
+  });
+  it('admin group → passes the guard (lib fn called)', async () => {
+    await handler({ info: { fieldName }, arguments: adminArgsFor(fieldName), identity: { claims: { 'cognito:groups': ['admin'] } } } as never).catch(() => {});
+    expect(target()).toHaveBeenCalled();
   });
 });
