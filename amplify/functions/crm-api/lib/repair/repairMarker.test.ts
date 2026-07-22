@@ -6,6 +6,7 @@ import {
   buildStructuredMarkerPut, structuredMarkerKey, accumulateMarker, sealMarker, deleteRepairMarkerFenced,
   queryBuildingOlderThan, promoteAbandonedBuilding, markStuckV2, queryStuckByReason, republishStuckFenced,
   bumpAttemptFenced, SAMPLE_CAP, type StructuredMarkerV2,
+  mergeReconKey, acknowledgeMergeReconFenced,
 } from './repairMarker';
 
 beforeEach(() => { send.mockReset(); send.mockResolvedValue({}); });
@@ -208,5 +209,52 @@ describe('repairMarker v2 (structured)', () => {
     send.mockRejectedValueOnce(Object.assign(new Error('ccfe'), { name: 'ConditionalCheckFailedException' }));
     const r = await bumpAttemptFenced(markerAt(2), 'boom', 'tNow');
     expect(r.lost).toBe(true);
+  });
+});
+
+describe('mergeReconKey / acknowledgeMergeReconFenced (Task 13, R9)', () => {
+  it('mergeReconKey builds the PK/SK pair matching organization-api\'s convention', () => {
+    expect(mergeReconKey('src.com', 'tgt.com')).toEqual({ PK: 'MERGE_RECON#src.com', SK: 'TO#tgt.com' });
+  });
+
+  it('strong-reads the marker, then a fenced flip needs_review→acknowledged with the server-derived actor', async () => {
+    send.mockResolvedValueOnce({ Item: { version: 3, state: 'needs_review' } }); // Get
+    send.mockResolvedValueOnce({}); // Update
+    const r = await acknowledgeMergeReconFenced('src.com', 'tgt.com', 'admin@x.com');
+    expect(r).toEqual({ ok: true });
+
+    const getCall = send.mock.calls[0][0].input;
+    expect(getCall.Key).toEqual({ PK: 'MERGE_RECON#src.com', SK: 'TO#tgt.com' });
+    expect(getCall.ConsistentRead).toBe(true);
+
+    const u = send.mock.calls[1][0].input;
+    expect(u.Key).toEqual({ PK: 'MERGE_RECON#src.com', SK: 'TO#tgt.com' });
+    expect(u.ConditionExpression).toBe('#st = :review AND version = :v');
+    expect(u.ExpressionAttributeValues[':v']).toBe(3);
+    expect(u.ExpressionAttributeValues[':review']).toBe('needs_review');
+    expect(u.ExpressionAttributeValues[':ack']).toBe('acknowledged');
+    expect(u.ExpressionAttributeValues[':ackPk']).toBe('MERGE_RECON#acknowledged'); // proves exclusion from the needs_review GSI1 partition crmHealth queries
+    expect(u.ExpressionAttributeValues[':actor']).toBe('admin@x.com');
+    expect(u.UpdateExpression).toContain('version = version + :one');
+  });
+
+  it('missing marker ⇒ {ok:false, notFound:true}, no write attempted', async () => {
+    send.mockResolvedValueOnce({}); // Get: no Item
+    const r = await acknowledgeMergeReconFenced('src.com', 'tgt.com', 'admin@x.com');
+    expect(r).toEqual({ ok: false, notFound: true });
+    expect(send).toHaveBeenCalledTimes(1); // only the Get — no Update
+  });
+
+  it('lost version fence (raced acknowledge/re-probe) ⇒ {ok:false, raced:true}, does not throw', async () => {
+    send.mockResolvedValueOnce({ Item: { version: 5, state: 'needs_review' } }); // Get
+    send.mockRejectedValueOnce(Object.assign(new Error('ccfe'), { name: 'ConditionalCheckFailedException' })); // Update races
+    const r = await acknowledgeMergeReconFenced('src.com', 'tgt.com', 'admin@x.com');
+    expect(r).toEqual({ ok: false, raced: true });
+  });
+
+  it('a non-CCFE write failure propagates (not swallowed as raced)', async () => {
+    send.mockResolvedValueOnce({ Item: { version: 1, state: 'needs_review' } });
+    send.mockRejectedValueOnce(new Error('network blip'));
+    await expect(acknowledgeMergeReconFenced('src.com', 'tgt.com', 'admin@x.com')).rejects.toThrow('network blip');
   });
 });

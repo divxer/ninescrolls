@@ -1,4 +1,4 @@
-import { PutCommand, DeleteCommand, UpdateCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
+import { GetCommand, PutCommand, DeleteCommand, UpdateCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient, TABLE_NAME } from '../dynamodb';
 
 export type RepairUnitType = 'structured' | 'analytics';
@@ -233,4 +233,44 @@ export async function bumpAttemptFenced(m: StructuredMarkerV2, lastError: string
 export async function republishStuckFenced(m: StructuredMarkerV2, nowIso: string): Promise<{ lost: boolean }> {
   return fencedUpdate(m, 'SET GSI1PK = :g, #s = :st, version = :nv, lastAttemptAt = :now',
     { ':g': 'CRM_REPAIR#pending', ':st': 'pending', ':now': nowIso }, { '#s': 'status' });
+}
+
+// ---------------------------------------------------------------------------
+// Task 13 (R9): MERGE_RECON needs_review → acknowledged — the operator's sign-off on Task 12's
+// merge-residual review queue. Mirrors organization-api's mergeReconKey (PK/SK convention).
+// ---------------------------------------------------------------------------
+
+export function mergeReconKey(fromOrgId: string, toOrgId: string) {
+  return { PK: `MERGE_RECON#${fromOrgId}`, SK: `TO#${toOrgId}` };
+}
+
+export type AcknowledgeMergeReconResult = { ok: true } | { ok: false; notFound: true } | { ok: false; raced: true };
+
+// Strong-read the marker for its current version, then a version-fenced flip out of the
+// needs_review partition. Retention: acknowledged markers are KEPT INDEFINITELY (evidence for a
+// future merge-integrity arc) — this function never deletes or TTLs a marker.
+export async function acknowledgeMergeReconFenced(fromOrgId: string, toOrgId: string, actor: string): Promise<AcknowledgeMergeReconResult> {
+  const key = mergeReconKey(fromOrgId, toOrgId);
+  const read = await docClient.send(new GetCommand({ TableName: TABLE_NAME(), Key: key, ConsistentRead: true }));
+  const marker = read.Item as { version?: number } | undefined;
+  if (!marker) return { ok: false, notFound: true };
+
+  const nowIso = new Date().toISOString();
+  try {
+    await docClient.send(new UpdateCommand({
+      TableName: TABLE_NAME(), Key: key,
+      UpdateExpression: 'SET #st = :ack, GSI1PK = :ackPk, acknowledgedBy = :actor, acknowledgedAt = :now, updatedAt = :now, version = version + :one',
+      ConditionExpression: '#st = :review AND version = :v',
+      ExpressionAttributeNames: { '#st': 'state' },
+      ExpressionAttributeValues: {
+        ':ack': 'acknowledged', ':ackPk': 'MERGE_RECON#acknowledged',
+        ':actor': actor, ':now': nowIso, ':one': 1,
+        ':review': 'needs_review', ':v': marker.version,
+      },
+    }));
+    return { ok: true };
+  } catch (err) {
+    if ((err as { name?: string }).name === 'ConditionalCheckFailedException') return { ok: false, raced: true };
+    throw err;
+  }
 }

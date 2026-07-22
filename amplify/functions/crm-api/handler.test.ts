@@ -93,13 +93,12 @@ describe('handler — timelineByOrg AppSync resolver', () => {
 });
 
 const linkStructuredMock = vi.fn(); const linkVisitorMock = vi.fn(); const queueMock = vi.fn();
-const queryUnitEventsMock = vi.fn();
-vi.mock('./lib/link/linkStructuredUnit', () => ({ linkStructuredUnit: (a: unknown) => linkStructuredMock(a), queryUnitEvents: (k: string) => queryUnitEventsMock(k) }));
+vi.mock('./lib/link/linkStructuredUnit', () => ({ linkStructuredUnit: (a: unknown) => linkStructuredMock(a) }));
 vi.mock('./lib/link/linkVisitor', () => ({ linkVisitor: (a: unknown) => linkVisitorMock(a) }));
 vi.mock('./lib/read/needsLinkingQueue', () => ({ needsLinkingQueue: (a: unknown) => queueMock(a) }));
 
 describe('handler — 3B resolvers', () => {
-  beforeEach(() => { linkStructuredMock.mockReset(); linkVisitorMock.mockReset(); queueMock.mockReset(); queryUnitEventsMock.mockReset(); });
+  beforeEach(() => { linkStructuredMock.mockReset(); linkVisitorMock.mockReset(); queueMock.mockReset(); });
 
   it('derives operator server-side from identity, ignores any client operator arg', async () => {
     linkStructuredMock.mockResolvedValueOnce({ moved: 1 });
@@ -107,34 +106,18 @@ describe('handler — 3B resolvers', () => {
     expect(linkStructuredMock).toHaveBeenCalledWith({ representativeEventId: 'tev-1', targetOrgId: 'acme.com', operator: 'admin@x.com' });
   });
 
-  // Task 10 Step 4: TRANSITIONAL ADAPTER — the deployed legacy arg shape keeps working until the
-  // Task-13 schema migration, by deriving the representative SERVER-SIDE.
-  it('new-shape args (representativeEventId) dispatch directly — no unit read', async () => {
+  it('representativeEventId args dispatch directly', async () => {
     linkStructuredMock.mockResolvedValueOnce({ moved: 1 });
     await handler({ info: { fieldName: 'linkStructuredUnit' }, arguments: { representativeEventId: 'tev-1', targetOrgId: 'acme.com' }, identity: { claims: { email: 'admin@x.com', 'cognito:groups': ['admin'] } } } as never);
-    expect(queryUnitEventsMock).not.toHaveBeenCalled();
     expect(linkStructuredMock).toHaveBeenCalledWith({ representativeEventId: 'tev-1', targetOrgId: 'acme.com', operator: 'admin@x.com' });
   });
 
-  it('legacy-shape args derive the representative server-side then dispatch', async () => {
-    queryUnitEventsMock.mockResolvedValueOnce([{ id: 'tev-9' }, { id: 'tev-10' }]);
-    linkStructuredMock.mockResolvedValueOnce({ moved: 2 });
-    await handler({ info: { fieldName: 'linkStructuredUnit' }, arguments: { sourceType: 'rfq', sourceEntityId: 'r1', targetOrgId: 'acme.com' }, identity: { claims: { email: 'admin@x.com', 'cognito:groups': ['admin'] } } } as never);
-    expect(queryUnitEventsMock).toHaveBeenCalledWith('unresolved-rfq-r1');
-    expect(linkStructuredMock).toHaveBeenCalledWith({ representativeEventId: 'tev-9', targetOrgId: 'acme.com', operator: 'admin@x.com' });
-  });
-
-  it('legacy shape with sourceType gmail throws (gmail units are never nameable via legacy args)', async () => {
-    await expect(handler({ info: { fieldName: 'linkStructuredUnit' }, arguments: { sourceType: 'gmail', sourceEntityId: 'mid-1', targetOrgId: 'acme.com' }, identity: { claims: { email: 'admin@x.com', 'cognito:groups': ['admin'] } } } as never))
-      .rejects.toThrow(/invalid legacy link args/i);
-    expect(queryUnitEventsMock).not.toHaveBeenCalled();
-    expect(linkStructuredMock).not.toHaveBeenCalled();
-  });
-
-  it('legacy shape over an empty unit throws (nothing to derive)', async () => {
-    queryUnitEventsMock.mockResolvedValueOnce([]);
+  // Task 13: the Task-10 transitional adapter (deriveRepresentativeEventId + the legacy
+  // sourceType/sourceEntityId branch) is DELETED — legacy-shape args now throw instead of being
+  // silently served.
+  it('legacy-shape args (sourceType/sourceEntityId, no representativeEventId) throw — the adapter is removed', async () => {
     await expect(handler({ info: { fieldName: 'linkStructuredUnit' }, arguments: { sourceType: 'rfq', sourceEntityId: 'r1', targetOrgId: 'acme.com' }, identity: { claims: { email: 'admin@x.com', 'cognito:groups': ['admin'] } } } as never))
-      .rejects.toThrow(/no unresolved events/i);
+      .rejects.toThrow(/requires representativeEventId/i);
     expect(linkStructuredMock).not.toHaveBeenCalled();
   });
 
@@ -177,8 +160,33 @@ describe('handler — 3C repair/health', () => {
   });
 });
 
-// Task 6 (spec R6/blocker-1): admin-group guard must run BEFORE any of these six resolvers touch
-// their lib fn. NOTE for Task 13: acknowledgeMergeRecon will become the seventh guarded entry.
+const ackMergeReconMock = vi.fn();
+vi.mock('./lib/repair/repairMarker', () => ({ acknowledgeMergeReconFenced: (...a: unknown[]) => ackMergeReconMock(...a) }));
+
+describe('handler — acknowledgeMergeRecon resolver (Task 13, R9)', () => {
+  beforeEach(() => ackMergeReconMock.mockReset());
+
+  it('derives actor server-side from identity, forwards fromOrgId/toOrgId, ignores any client actor arg', async () => {
+    ackMergeReconMock.mockResolvedValueOnce({ ok: true });
+    await handler({ info: { fieldName: 'acknowledgeMergeRecon' }, arguments: { fromOrgId: 'src.com', toOrgId: 'tgt.com', actor: 'ATTACKER' }, identity: { claims: { email: 'admin@x.com', 'cognito:groups': ['admin'] } } } as never);
+    expect(ackMergeReconMock).toHaveBeenCalledWith('src.com', 'tgt.com', 'admin@x.com');
+  });
+
+  it('falls back to identity.sub then unknown, same as the other admin mutations', async () => {
+    ackMergeReconMock.mockResolvedValueOnce({ ok: true });
+    await handler({ info: { fieldName: 'acknowledgeMergeRecon' }, arguments: { fromOrgId: 'src.com', toOrgId: 'tgt.com' }, identity: { sub: 'sub-1', groups: ['admin'] } } as never);
+    expect(ackMergeReconMock).toHaveBeenCalledWith('src.com', 'tgt.com', 'sub-1');
+  });
+
+  it('a lost fence ({ok:false,raced:true}) is a normal (non-throwing) resolver result', async () => {
+    ackMergeReconMock.mockResolvedValueOnce({ ok: false, raced: true });
+    const r = await handler({ info: { fieldName: 'acknowledgeMergeRecon' }, arguments: { fromOrgId: 'src.com', toOrgId: 'tgt.com' }, identity: { claims: { email: 'admin@x.com', 'cognito:groups': ['admin'] } } } as never);
+    expect(r).toEqual({ ok: false, raced: true });
+  });
+});
+
+// Task 6 (spec R6/blocker-1): admin-group guard must run BEFORE any of these seven resolvers touch
+// their lib fn. Task 13 adds acknowledgeMergeRecon as the seventh guarded entry.
 function adminArgsFor(fieldName: string): Record<string, unknown> {
   switch (fieldName) {
     case 'timelineByOrg': return { orgId: 'acme.com' };
@@ -187,6 +195,7 @@ function adminArgsFor(fieldName: string): Record<string, unknown> {
     case 'linkVisitor': return { visitorId: 'v1', targetOrgId: 'acme.com' };
     case 'crmHealth': return {};
     case 'runCrmRepair': return { limit: 10 };
+    case 'acknowledgeMergeRecon': return { fromOrgId: 'src.com', toOrgId: 'tgt.com' };
     default: return {};
   }
 }
@@ -195,6 +204,7 @@ const GUARDED: Array<[string, () => ReturnType<typeof vi.fn>]> = [
   ['timelineByOrg', () => timelineByOrgMock], ['needsLinkingQueue', () => queueMock],
   ['linkStructuredUnit', () => linkStructuredMock], ['linkVisitor', () => linkVisitorMock],
   ['crmHealth', () => crmHealthFn], ['runCrmRepair', () => reconcileRepair],
+  ['acknowledgeMergeRecon', () => ackMergeReconMock],
 ];
 
 describe.each(GUARDED)('authz on %s', (fieldName, target) => {
@@ -205,6 +215,7 @@ describe.each(GUARDED)('authz on %s', (fieldName, target) => {
     linkVisitorMock.mockReset();
     crmHealthFn.mockReset();
     reconcileRepair.mockReset();
+    ackMergeReconMock.mockReset();
   });
 
   it('missing groups → rejected, lib fn NOT called', async () => {
