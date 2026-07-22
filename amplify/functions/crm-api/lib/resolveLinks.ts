@@ -6,7 +6,7 @@ import type { ResolveResult } from './types';
 export type ResolveInput = {
   sourceEntityType: string;
   sourceEntityId: string;
-  channel: 'analytics' | 'lead' | 'rfq' | 'quote' | 'order' | 'logistics' | 'manual';
+  channel: 'analytics' | 'lead' | 'rfq' | 'quote' | 'order' | 'logistics' | 'manual' | 'gmail';
   lockedOrgId?: string;
   lockedContactId?: string;
   matchedOrgId?: string;
@@ -48,5 +48,8 @@ export async function resolveLinks(input: ResolveInput): Promise<ResolveResult> 
     return { orgId: input.priorVisitorOrgId, contactId: null, resolutionStatus: 'resolved', resolutionReason: 'visitor_prior_event', confidence: 0.5 };
   }
 
-  return { orgId: `unresolved-${input.sourceEntityType}-${input.sourceEntityId}`, contactId: null, resolutionStatus: 'unresolved', resolutionReason: 'unresolved', confidence: 0 };
+  const unresolvedKey = input.channel === 'gmail' && input.email
+    ? `unresolved-gmail-${normalizeEmail(input.email)}`
+    : `unresolved-${input.sourceEntityType}-${input.sourceEntityId}`;
+  return { orgId: unresolvedKey, contactId: null, resolutionStatus: 'unresolved', resolutionReason: 'unresolved', confidence: 0 };
 }
