@@ -31,3 +31,8 @@ export function isDenylistedDomain(domain: string): boolean {
   const d = domain.toLowerCase();
   return FREE_EMAIL_DOMAINS.has(d) || INFRA_DOMAINS.has(d);
 }
+
+export function normalizeRfc822MessageId(raw: string): string {
+  const t = raw.trim();
+  return (t.startsWith('<') && t.endsWith('>') ? t.slice(1, -1) : t).toLowerCase();
+}

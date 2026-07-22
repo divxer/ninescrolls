@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { normalizeEmail, domainOf, normalizeOrgName, isFreeEmailDomain, isDenylistedDomain } from './normalize';
+import { normalizeEmail, domainOf, normalizeOrgName, isFreeEmailDomain, isDenylistedDomain, normalizeRfc822MessageId } from './normalize';
 
 describe('normalize', () => {
   it('normalizeEmail lowercases + trims', () => {
@@ -21,5 +21,14 @@ describe('normalize', () => {
     expect(isDenylistedDomain('amazonaws.com')).toBe(true);
     expect(isDenylistedDomain('gmail.com')).toBe(true);
     expect(isDenylistedDomain('diamondfoundry.com')).toBe(false);
+  });
+});
+
+describe('normalizeRfc822MessageId', () => {
+  it('trims, strips surrounding <>, lowercases', () => {
+    expect(normalizeRfc822MessageId('  <CAF+Abc123@Mail.Gmail.Com>  ')).toBe('caf+abc123@mail.gmail.com');
+  });
+  it('passes through an already-bare id', () => {
+    expect(normalizeRfc822MessageId('x@y.z')).toBe('x@y.z');
   });
 });

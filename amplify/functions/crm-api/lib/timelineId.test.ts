@@ -31,4 +31,14 @@ describe('timelineId', () => {
     expect(a).not.toBe(b);   // different times → different ids (no collision)
     expect(a).toBe(a2);      // same inputs → deterministic
   });
+  it('gmail (rfc822MessageId): tev-gmail-<sha16 of normalized Message-ID>, stable across raw forms', () => {
+    const a = timelineId({ source: 'gmail', rfc822MessageId: '<ABC@x.com>' });
+    const b = timelineId({ source: 'gmail', rfc822MessageId: 'abc@x.com' });
+    expect(a).toBe(b);
+    expect(a).toMatch(/^tev-gmail-[0-9a-f]{16}$/);
+  });
+  it('gmail fallback (mailbox + gmailMessageId): mailbox-namespaced literal id', () => {
+    expect(timelineId({ source: 'gmail', mailbox: 'info@ninescrolls.com', gmailMessageId: '18f2ab' }))
+      .toBe('tev-gmail-info@ninescrolls.com-18f2ab');
+  });
 });

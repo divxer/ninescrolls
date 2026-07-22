@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import { normalizeRfc822MessageId } from './normalize';
 
 export type TimelineIdInput =
   | { kind: 'order_created'; orderId: string }
@@ -9,13 +10,24 @@ export type TimelineIdInput =
   | { kind: 'logistics_milestone'; caseId: string; milestoneId?: string; stage?: string; occurredAt?: string }
   | { kind: 'quote_sent'; quoteDocId: string }
   | { kind: 'site_visit_session'; sessionId: string }
-  | { kind: 'manual'; manualId: string };
+  | { kind: 'manual'; manualId: string }
+  | { source: 'gmail'; rfc822MessageId: string }
+  | { source: 'gmail'; mailbox: string; gmailMessageId: string };
 
 function shortHash(...parts: string[]): string {
   return 'h' + crypto.createHash('sha256').update(parts.join('|')).digest('hex').slice(0, 12);
 }
 
 export function timelineId(input: TimelineIdInput): string {
+  // Handle gmail variants first (they use 'source' discriminator, not 'kind')
+  if ('source' in input) {
+    if ('rfc822MessageId' in input) {
+      const norm = normalizeRfc822MessageId(input.rfc822MessageId);
+      return `tev-gmail-${crypto.createHash('sha256').update(norm).digest('hex').slice(0, 16)}`;
+    }
+    return `tev-gmail-${input.mailbox}-${input.gmailMessageId}`;
+  }
+
   switch (input.kind) {
     case 'order_created': return `tev-order-${input.orderId}-created`;
     case 'order_stage_changed': {
