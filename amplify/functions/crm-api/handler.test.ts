@@ -93,17 +93,49 @@ describe('handler — timelineByOrg AppSync resolver', () => {
 });
 
 const linkStructuredMock = vi.fn(); const linkVisitorMock = vi.fn(); const queueMock = vi.fn();
-vi.mock('./lib/link/linkStructuredUnit', () => ({ linkStructuredUnit: (a: unknown) => linkStructuredMock(a) }));
+const queryUnitEventsMock = vi.fn();
+vi.mock('./lib/link/linkStructuredUnit', () => ({ linkStructuredUnit: (a: unknown) => linkStructuredMock(a), queryUnitEvents: (k: string) => queryUnitEventsMock(k) }));
 vi.mock('./lib/link/linkVisitor', () => ({ linkVisitor: (a: unknown) => linkVisitorMock(a) }));
 vi.mock('./lib/read/needsLinkingQueue', () => ({ needsLinkingQueue: (a: unknown) => queueMock(a) }));
 
 describe('handler — 3B resolvers', () => {
-  beforeEach(() => { linkStructuredMock.mockReset(); linkVisitorMock.mockReset(); queueMock.mockReset(); });
+  beforeEach(() => { linkStructuredMock.mockReset(); linkVisitorMock.mockReset(); queueMock.mockReset(); queryUnitEventsMock.mockReset(); });
 
   it('derives operator server-side from identity, ignores any client operator arg', async () => {
     linkStructuredMock.mockResolvedValueOnce({ moved: 1 });
-    await handler({ info: { fieldName: 'linkStructuredUnit' }, arguments: { sourceType: 'rfq', sourceEntityId: 'r1', targetOrgId: 'acme.com', operator: 'ATTACKER' }, identity: { claims: { email: 'admin@x.com', 'cognito:groups': ['admin'] } } } as never);
-    expect(linkStructuredMock).toHaveBeenCalledWith({ sourceType: 'rfq', sourceEntityId: 'r1', targetOrgId: 'acme.com', operator: 'admin@x.com' });
+    await handler({ info: { fieldName: 'linkStructuredUnit' }, arguments: { representativeEventId: 'tev-1', targetOrgId: 'acme.com', operator: 'ATTACKER' }, identity: { claims: { email: 'admin@x.com', 'cognito:groups': ['admin'] } } } as never);
+    expect(linkStructuredMock).toHaveBeenCalledWith({ representativeEventId: 'tev-1', targetOrgId: 'acme.com', operator: 'admin@x.com' });
+  });
+
+  // Task 10 Step 4: TRANSITIONAL ADAPTER — the deployed legacy arg shape keeps working until the
+  // Task-13 schema migration, by deriving the representative SERVER-SIDE.
+  it('new-shape args (representativeEventId) dispatch directly — no unit read', async () => {
+    linkStructuredMock.mockResolvedValueOnce({ moved: 1 });
+    await handler({ info: { fieldName: 'linkStructuredUnit' }, arguments: { representativeEventId: 'tev-1', targetOrgId: 'acme.com' }, identity: { claims: { email: 'admin@x.com', 'cognito:groups': ['admin'] } } } as never);
+    expect(queryUnitEventsMock).not.toHaveBeenCalled();
+    expect(linkStructuredMock).toHaveBeenCalledWith({ representativeEventId: 'tev-1', targetOrgId: 'acme.com', operator: 'admin@x.com' });
+  });
+
+  it('legacy-shape args derive the representative server-side then dispatch', async () => {
+    queryUnitEventsMock.mockResolvedValueOnce([{ id: 'tev-9' }, { id: 'tev-10' }]);
+    linkStructuredMock.mockResolvedValueOnce({ moved: 2 });
+    await handler({ info: { fieldName: 'linkStructuredUnit' }, arguments: { sourceType: 'rfq', sourceEntityId: 'r1', targetOrgId: 'acme.com' }, identity: { claims: { email: 'admin@x.com', 'cognito:groups': ['admin'] } } } as never);
+    expect(queryUnitEventsMock).toHaveBeenCalledWith('unresolved-rfq-r1');
+    expect(linkStructuredMock).toHaveBeenCalledWith({ representativeEventId: 'tev-9', targetOrgId: 'acme.com', operator: 'admin@x.com' });
+  });
+
+  it('legacy shape with sourceType gmail throws (gmail units are never nameable via legacy args)', async () => {
+    await expect(handler({ info: { fieldName: 'linkStructuredUnit' }, arguments: { sourceType: 'gmail', sourceEntityId: 'mid-1', targetOrgId: 'acme.com' }, identity: { claims: { email: 'admin@x.com', 'cognito:groups': ['admin'] } } } as never))
+      .rejects.toThrow(/invalid legacy link args/i);
+    expect(queryUnitEventsMock).not.toHaveBeenCalled();
+    expect(linkStructuredMock).not.toHaveBeenCalled();
+  });
+
+  it('legacy shape over an empty unit throws (nothing to derive)', async () => {
+    queryUnitEventsMock.mockResolvedValueOnce([]);
+    await expect(handler({ info: { fieldName: 'linkStructuredUnit' }, arguments: { sourceType: 'rfq', sourceEntityId: 'r1', targetOrgId: 'acme.com' }, identity: { claims: { email: 'admin@x.com', 'cognito:groups': ['admin'] } } } as never))
+      .rejects.toThrow(/no unresolved events/i);
+    expect(linkStructuredMock).not.toHaveBeenCalled();
   });
 
   it('falls back to identity.sub then unknown', async () => {
@@ -151,7 +183,7 @@ function adminArgsFor(fieldName: string): Record<string, unknown> {
   switch (fieldName) {
     case 'timelineByOrg': return { orgId: 'acme.com' };
     case 'needsLinkingQueue': return {};
-    case 'linkStructuredUnit': return { sourceType: 'rfq', sourceEntityId: 'r1', targetOrgId: 'acme.com' };
+    case 'linkStructuredUnit': return { representativeEventId: 'tev-1', targetOrgId: 'acme.com' };
     case 'linkVisitor': return { visitorId: 'v1', targetOrgId: 'acme.com' };
     case 'crmHealth': return {};
     case 'runCrmRepair': return { limit: 10 };

@@ -6,7 +6,7 @@ import { backfillVisitorBridge } from './lib/analytics/backfillVisitorBridge';
 import { timelineByOrg } from './lib/read/timelineByOrg';
 import { toOrganizationTimelineItem } from './lib/read/organizationTimelineItem';
 import { needsLinkingQueue } from './lib/read/needsLinkingQueue';
-import { linkStructuredUnit } from './lib/link/linkStructuredUnit';
+import { linkStructuredUnit, queryUnitEvents } from './lib/link/linkStructuredUnit';
 import { linkVisitor } from './lib/link/linkVisitor';
 import { reconcileRepair } from './lib/repair/reconcileRepair';
 import { crmHealth } from './lib/repair/crmHealth';
@@ -26,6 +26,18 @@ const operatorOf = (e: AppSyncEvent): string => e.identity?.claims?.email ?? e.i
 // Direct Lambda invoke payloads (from amplify/lib/crm/invoke-crm-api) carry an `action`.
 type DirectInvokeEvent = { action: string; args?: unknown; mode?: 'hot' | 'cold'; cursor?: Record<string, unknown>; limit?: number; maxSessions?: number; visitorId?: string; startSessionSk?: string };
 
+// TRANSITIONAL (removed in Task 13): serve the deployed legacy arg shape by deriving the
+// representative SERVER-SIDE. The derived event still passes linkStructuredUnit's full
+// validation (strong read, unresolved, eligibility, ALLOWED source), so this is no weaker
+// than the deployed 3B contract it temporarily preserves — and it is admin-gated (Task 6).
+async function deriveRepresentativeEventId(sourceType: string, sourceEntityId: string): Promise<string> {
+  const ALLOWED = new Set(['rfq', 'lead', 'order', 'quote', 'logistics']);   // legacy shapes only — gmail NEVER via legacy args
+  if (!ALLOWED.has(sourceType) || !sourceEntityId) throw new Error('invalid legacy link args');
+  const events = await queryUnitEvents(`unresolved-${sourceType}-${sourceEntityId}`);
+  if (events.length === 0) throw new Error('no unresolved events for legacy link args');
+  return events[0].id;
+}
+
 const resolvers: Record<string, (e: AppSyncEvent) => Promise<unknown>> = {
   timelineByOrg: async (e) => {
     requireAdmin(e);
@@ -42,8 +54,10 @@ const resolvers: Record<string, (e: AppSyncEvent) => Promise<unknown>> = {
   },
   linkStructuredUnit: async (e) => {
     requireAdmin(e);
-    const a = (e.arguments ?? {}) as { sourceType?: string; sourceEntityId?: string; targetOrgId?: string };
-    return linkStructuredUnit({ sourceType: a.sourceType ?? '', sourceEntityId: a.sourceEntityId ?? '', targetOrgId: a.targetOrgId ?? '', operator: operatorOf(e) });
+    const a = (e.arguments ?? {}) as { representativeEventId?: string; sourceType?: string; sourceEntityId?: string; targetOrgId?: string };
+    const representativeEventId = a.representativeEventId
+      ?? await deriveRepresentativeEventId(a.sourceType ?? '', a.sourceEntityId ?? '');
+    return linkStructuredUnit({ representativeEventId, targetOrgId: a.targetOrgId ?? '', operator: operatorOf(e) });
   },
   linkVisitor: async (e) => {
     requireAdmin(e);
