@@ -43,7 +43,7 @@ export async function emitTimelineEvent(args: EmitArgs): Promise<void> {
   let contactId = resolved.contactId;
   const email = args.resolveInput.email ? normalizeEmail(args.resolveInput.email) : null;
   if (email && !isSentinelOrg(orgId)) {
-    contactId = await upsertContact({ email, orgId, source: args.source, occurredAt: args.occurredAt });
+    contactId = (await upsertContact({ email, orgId, source: args.source, occurredAt: args.occurredAt })).contactId;
   }
 
   const nowIso = new Date().toISOString();
