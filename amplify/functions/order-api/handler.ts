@@ -25,6 +25,7 @@ import { deleteDocument } from './resolvers/deleteDocument.js';
 import { declineRfq } from './resolvers/declineRfq.js';
 import { convertRfqToOrder } from './resolvers/convertRfqToOrder.js';
 import { revertRfqToPending } from './resolvers/revertRfqToPending.js';
+import { createStripeOrder } from './resolvers/createStripeOrder.js';
 
 // AppSync invocation shape: `info` is present on direct resolver events;
 // Amplify Gen 2 a.handler.function() sends fieldName/typeName at the top level.
@@ -66,6 +67,9 @@ const resolvers: Record<string, (event: never) => Promise<unknown>> = {
     declineRfq,
     convertRfqToOrder,
     revertRfqToPending,
+    // Internal-only (not in the GraphQL schema — reachable solely via direct
+    // Lambda invoke from stripe-webhook; AppSync can never route here)
+    createStripeOrder,
 };
 
 export const handler = async (event: OrderApiEvent) => {

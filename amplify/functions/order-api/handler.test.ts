@@ -1078,6 +1078,113 @@ describe('order-api handler', () => {
     // -----------------------------------------------------------------------
     // updateOrder
     // -----------------------------------------------------------------------
+    // -----------------------------------------------------------------------
+    // createStripeOrder (internal-only: not in the GraphQL schema, reachable
+    // only via direct Lambda invoke from stripe-webhook)
+    // -----------------------------------------------------------------------
+    describe('createStripeOrder', () => {
+        const STRIPE_INPUT = {
+            stripeSessionId: 'cs_live_test123',
+            paymentIntentId: 'pi_test123',
+            amountTotalCents: 799900,
+            currency: 'usd',
+            customerEmail: 'buyer@innatecontrol.com',
+            customerName: 'Junqing Qiao',
+            contactFirstName: 'Junqing',
+            contactLastName: 'Qiao',
+            contactPhone: '5085020875',
+            productName: 'HY-4L - RF (13.56 MHz) Plasma Cleaner',
+            quantity: 1,
+            shippingAddress: '128 Parsons St, Brighton, MA, 02135, US',
+            paidAt: '2026-07-22T19:38:45.572Z',
+        };
+
+        function makeDirectInvokeEvent(input: unknown) {
+            // Direct Lambda invoke shape: no info wrapper, no identity
+            return { fieldName: 'createStripeOrder', arguments: { input } };
+        }
+
+        it('creates a paid order directly at PO_RECEIVED with source STRIPE', async () => {
+            mockPut.mockResolvedValue({});
+            // buildFullOrderResponse
+            mockGet.mockResolvedValueOnce({
+                Item: { ...SAMPLE_ORDER, status: 'PO_RECEIVED', source: 'STRIPE' },
+            });
+            mockQuery.mockResolvedValueOnce({ Items: [SAMPLE_CONTACT] });
+
+            const result = await handler(
+                makeDirectInvokeEvent(STRIPE_INPUT) as any,
+                {} as any,
+                vi.fn(),
+            );
+
+            expect(result).toBeDefined();
+            // SESSION marker + ORDER META + CONTACT + LOG
+            expect(mockPut).toHaveBeenCalledTimes(4);
+
+            const metaPut = mockSend.mock.calls.find((c: unknown[]) => {
+                const arg = c[0] as { Item?: Record<string, unknown> };
+                return arg.Item?.SK === 'META' && typeof arg.Item?.PK === 'string' && (arg.Item.PK as string).startsWith('ORDER#');
+            });
+            expect(metaPut).toBeTruthy();
+            const meta = (metaPut![0] as { Item: Record<string, unknown> }).Item;
+            expect(meta.status).toBe('PO_RECEIVED');
+            expect(meta.GSI1PK).toBe('ORDER_STATUS#PO_RECEIVED');
+            expect(meta.source).toBe('STRIPE');
+            expect(meta.stripeSessionId).toBe('cs_live_test123');
+            expect(meta.quoteAmount).toBe(7999);
+            expect(meta.poDate).toBe('2026-07-22');
+            expect(meta.GSI4PK).toBe('EMAIL#buyer@innatecontrol.com');
+
+            const markerPut = mockSend.mock.calls.find((c: unknown[]) => {
+                const arg = c[0] as { Item?: Record<string, unknown> };
+                return arg.Item?.PK === 'STRIPE_SESSION#cs_live_test123';
+            });
+            expect(markerPut).toBeTruthy();
+        });
+
+        it('is idempotent: returns the existing order when the session marker already exists', async () => {
+            const { ConditionalCheckFailedException } = await import('@aws-sdk/client-dynamodb');
+            // Marker put fails → resolver looks up marker → existing order
+            mockPut.mockRejectedValueOnce(new (ConditionalCheckFailedException as any)());
+            mockGet
+                .mockResolvedValueOnce({ Item: { PK: 'STRIPE_SESSION#cs_live_test123', orderId: 'ord-20260722-d169' } })
+                .mockResolvedValueOnce({ Item: { ...SAMPLE_ORDER, orderId: 'ord-20260722-d169', status: 'PO_RECEIVED', source: 'STRIPE' } });
+            mockQuery.mockResolvedValueOnce({ Items: [SAMPLE_CONTACT] });
+
+            const result = await handler(
+                makeDirectInvokeEvent(STRIPE_INPUT) as any,
+                {} as any,
+                vi.fn(),
+            ) as Record<string, unknown>;
+
+            expect(result.orderId).toBe('ord-20260722-d169');
+            // Only the failed marker put — no META/CONTACT/LOG writes
+            expect(mockPut).toHaveBeenCalledTimes(1);
+        });
+
+        it('throws when required fields are missing', async () => {
+            await expect(handler(
+                makeDirectInvokeEvent({ stripeSessionId: 'cs_x' }) as any,
+                {} as any,
+                vi.fn(),
+            )).rejects.toThrow(/required/);
+        });
+
+        it('accepts a JSON-string input payload', async () => {
+            mockPut.mockResolvedValue({});
+            mockGet.mockResolvedValueOnce({ Item: { ...SAMPLE_ORDER, source: 'STRIPE' } });
+            mockQuery.mockResolvedValueOnce({ Items: [] });
+
+            const result = await handler(
+                makeDirectInvokeEvent(JSON.stringify(STRIPE_INPUT)) as any,
+                {} as any,
+                vi.fn(),
+            );
+            expect(result).toBeDefined();
+        });
+    });
+
     describe('updateOrder', () => {
         it('writes QUOTE_VALIDITY_UPDATED log when validUntil changes', async () => {
             mockGet.mockResolvedValue({
