@@ -91,6 +91,13 @@ describe('upsertContact', () => {
     const r = await upsertContact({ email: 'b@x.com', orgId: 'b.com', source: 'gmail', occurredAt: 't1', linkGeneration: '01J0BBBB…' });
     expect(r.outcome).toBe('locked');
   });
+  it('generational condition covers the NULL-typed stamp a non-generational write leaves behind', async () => {
+    mockGetByEmail({ contactId: 'ct-1', orgId: 'a.com', linkLocked: false, lastLinkGeneration: null });
+    mockSend.mockResolvedValueOnce({});
+    await upsertContact({ email: 'b@x.com', orgId: 'b.com', source: 'gmail', occurredAt: 't1', linkGeneration: '01J0BBBBBBBBBBBBBBBBBBBBBB' });
+    expect(putInput().ConditionExpression).toContain('attribute_type(lastLinkGeneration, :nullType)');
+    expect((putInput().ExpressionAttributeValues as Fields)[':nullType']).toBe('NULL');
+  });
 
   // ---- additional required tests (a)-(d) ------------------------------------------------
   it('(a) CCFE retry rebuilds org+lock+stamp as a coherent PAIR from the fresh read (never mixes generations)', async () => {

@@ -60,9 +60,12 @@ export async function upsertContact(args: {
 
     const put = args.linkGeneration
       ? new PutCommand({ TableName: TABLE_NAME(), Item: item,
-          // store-enforced monotonicity — a racing NEWER generation makes this CCFE
-          ConditionExpression: 'attribute_not_exists(PK) OR attribute_not_exists(lastLinkGeneration) OR lastLinkGeneration < :gen',
-          ExpressionAttributeValues: { ':gen': args.linkGeneration } })
+          // store-enforced monotonicity — a racing NEWER generation makes this CCFE.
+          // A non-generational write leaves lastLinkGeneration as a typed DynamoDB NULL (attribute
+          // EXISTS with type NULL), against which `lastLinkGeneration < :gen` is always false — so
+          // attribute_type(...) must also be accepted, or the first generational link ever CCFEs.
+          ConditionExpression: 'attribute_not_exists(PK) OR attribute_not_exists(lastLinkGeneration) OR attribute_type(lastLinkGeneration, :nullType) OR lastLinkGeneration < :gen',
+          ExpressionAttributeValues: { ':gen': args.linkGeneration, ':nullType': 'NULL' } })
       : (observed === null
           ? new PutCommand({ TableName: TABLE_NAME(), Item: item,
               ConditionExpression: 'attribute_not_exists(PK) OR attribute_not_exists(lastLinkGeneration) OR lastLinkGeneration = :null',
