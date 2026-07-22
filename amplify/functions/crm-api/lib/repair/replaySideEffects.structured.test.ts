@@ -10,7 +10,7 @@ const recomputeRollupsForOrg = vi.fn();
 vi.mock('../orgStore', () => ({ recomputeRollupsForOrg: (...a: unknown[]) => recomputeRollupsForOrg(...a) }));
 const markRollupApplied = vi.fn();
 vi.mock('../timelineStore', () => ({ markRollupApplied: (...a: unknown[]) => markRollupApplied(...a) }));
-import { replayStructuredSideEffects } from './replaySideEffects';
+import { replayStructuredSideEffects, resolveEffectiveTarget } from './replaySideEffects';
 
 const base = { sourceType: 'rfq', sourceEntityId: '1', backfillPk: 'RFQ#1', targetOrgId: 'acme.com',
   unitKey: 'unresolved-rfq-1', operator: 'op', createdAt: '2026-07-08T00:00:00.000Z',
@@ -258,6 +258,25 @@ describe('replayStructuredSideEffects (generational)', () => {
     rejectOrgReadOnce(new Error('throttled'));
     const r = await replayStructuredSideEffects({ ...base, targetOrgId: 'a.com', generation: GEN_A });
     expect(r).toMatchObject({ ok: false, errorType: 'transient' });
+  });
+
+  // ---- chain-derived redirect sources (cross-invocation durability) --------------------------
+  // `mergedInto` persists forever, so the walk from the requested org passes through EVERY org
+  // that was ever an effective target for this unit and later merged away — the archived orgs
+  // VISITED are the durable redirect-source list (no marker schema, no in-memory state).
+  it('resolveEffectiveTarget returns the archived orgs VISITED on the walk', async () => {
+    mockOrg('a.com', { status: 'archived', mergedInto: 'b.com' });
+    mockOrg('b.com', { status: 'archived', mergedInto: 'c.com' });
+    mockOrg('c.com', { status: 'active' });
+    await expect(resolveEffectiveTarget('a.com')).resolves.toEqual({
+      status: 'active', orgId: 'c.com', visitedArchived: ['a.com', 'b.com'],
+    });
+  });
+  it('resolveEffectiveTarget: an already-active requested org yields an EMPTY visitedArchived', async () => {
+    mockOrg('a.com', { status: 'active' });
+    await expect(resolveEffectiveTarget('a.com')).resolves.toEqual({
+      status: 'active', orgId: 'a.com', visitedArchived: [],
+    });
   });
 
   // ---- write-time fences ---------------------------------------------------------------------

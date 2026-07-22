@@ -939,18 +939,24 @@ async function readOrgMeta(orgId: string): Promise<(OrgMetaItem & Record<string,
 // Canonical-successor resolution (same semantics as crm-api's resolveEffectiveTarget, spec R10):
 // strong reads; ONLY exact 'active' applies; successors followed ONLY from exact 'archived' via
 // `mergedInto`; depth ≤5 with a visited-set; anything else is structural unavailability.
-type EffectiveTargetOrg = { status: 'active'; orgId: string } | { status: 'unavailable'; reason: string };
+// `visitedArchived` (mirrored from crm-api to prevent shape drift) lists the archived orgs the
+// walk passed through, in hop order — the resume path may ignore or use it.
+type EffectiveTargetOrg =
+    | { status: 'active'; orgId: string; visitedArchived: string[] }
+    | { status: 'unavailable'; reason: string };
 async function resolveEffectiveTargetOrg(requestedOrgId: string): Promise<EffectiveTargetOrg> {
     const visited = new Set<string>();
+    const visitedArchived: string[] = [];
     let cur = requestedOrgId;
     for (let hop = 0; hop <= 5; hop++) {
         if (visited.has(cur)) return { status: 'unavailable', reason: `merge-chain cycle at ${cur}` };
         visited.add(cur);
         const org = await readOrgMeta(cur);
         if (!org) return { status: 'unavailable', reason: `org ${cur} not found` };
-        if (org.status === 'active') return { status: 'active', orgId: cur };
+        if (org.status === 'active') return { status: 'active', orgId: cur, visitedArchived };
         if (org.status !== 'archived') return { status: 'unavailable', reason: `org ${cur} has non-navigable status '${String(org.status)}'` };
         if (!org.mergedInto) return { status: 'unavailable', reason: `org ${cur} archived without successor` };
+        visitedArchived.push(cur);
         cur = org.mergedInto;
     }
     return { status: 'unavailable', reason: 'merge-chain depth limit (5) exceeded' };

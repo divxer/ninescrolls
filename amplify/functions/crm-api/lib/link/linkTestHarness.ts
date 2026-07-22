@@ -396,6 +396,13 @@ export class HarnessStore {
     return clone([...this.items.values()].find((it) =>
       it.entityType === 'LINK_AUDIT' && (it.details as Item | null)?.generation === generation)) as Item;
   }
+  /** ALL LINK_AUDIT rows carrying this generation — a redirect across invocations legitimately
+   *  leaves one row per effective target (deterministic id = unitKey + effective org + generation) */
+  auditsFor(generation: string): Item[] {
+    return [...this.items.values()]
+      .filter((it) => it.entityType === 'LINK_AUDIT' && (it.details as Item | null)?.generation === generation)
+      .map((it) => clone(it));
+  }
 
   dirtyRollups(): string[] { return [...this.dirty]; }
   recordDirtyRollup(orgId: string): void { this.dirty.push(orgId); }

@@ -55,7 +55,13 @@ export async function resolveBackfillPk(sourceType: string, sourceEntityId: stri
 // STRUCTURAL unavailability. Read FAILURES (network/throttle) are deliberately NOT caught here —
 // they propagate and the caller classifies them 'transient' (retryable), so a wobbly read can
 // never park a marker as blocked.
-export type EffectiveTarget = { status: 'active'; orgId: string } | { status: 'unavailable'; reason: string };
+// `visitedArchived` lists the archived orgs the walk passed through, in hop order. Because
+// `mergedInto` persists forever, this chain contains EVERY org that was ever an effective target
+// for the requested org and later merged away — it is the DURABLE redirect-source list (complete
+// across invocations, with no marker schema change and no in-memory state).
+export type EffectiveTarget =
+  | { status: 'active'; orgId: string; visitedArchived: string[] }
+  | { status: 'unavailable'; reason: string };
 
 async function readOrg(orgId: string): Promise<Record<string, unknown> | undefined> {
   const res = await docClient.send(new GetCommand({
@@ -66,15 +72,17 @@ async function readOrg(orgId: string): Promise<Record<string, unknown> | undefin
 
 export async function resolveEffectiveTarget(requestedOrgId: string): Promise<EffectiveTarget> {
   const visited = new Set<string>();
+  const visitedArchived: string[] = [];
   let cur = requestedOrgId;
   for (let hop = 0; hop <= 5; hop++) {
     if (visited.has(cur)) return { status: 'unavailable', reason: `merge-chain cycle at ${cur}` };
     visited.add(cur);
     const org = await readOrg(cur);
     if (!org) return { status: 'unavailable', reason: `org ${cur} not found` };
-    if (org.status === 'active') return { status: 'active', orgId: cur };
+    if (org.status === 'active') return { status: 'active', orgId: cur, visitedArchived };
     if (org.status !== 'archived') return { status: 'unavailable', reason: `org ${cur} has non-navigable status '${String(org.status)}'` };
     if (!org.mergedInto) return { status: 'unavailable', reason: `org ${cur} archived without successor` };
+    visitedArchived.push(cur);
     cur = org.mergedInto as string;
   }
   return { status: 'unavailable', reason: 'merge-chain depth limit (5) exceeded' };
@@ -253,11 +261,14 @@ async function replayStructuredGenerational(args: ReplayStructuredArgs, generati
   // (object wrapper: assignments happen inside effect closures — keeps TS narrowing honest)
   const state = { backfillStatus: 'no_source' as BackfillStatus };
   let fenceRetried = false;
-  // Every org this replay has TARGETED so far: the requested org, plus any prior effective org
-  // abandoned when a fence cancellation forced a re-resolve (events may already have been moved
-  // there mid-redirect — the retry's redirect pass must drain it too, not just the requested org).
-  const redirectSources = [args.targetOrgId];
+  // Redirect sources are CHAIN-DERIVED, never remembered state: the archived orgs visited on the
+  // resolve walk contain every org that was ever an effective target for this unit and later
+  // merged away (mergedInto persists forever) — so the list is complete even when a PRIOR
+  // INVOCATION moved events to an intermediate that merged away before this drain. A mid-invocation
+  // fence retry re-resolves and naturally picks up the newly archived org on the fresh walk.
+  let redirectSources = [...new Set([args.targetOrgId, ...resolved.visitedArchived])];
 
+  const REDIRECT_EFFECT = 2;   // index of the redirect pass below — fence-loss retries resume at or before it
   const effects: Array<() => Promise<void>> = [
     async () => { if (pk) state.backfillStatus = await backfillByPk(pk, eff, generation); },
     async () => {
@@ -269,6 +280,15 @@ async function replayStructuredGenerational(args: ReplayStructuredArgs, generati
       if (res.outcome === 'org_inactive') throw new FenceLostError(eff);
       // written | superseded | locked are ALL success for the contact effect (R8)
     },
+    async () => {
+      const sources = redirectSources.filter((s) => s !== eff);
+      if (sources.length > 0) await redirectMovePass(sources, eff, generation);
+    },
+    // Audit runs LAST — after redirect convergence — so the final row names the org the unit
+    // actually CONVERGED on, never only an intermediate abandoned by a mid-redirect merge. The
+    // deterministic id includes the effective target + generation: an earlier invocation's audit
+    // at an abandoned target remains an honest historical row, and this invocation's audit is a
+    // distinct idempotent row (attribute_not_exists no-op on replay).
     async () => {
       await writeLinkAuditLog({
         // INVARIANT #1: id derived only from COMMITTED values — the unit key, the org the effects
@@ -284,10 +304,6 @@ async function replayStructuredGenerational(args: ReplayStructuredArgs, generati
         },
       });
     },
-    async () => {
-      const sources = redirectSources.filter((s) => s !== eff);
-      if (sources.length > 0) await redirectMovePass(sources, eff, generation);
-    },
   ];
 
   for (let i = 0; i < effects.length; ) {
@@ -301,9 +317,13 @@ async function replayStructuredGenerational(args: ReplayStructuredArgs, generati
         try { re = await resolveEffectiveTarget(args.targetOrgId); }
         catch (e2) { return { ok: false, errorType: 'transient', error: msg(e2), backfillStatus: state.backfillStatus }; }
         if (re.status === 'unavailable') return { ok: false, errorType: 'target_unavailable', reason: re.reason, backfillStatus: state.backfillStatus };
-        if (!redirectSources.includes(eff)) redirectSources.push(eff);   // the abandoned target may hold already-moved events
+        redirectSources = [...new Set([args.targetOrgId, ...re.visitedArchived])];   // fresh chain walk includes the just-archived target
         eff = re.orgId;
-        continue;                                            // retry THIS effect and all remaining at the successor
+        // Retry from THIS effect — but never past the redirect pass: a fence loss AT THE AUDIT
+        // means events were just redirected to a now-archived org, so the redirect must re-run at
+        // the new effective target before the (idempotent) audit does.
+        i = Math.min(i, REDIRECT_EFFECT);
+        continue;
       }
       return { ok: false, errorType: 'transient', error: msg(err), backfillStatus: state.backfillStatus };
     }

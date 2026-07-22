@@ -311,6 +311,72 @@ describe('linkStructuredUnit adversarial suite (stateful harness, real functions
     expect(store.get('TLEVENT#tev-1').orgId).toBe('c.com');           // the B-stranded event converged
     expect(store.get('TLEVENT#tev-2').orgId).toBe('c.com');           // and the A-remainder followed too
     expect(store.markersFor('unresolved-rfq-r1')).toHaveLength(0);    // deleted only after full convergence
+    // ISSUE-2: the audit is written AFTER redirect convergence — the final row names the org the
+    // unit actually CONVERGED on (C), never only the abandoned intermediate (B).
+    const audits = store.auditsFor(GEN_1);
+    expect(audits.map((a) => a.newOrgId)).toContain('c.com');
+    const finalAudit = audits.find((a) => a.newOrgId === 'c.com') as Record<string, any>;
+    expect(finalAudit.details).toMatchObject({ requestedTargetOrgId: 'a.com', effectiveTargetOrgId: 'c.com' });
+  });
+
+  // Scenario 12c (ISSUE-1 regression — cross-INVOCATION durability): invocation 1's redirect moves
+  // the unit A→B and then crashes on a late rollup write — the marker survives, but the list of
+  // orgs that invocation had targeted lived only in its memory. B merges into C BEFORE the drainer
+  // retries. Invocation 2 must re-derive its redirect sources from the PERSISTENT merge chain
+  // (mergedInto is forever), find the B-stranded events, and converge them at C.
+  it('cross-invocation stranding: a fresh drain derives redirect sources from the merge chain and drains the archived intermediate', async () => {
+    const store = seedStore([rfqRecord('RFQ#1', { matchedOrgId: '' }),
+      orgItem('a.com', { status: 'archived', mergedInto: 'b.com' }), orgItem('b.com'), orgItem('c.com'),
+      movedEvent('tev-1', { orgId: 'a.com', linkGeneration: GEN_1 }),
+      movedEvent('tev-2', { orgId: 'a.com', linkGeneration: GEN_1 })]);
+    putPendingMarker(store, { unitKey: 'unresolved-rfq-r1', generation: GEN_1, targetOrgId: 'a.com' });
+    // invocation 1: both redirect moves COMMIT at B, then the first markRollupApplied write crashes
+    const crash = store.gateOn((cmd, input) => cmd.constructor.name === 'UpdateCommand'
+      && String((input as { Key?: { PK?: string } }).Key?.PK ?? '').startsWith('TLEVENT#'));
+    const p1 = reconcileRepair({});
+    await store.idle();
+    crash.releaseWithCrash();
+    const s1 = await p1;
+    expect(s1.retrying).toBe(1);                                      // transient → marker retained
+    expect(store.get('TLEVENT#tev-1').orgId).toBe('b.com');           // the moves committed at B
+    expect(store.get('TLEVENT#tev-2').orgId).toBe('b.com');
+    await mergeOrganization('b.com', 'c.com');                        // B merges away BETWEEN invocations
+    const s2 = await reconcileRepair({});                             // invocation 2: fresh call, no shared memory
+    expect(s2.repaired).toBe(1);
+    expect(store.get('TLEVENT#tev-1').orgId).toBe('c.com');           // recovered via the chain walk
+    expect(store.get('TLEVENT#tev-2').orgId).toBe('c.com');
+    expect(store.markersFor('unresolved-rfq-r1')).toHaveLength(0);    // deleted only after full convergence
+  });
+
+  // Scenario 12d (ISSUE-2 regression — audit trail across invocations): invocation 1 converges the
+  // unit at B and writes its audit, but crashes DELETING the marker. B merges into C; invocation 2
+  // re-drains and converges at C. Each invocation's audit is a distinct deterministic row (the id
+  // includes the effective target + generation): the B-row remains honest history, the C-row
+  // records the final convergence.
+  it('two invocations with a merge between: audit rows exist for BOTH effective targets (B then C); events converge at C', async () => {
+    const store = seedStore([rfqRecord('RFQ#1', { matchedOrgId: '' }),
+      orgItem('a.com', { status: 'archived', mergedInto: 'b.com' }), orgItem('b.com'), orgItem('c.com'),
+      movedEvent('tev-1', { orgId: 'a.com', linkGeneration: GEN_1 })]);
+    putPendingMarker(store, { unitKey: 'unresolved-rfq-r1', generation: GEN_1, targetOrgId: 'a.com' });
+    const crash = store.gateOn((cmd, input) => cmd.constructor.name === 'DeleteCommand'
+      && String((input as { Key?: { PK?: string } }).Key?.PK ?? '').startsWith('CRM_REPAIR#'));
+    const p1 = reconcileRepair({});
+    await store.idle();
+    crash.releaseWithCrash();
+    const s1 = await p1;
+    expect(s1.errors).toBe(1);                                        // marker-delete bookkeeping failed → retained
+    expect(store.get('TLEVENT#tev-1').orgId).toBe('b.com');
+    expect(store.auditsFor(GEN_1).map((a) => a.newOrgId)).toEqual(['b.com']);   // invocation 1's audit at ITS effective target
+    await mergeOrganization('b.com', 'c.com');
+    const s2 = await reconcileRepair({});
+    expect(s2.repaired).toBe(1);
+    expect(store.get('TLEVENT#tev-1').orgId).toBe('c.com');
+    const audits = store.auditsFor(GEN_1);
+    expect(audits.map((a) => a.newOrgId).sort()).toEqual(['b.com', 'c.com']);   // both rows kept
+    expect(new Set(audits.map((a) => a.id)).size).toBe(2);                      // distinct deterministic ids
+    const cRow = audits.find((a) => a.newOrgId === 'c.com') as Record<string, any>;
+    expect(cRow.details).toMatchObject({ requestedTargetOrgId: 'a.com', effectiveTargetOrgId: 'c.com' });
+    expect(store.markersFor('unresolved-rfq-r1')).toHaveLength(0);
   });
 
   // Scenario 13 — >100-event unit REDIRECT: the paginated redirect pass moves all 130, rollups dirty.
