@@ -207,6 +207,18 @@ describe('stripe-webhook handler', () => {
         expect(mockBridge).not.toHaveBeenCalled();
     });
 
+    it('skips the bridge (without failing) when the session amount is zero', async () => {
+        const session = makeSession({ amount_total: 0 });
+        mockConstructEvent.mockReturnValue(makeStripeEvent('checkout.session.completed', session));
+        mockRetrieve.mockResolvedValue(session);
+
+        const res = await handler(makeApiGatewayEvent());
+
+        // A retry can never fix a zero amount — 200, not 500
+        expect(res.statusCode).toBe(200);
+        expect(mockBridge).not.toHaveBeenCalled();
+    });
+
     it('rejects requests without a stripe-signature header', async () => {
         const res = await handler({ body: '{}', isBase64Encoded: false, headers: {} });
         expect(res.statusCode).toBe(400);

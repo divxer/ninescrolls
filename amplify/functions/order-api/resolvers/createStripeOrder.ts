@@ -1,8 +1,8 @@
-import { TransactWriteCommand, GetCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { TransactWriteCommand, GetCommand, QueryCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient, TABLE_NAME } from '../lib/dynamodb.js';
 import { generateOrderId, generateContactId, generateLogId } from '../lib/idGenerators.js';
-import { buildFullOrderResponse, sendSlackNotification } from '../lib/orderHelper.js';
-import type { AppSyncEvent } from '../lib/types.js';
+import { buildOrderResponse, sendSlackNotification } from '../lib/orderHelper.js';
+import type { AppSyncEvent, OrderItem, ContactItem } from '../lib/types.js';
 import { invokeOrganizationApi } from '../../../lib/organization/invoke-org-api.js';
 import { computeOrderScore } from '../../../lib/organization/lead-score.js';
 import { emitTimelineEventToCrm } from '../../../lib/crm/invoke-crm-api.js';
@@ -169,29 +169,68 @@ export async function createStripeOrder(event: AppSyncEvent) {
         if (name !== 'TransactionCanceledException') {
             throw err;
         }
-        // The only condition in the transaction is the marker's
-        // attribute_not_exists — a cancellation means another invocation
-        // already created this session's order.
+        // Inspect why the transaction was cancelled. The marker Put is item 0
+        // and carries the only ConditionExpression — ConditionalCheckFailed
+        // there means another invocation already created this session's order.
+        // Any other cancellation (TransactionConflict with an in-flight winner,
+        // throttling, …) wrote nothing: rethrow so the webhook 500s and Stripe
+        // retries — by then the winner's commit is visible.
+        const reasons = (err as { CancellationReasons?: Array<{ Code?: string }> }).CancellationReasons;
+        const markerAlreadyExists = reasons?.[0]?.Code === 'ConditionalCheckFailed';
+        if (reasons && !markerAlreadyExists) {
+            throw err;
+        }
+        // Duplicate path — use strongly consistent base-table reads so a
+        // concurrent loser can't miss the winner's just-committed records.
         const existing = await docClient.send(new GetCommand({
             TableName: TABLE_NAME(),
             Key: { PK: `STRIPE_SESSION#${input.stripeSessionId}`, SK: 'META' },
+            ConsistentRead: true,
         }));
         const existingOrderId = existing.Item?.orderId as string | undefined;
         if (!existingOrderId) {
-            // Cancelled for another reason (e.g. throttling mid-transaction) —
-            // nothing was written; rethrow so the webhook 500s and Stripe retries.
+            // No marker even on a consistent read — the cancellation wasn't a
+            // duplicate after all (SDK gave no usable reasons); retry.
             throw err;
         }
-        const existingOrder = await buildFullOrderResponse(existingOrderId);
-        if (!existingOrder) {
+        const metaRes = await docClient.send(new GetCommand({
+            TableName: TABLE_NAME(),
+            Key: { PK: `ORDER#${existingOrderId}`, SK: 'META' },
+            ConsistentRead: true,
+        }));
+        if (!metaRes.Item) {
+            // Impossible under the atomic transaction (marker and order commit
+            // together) — never report silent success for a missing order.
             throw new Error(`Stripe session marker points to missing order ${existingOrderId} (session ${input.stripeSessionId})`);
+        }
+        const contactsRes = await docClient.send(new QueryCommand({
+            TableName: TABLE_NAME(),
+            KeyConditionExpression: 'PK = :pk AND begins_with(SK, :sk)',
+            ExpressionAttributeValues: {
+                ':pk': `ORDER#${existingOrderId}`,
+                ':sk': 'CONTACT#',
+            },
+            ConsistentRead: true,
+        }));
+        if (!(metaRes.Item as OrderItem).matchedOrgId) {
+            // The original invocation may have died between its transaction
+            // commit and the org upsert / CRM emit. Those are deliberately
+            // non-fatal (same contract as createOrder) — surface it for
+            // reconciliation (scripts/backfill-organizations.ts) instead of
+            // re-running here: upsertFromSubmission applies a scoreDelta and
+            // is NOT idempotent, so a blind rerun would double-count.
+            console.warn(JSON.stringify({
+                event: 'createStripeOrder.duplicate_without_org',
+                stripeSessionId: input.stripeSessionId,
+                orderId: existingOrderId,
+            }));
         }
         console.log(JSON.stringify({
             event: 'createStripeOrder.duplicate',
             stripeSessionId: input.stripeSessionId,
             orderId: existingOrderId,
         }));
-        return existingOrder;
+        return buildOrderResponse(metaRes.Item as OrderItem, (contactsRes.Items ?? []) as ContactItem[]);
     }
 
     // 5. Slack notification — a paid order deserves a loud ping.
@@ -223,6 +262,7 @@ export async function createStripeOrder(event: AppSyncEvent) {
                     ':gsi2sk': `ORDER#${now}`,
                 },
             }));
+            orderItem.matchedOrgId = matchedOrgId;
         }
     } catch (err) {
         console.error(JSON.stringify({
@@ -237,5 +277,7 @@ export async function createStripeOrder(event: AppSyncEvent) {
         { matchedOrgId, email: normalizedEmail },
     ));
 
-    return buildFullOrderResponse(orderId);
+    // Build the response from the items just written — no re-read, so an
+    // eventually consistent GET can never hide our own transaction.
+    return buildOrderResponse(orderItem as OrderItem, [contactItem as ContactItem]);
 }

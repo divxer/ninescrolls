@@ -13,7 +13,7 @@ const mockTransact = vi.fn();
 
 const mockSend = vi.fn().mockImplementation((cmd: unknown) => {
     const name = (cmd as { constructor: { name: string } }).constructor.name;
-    if (name === 'GetCommand') return mockGet();
+    if (name === 'GetCommand') return mockGet(cmd);
     if (name === 'PutCommand') return mockPut();
     if (name === 'UpdateCommand') return mockUpdate();
     if (name === 'QueryCommand') return mockQuery(cmd);
@@ -1107,19 +1107,24 @@ describe('order-api handler', () => {
             return { fieldName: 'createStripeOrder', arguments: { input } };
         }
 
+        beforeEach(() => {
+            // The global beforeEach only clears calls (vi.clearAllMocks) —
+            // unconsumed mockResolvedValueOnce queues would leak across tests.
+            mockGet.mockReset();
+            mockQuery.mockReset();
+            mockPut.mockReset();
+            mockTransact.mockReset();
+            mockPut.mockResolvedValue({});
+            mockTransact.mockResolvedValue({});
+        });
+
         function transactItems(call: unknown[]): Record<string, unknown>[] {
             const arg = call[0] as { TransactItems?: Array<{ Put?: { Item: Record<string, unknown> } }> };
             return (arg.TransactItems ?? []).map((t) => t.Put?.Item ?? {});
         }
 
         it('creates marker + order + contact + log in ONE atomic transaction', async () => {
-            mockTransact.mockResolvedValueOnce({});
-            // buildFullOrderResponse
-            mockGet.mockResolvedValueOnce({
-                Item: { ...SAMPLE_ORDER, status: 'PO_RECEIVED', source: 'STRIPE' },
-            });
-            mockQuery.mockResolvedValueOnce({ Items: [SAMPLE_CONTACT] });
-
+            // Response is built from the in-memory items — no reads needed
             const result = await handler(
                 makeDirectInvokeEvent(STRIPE_INPUT) as any,
                 {} as any,
@@ -1153,13 +1158,22 @@ describe('order-api handler', () => {
             expect(items.find((it) => String(it.SK).startsWith('LOG#'))).toBeTruthy();
         });
 
-        it('is idempotent: a cancelled transaction with an existing marker returns the original order', async () => {
-            const cancel = new Error('Transaction cancelled');
+        function makeCancel(reasons?: Array<{ Code: string }>) {
+            const cancel = new Error('Transaction cancelled') as Error & { CancellationReasons?: Array<{ Code: string }> };
             cancel.name = 'TransactionCanceledException';
-            mockTransact.mockRejectedValueOnce(cancel);
+            if (reasons) cancel.CancellationReasons = reasons;
+            return cancel;
+        }
+        // Realistic AWS shape: marker (item 0) condition failed, other items 'None'
+        const MARKER_EXISTS_REASONS = [
+            { Code: 'ConditionalCheckFailed' }, { Code: 'None' }, { Code: 'None' }, { Code: 'None' },
+        ];
+
+        it('is idempotent: marker ConditionalCheckFailed returns the original order via consistent reads', async () => {
+            mockTransact.mockRejectedValueOnce(makeCancel(MARKER_EXISTS_REASONS));
             mockGet
                 .mockResolvedValueOnce({ Item: { PK: 'STRIPE_SESSION#cs_live_test123', orderId: 'ord-20260722-d169' } })
-                .mockResolvedValueOnce({ Item: { ...SAMPLE_ORDER, orderId: 'ord-20260722-d169', status: 'PO_RECEIVED', source: 'STRIPE' } });
+                .mockResolvedValueOnce({ Item: { ...SAMPLE_ORDER, orderId: 'ord-20260722-d169', status: 'PO_RECEIVED', source: 'STRIPE', matchedOrgId: 'org-1' } });
             mockQuery.mockResolvedValueOnce({ Items: [SAMPLE_CONTACT] });
 
             const result = await handler(
@@ -1171,28 +1185,47 @@ describe('order-api handler', () => {
             expect(result.orderId).toBe('ord-20260722-d169');
             // No partial writes on the duplicate path
             expect(mockPut).not.toHaveBeenCalled();
+            // Every duplicate-path read must be strongly consistent so a
+            // concurrent loser can't miss the winner's just-committed records
+            for (const call of mockGet.mock.calls) {
+                expect((call[0] as { ConsistentRead?: boolean }).ConsistentRead).toBe(true);
+            }
+            expect((mockQuery.mock.calls[0][0] as { ConsistentRead?: boolean }).ConsistentRead).toBe(true);
         });
 
-        it('rethrows when the transaction is cancelled but no marker exists (transient failure)', async () => {
-            const cancel = new Error('Transaction cancelled');
-            cancel.name = 'TransactionCanceledException';
-            mockTransact.mockRejectedValueOnce(cancel);
-            mockGet.mockResolvedValueOnce({}); // marker lookup → not found
+        it('rethrows on TransactionConflict without treating it as a duplicate', async () => {
+            // A loser racing the winner's in-flight transaction gets
+            // TransactionConflict — nothing was written; Stripe must retry.
+            mockTransact.mockRejectedValueOnce(makeCancel([
+                { Code: 'TransactionConflict' }, { Code: 'None' }, { Code: 'None' }, { Code: 'None' },
+            ]));
 
             await expect(handler(
                 makeDirectInvokeEvent(STRIPE_INPUT) as any,
                 {} as any,
                 vi.fn(),
             )).rejects.toThrow('Transaction cancelled');
+            // Short-circuits on the cancellation reason — no marker lookup at all
+            expect(mockGet).not.toHaveBeenCalled();
+        });
+
+        it('rethrows when cancelled without reasons and no marker exists on a consistent read', async () => {
+            mockTransact.mockRejectedValueOnce(makeCancel()); // SDK gave no reasons
+            mockGet.mockResolvedValueOnce({}); // consistent marker lookup → not found
+
+            await expect(handler(
+                makeDirectInvokeEvent(STRIPE_INPUT) as any,
+                {} as any,
+                vi.fn(),
+            )).rejects.toThrow('Transaction cancelled');
+            expect((mockGet.mock.calls[0][0] as { ConsistentRead?: boolean }).ConsistentRead).toBe(true);
         });
 
         it('throws when the marker points at a missing order (never reports silent success)', async () => {
-            const cancel = new Error('Transaction cancelled');
-            cancel.name = 'TransactionCanceledException';
-            mockTransact.mockRejectedValueOnce(cancel);
+            mockTransact.mockRejectedValueOnce(makeCancel(MARKER_EXISTS_REASONS));
             mockGet
                 .mockResolvedValueOnce({ Item: { PK: 'STRIPE_SESSION#cs_live_test123', orderId: 'ord-gone' } })
-                .mockResolvedValueOnce({}); // buildFullOrderResponse → order missing
+                .mockResolvedValueOnce({}); // consistent META read → order missing
 
             await expect(handler(
                 makeDirectInvokeEvent(STRIPE_INPUT) as any,
@@ -1210,10 +1243,6 @@ describe('order-api handler', () => {
         });
 
         it('accepts a JSON-string input payload', async () => {
-            mockPut.mockResolvedValue({});
-            mockGet.mockResolvedValueOnce({ Item: { ...SAMPLE_ORDER, source: 'STRIPE' } });
-            mockQuery.mockResolvedValueOnce({ Items: [] });
-
             const result = await handler(
                 makeDirectInvokeEvent(JSON.stringify(STRIPE_INPUT)) as any,
                 {} as any,

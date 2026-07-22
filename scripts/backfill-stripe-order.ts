@@ -22,7 +22,7 @@
  */
 import { DynamoDBClient, ListTablesCommand } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, GetCommand } from '@aws-sdk/lib-dynamodb';
-import { LambdaClient, InvokeCommand, ListFunctionsCommand } from '@aws-sdk/client-lambda';
+import { LambdaClient, InvokeCommand, ListFunctionsCommand, GetFunctionConfigurationCommand } from '@aws-sdk/client-lambda';
 
 interface StripeOrderRecord {
   orderId: string;
@@ -53,22 +53,57 @@ async function findStripeOrdersTable(ddb: DynamoDBClient): Promise<string> {
   throw new Error('StripeOrders table not found — check AWS credentials/region');
 }
 
-/** Find the main-branch order-api Lambda (same naming convention the IAM grants rely on). */
-async function findOrderApiFunction(lambda: LambdaClient): Promise<string> {
+/** Find a main-branch Lambda by name fragment (same naming convention the IAM grants rely on). */
+async function findFunction(lambda: LambdaClient, fragment: RegExp, label: string): Promise<string> {
   const matches: string[] = [];
   let marker: string | undefined;
   do {
     const res = await lambda.send(new ListFunctionsCommand({ Marker: marker }));
     for (const fn of res.Functions ?? []) {
       const name = fn.FunctionName ?? '';
-      if (/orderapi/i.test(name) && /main-branch/.test(name)) matches.push(name);
+      if (fragment.test(name) && /main-branch/.test(name)) matches.push(name);
     }
     marker = res.NextMarker;
   } while (marker);
   if (matches.length !== 1) {
-    throw new Error(`Expected exactly one main-branch order-api Lambda, found: ${JSON.stringify(matches)}`);
+    throw new Error(`Expected exactly one main-branch ${label} Lambda, found: ${JSON.stringify(matches)}`);
   }
   return matches[0];
+}
+
+/**
+ * Independently verify with Stripe that the session is actually PAID.
+ * The legacy webhook persisted every checkout.session.completed row with a
+ * hard-coded status 'paid' — including potentially unsettled delayed-payment
+ * sessions — so the StripeOrders row alone cannot be trusted.
+ *
+ * Key resolution: STRIPE_SECRET_KEY env var, else read from the deployed
+ * stripe-webhook Lambda's configuration (the operator's IAM already allows it).
+ */
+async function verifyPaidWithStripe(lambda: LambdaClient, sessionId: string): Promise<void> {
+  let key = process.env.STRIPE_SECRET_KEY;
+  if (!key) {
+    const webhookFn = await findFunction(lambda, /stripewebhook/i, 'stripe-webhook');
+    const cfg = await lambda.send(new GetFunctionConfigurationCommand({ FunctionName: webhookFn }));
+    key = cfg.Environment?.Variables?.STRIPE_SECRET_KEY;
+  }
+  if (!key) {
+    throw new Error('STRIPE_SECRET_KEY not found (env var or stripe-webhook Lambda config) — cannot verify payment');
+  }
+
+  const res = await fetch(`https://api.stripe.com/v1/checkout/sessions/${sessionId}`, {
+    headers: { Authorization: `Bearer ${key}` },
+  });
+  const session = await res.json() as { payment_status?: string; status?: string; error?: { message?: string } };
+  if (!res.ok) {
+    throw new Error(`Stripe session lookup failed: ${session.error?.message ?? res.statusText}`);
+  }
+  if (session.payment_status !== 'paid') {
+    throw new Error(
+      `Refusing to backfill: Stripe reports payment_status '${session.payment_status}' (status '${session.status}') for ${sessionId} — only 'paid' sessions become admin orders`,
+    );
+  }
+  console.log('Stripe verification: payment_status = paid ✓');
 }
 
 function formatShipping(raw: StripeOrderRecord['shippingAddress']): string {
@@ -106,9 +141,12 @@ async function main() {
   const productName = line?.description ?? 'Unknown product';
   console.log(`Order: ${productName} — $${(rec.amountTotal / 100).toFixed(2)} ${rec.currency.toUpperCase()} — ${rec.customerName} <${rec.customerEmail}> — paid ${rec.createdAt.slice(0, 10)}`);
 
-  // 2. Invoke the canonical internal resolver (idempotent per session — safe to re-run)
+  // 2. Independently confirm the payment actually settled before creating an order
   const lambda = new LambdaClient({});
-  const fnName = await findOrderApiFunction(lambda);
+  await verifyPaidWithStripe(lambda, sessionId);
+
+  // 3. Invoke the canonical internal resolver (idempotent per session — safe to re-run)
+  const fnName = await findFunction(lambda, /orderapi/i, 'order-api');
   console.log(`order-api Lambda: ${fnName}`);
 
   const payload = {
