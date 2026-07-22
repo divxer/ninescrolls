@@ -130,7 +130,13 @@ for P in $(aws iam list-role-policies --role-name "$ROLE" --query 'PolicyNames[]
 done
 ```
 
-Also confirm `ReservedConcurrentExecutions: 1` on the function configuration.
+Note: the function deliberately has NO reserved concurrency. A `reservedConcurrentExecutions: 1`
+reservation was intended as third-layer overlap protection, but the sandbox deploy gate
+(commsp2gate, 2026-07-21) proved the account's Lambda concurrency quota cannot absorb it —
+CloudFormation rejects any reservation that drops unreserved concurrency below 10, and prod
+deploys into the same account. Overlap safety is carried by the 300s fenced lease
+(`acquireLease` ⇒ concurrent invocations return `skippedLeaseHeld`) plus the 600s cron
+interval; the lease is the correctness mechanism, the reservation was defense-in-depth only.
 
 ## 7. Operations
 

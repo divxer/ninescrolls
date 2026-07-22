@@ -24,4 +24,12 @@ describe('gmail-sync IAM source contract', () => {
     expect(src).toMatch(/SECRET_ARN_RE/);
     expect(src).toMatch(/if \(gmailSyncEnabled\)[\s\S]{0,300}fromSecretCompleteArn/);
   });
+  // Execution-discovered constraint (sandbox gate commsp2gate, 2026-07-21): the account's
+  // Lambda concurrency quota cannot absorb a reservation (CloudFormation min-10 unreserved
+  // rule), and prod deploys into the same account. Overlap safety = the fenced lease.
+  // Pin the ABSENCE of the reservation AND the rationale comment so neither silently vanishes.
+  it('does NOT reserve concurrency (account quota) and keeps the lease rationale comment', () => {
+    expect(src).not.toMatch(/reservedConcurrentExecutions\s*=/);
+    expect(src).toMatch(/lease is the correctness mechanism/);
+  });
 });

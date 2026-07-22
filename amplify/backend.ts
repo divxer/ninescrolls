@@ -1360,10 +1360,13 @@ if (gmailSyncEnabled) {
   const gmailSaSecret = Secret.fromSecretCompleteArn(gmailSyncStack, 'GmailSaSecret', GMAIL_SA_SECRET_ARN);
   gmailSaSecret.grantRead(backend.gmailSync.resources.lambda);
 }
-// Single-writer guarantee belt-and-braces on top of the lease: never more than one
-// concurrent gmail-sync execution (spec §10; lease fencing in gmailSyncState.ts is
-// the primary mechanism, this is the infra-level backstop).
-backend.gmailSync.resources.cfnResources.cfnFunction.reservedConcurrentExecutions = 1;
+// NO reservedConcurrentExecutions here — deliberately. It was intended as a third-layer
+// overlap protection, but the sandbox deploy gate (commsp2gate, 2026-07-21) proved the
+// account's Lambda concurrency quota cannot absorb a reservation: CloudFormation rejects it
+// ("decreases account's UnreservedConcurrentExecution below its minimum value of [10]"),
+// and prod deploys into the SAME account. Overlap safety is carried by the 300s fenced
+// lease (acquireLease ⇒ concurrent invocations return skippedLeaseHeld) plus the 600s cron
+// interval — the lease is the correctness mechanism; the reservation was defense-in-depth only.
 // DynamoDB: gmail-sync owns EXACTLY its own state item(s) — LeadingKeys-scoped to
 // GMAIL_SYNC#* on the BASE TABLE only (no index ARNs; the function never queries a GSI).
 backend.gmailSync.resources.lambda.addToRolePolicy(new PolicyStatement({
