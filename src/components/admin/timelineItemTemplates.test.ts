@@ -68,5 +68,7 @@ describe('safeGmailUrl', () => {
     expect(safeGmailUrl(undefined)).toBeNull();
     expect(safeGmailUrl('')).toBeNull();
     expect(safeGmailUrl('not a url')).toBeNull();
+    expect(safeGmailUrl('javascript:alert(1)')).toBeNull();
+    expect(safeGmailUrl('data:text/html,x')).toBeNull();
   });
 });
