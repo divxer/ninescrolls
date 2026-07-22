@@ -98,6 +98,8 @@ export function buildOrderResponse(order: OrderItem, contacts: ContactItem[]): R
         source: order.source || 'MANUAL',
         rfqId: order.rfqId || null,
         declineReason: order.declineReason || null,
+        stripeSessionId: order.stripeSessionId || null,
+        stripePaymentIntentId: order.stripePaymentIntentId || null,
     };
 }
 

@@ -79,6 +79,8 @@ export interface OrderItem {
     source: string;
     rfqId?: string;
     declineReason?: string;
+    stripeSessionId?: string;
+    stripePaymentIntentId?: string;
     quoteDate?: string;
     quoteValidUntil?: string;
     poDate?: string;

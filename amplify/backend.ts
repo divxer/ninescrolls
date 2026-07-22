@@ -1186,6 +1186,16 @@ backend.orderApi.resources.lambda.addToRolePolicy(new PolicyStatement({
 }));
 backend.orderApi.addEnvironment('ORGANIZATION_API_FUNCTION_NAME', backend.organizationApi.resources.lambda.functionName);
 
+// stripe-webhook bridges PAID checkout sessions into the admin order system via
+// the internal createStripeOrder resolver (direct Lambda invoke — the field is
+// deliberately absent from the GraphQL schema).
+backend.stripeWebhook.resources.lambda.addToRolePolicy(new PolicyStatement({
+  effect: Effect.ALLOW,
+  actions: ['lambda:InvokeFunction'],
+  resources: [backend.orderApi.resources.lambda.functionArn],
+}));
+backend.stripeWebhook.addEnvironment('ORDER_API_FUNCTION_NAME', backend.orderApi.resources.lambda.functionName);
+
 // ---------------------------------------------------------------------------
 // CloudWatch alarms — only in prod / main branch deploys. Sandbox skips to
 // avoid spurious subscription-confirmation emails on every developer's spin-up.

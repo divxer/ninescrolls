@@ -60,6 +60,9 @@ export interface Order {
   source: string;
   rfqId?: string | null;
   declineReason?: string | null;
+  // Stripe checkout orders (source === 'STRIPE') only
+  stripeSessionId?: string | null;
+  stripePaymentIntentId?: string | null;
 }
 
 export interface OrderContact {
@@ -202,6 +205,25 @@ export const STATUS_LABELS: Record<OrderStatus, string> = {
   CLOSED: 'Closed',
   DECLINED: 'Declined',
 };
+
+export const SOURCE_LABELS: Record<string, string> = {
+  RFQ_WEBSITE: 'Portal',
+  MANUAL: 'Direct',
+  STRIPE: 'Online',
+};
+
+export function orderSourceLabel(source?: string | null): string {
+  return (source && SOURCE_LABELS[source]) || source || '-';
+}
+
+/**
+ * Stage label adjusted for order source: prepaid Stripe checkout orders never
+ * had a PO — the PO_RECEIVED stage reads as "Paid" for them.
+ */
+export function statusLabelFor(status: OrderStatus, source?: string | null): string {
+  if (status === 'PO_RECEIVED' && source === 'STRIPE') return 'Paid';
+  return STATUS_LABELS[status];
+}
 
 export const STATUS_COLORS: Record<OrderStatus, string> = {
   INQUIRY: '#7c3aed',

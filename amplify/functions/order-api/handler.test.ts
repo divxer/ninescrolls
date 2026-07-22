@@ -9,15 +9,17 @@ const mockUpdate = vi.fn();
 const mockQuery = vi.fn();
 const mockDelete = vi.fn();
 const mockScan = vi.fn();
+const mockTransact = vi.fn();
 
 const mockSend = vi.fn().mockImplementation((cmd: unknown) => {
     const name = (cmd as { constructor: { name: string } }).constructor.name;
-    if (name === 'GetCommand') return mockGet();
+    if (name === 'GetCommand') return mockGet(cmd);
     if (name === 'PutCommand') return mockPut();
     if (name === 'UpdateCommand') return mockUpdate();
     if (name === 'QueryCommand') return mockQuery(cmd);
     if (name === 'DeleteCommand') return mockDelete();
     if (name === 'ScanCommand') return mockScan();
+    if (name === 'TransactWriteCommand') return mockTransact(cmd);
     return Promise.resolve({});
 });
 
@@ -34,6 +36,7 @@ vi.mock('@aws-sdk/lib-dynamodb', () => ({
     QueryCommand: vi.fn().mockImplementation((p) => ({ ...p, constructor: { name: 'QueryCommand' } })),
     DeleteCommand: vi.fn().mockImplementation((p) => ({ ...p, constructor: { name: 'DeleteCommand' } })),
     ScanCommand: vi.fn().mockImplementation((p) => ({ ...p, constructor: { name: 'ScanCommand' } })),
+    TransactWriteCommand: vi.fn().mockImplementation((p) => ({ ...p, constructor: { name: 'TransactWriteCommand' } })),
 }));
 
 const mockS3Send = vi.fn().mockResolvedValue({});
@@ -1172,6 +1175,177 @@ describe('order-api handler', () => {
     // -----------------------------------------------------------------------
     // updateOrder
     // -----------------------------------------------------------------------
+    // -----------------------------------------------------------------------
+    // createStripeOrder (internal-only: not in the GraphQL schema, reachable
+    // only via direct Lambda invoke from stripe-webhook)
+    // -----------------------------------------------------------------------
+    describe('createStripeOrder', () => {
+        const STRIPE_INPUT = {
+            stripeSessionId: 'cs_live_test123',
+            paymentIntentId: 'pi_test123',
+            amountTotalCents: 799900,
+            currency: 'usd',
+            customerEmail: 'buyer@innatecontrol.com',
+            customerName: 'Junqing Qiao',
+            contactFirstName: 'Junqing',
+            contactLastName: 'Qiao',
+            contactPhone: '5085020875',
+            productName: 'HY-4L - RF (13.56 MHz) Plasma Cleaner',
+            quantity: 1,
+            shippingAddress: '128 Parsons St, Brighton, MA, 02135, US',
+            paidAt: '2026-07-22T19:38:45.572Z',
+        };
+
+        function makeDirectInvokeEvent(input: unknown) {
+            // Direct Lambda invoke shape: no info wrapper, no identity
+            return { fieldName: 'createStripeOrder', arguments: { input } };
+        }
+
+        beforeEach(() => {
+            // The global beforeEach only clears calls (vi.clearAllMocks) —
+            // unconsumed mockResolvedValueOnce queues would leak across tests.
+            mockGet.mockReset();
+            mockQuery.mockReset();
+            mockPut.mockReset();
+            mockTransact.mockReset();
+            mockPut.mockResolvedValue({});
+            mockTransact.mockResolvedValue({});
+        });
+
+        function transactItems(call: unknown[]): Record<string, unknown>[] {
+            const arg = call[0] as { TransactItems?: Array<{ Put?: { Item: Record<string, unknown> } }> };
+            return (arg.TransactItems ?? []).map((t) => t.Put?.Item ?? {});
+        }
+
+        it('creates marker + order + contact + log in ONE atomic transaction', async () => {
+            // Response is built from the in-memory items — no reads needed
+            const result = await handler(
+                makeDirectInvokeEvent(STRIPE_INPUT) as any,
+                {} as any,
+                vi.fn(),
+            );
+
+            expect(result).toBeDefined();
+            // No standalone Puts — everything durable goes through the transaction
+            expect(mockPut).not.toHaveBeenCalled();
+            expect(mockTransact).toHaveBeenCalledTimes(1);
+
+            const items = transactItems(mockTransact.mock.calls[0]);
+            expect(items).toHaveLength(4); // marker + META + CONTACT + LOG
+
+            const marker = items.find((it) => it.PK === 'STRIPE_SESSION#cs_live_test123');
+            expect(marker).toBeTruthy();
+            expect(marker!.orderId).toBeDefined();
+
+            const meta = items.find((it) => it.SK === 'META' && String(it.PK).startsWith('ORDER#'))!;
+            expect(meta.status).toBe('PO_RECEIVED');
+            expect(meta.GSI1PK).toBe('ORDER_STATUS#PO_RECEIVED');
+            expect(meta.source).toBe('STRIPE');
+            expect(meta.stripeSessionId).toBe('cs_live_test123');
+            expect(meta.quoteAmount).toBe(7999);
+            expect(meta.poDate).toBe('2026-07-22');
+            expect(meta.GSI4PK).toBe('EMAIL#buyer@innatecontrol.com');
+            // Marker and order are bound inside the same transaction
+            expect(marker!.orderId).toBe(meta.orderId);
+
+            expect(items.find((it) => String(it.SK).startsWith('CONTACT#'))).toBeTruthy();
+            expect(items.find((it) => String(it.SK).startsWith('LOG#'))).toBeTruthy();
+        });
+
+        function makeCancel(reasons?: Array<{ Code: string }>) {
+            const cancel = new Error('Transaction cancelled') as Error & { CancellationReasons?: Array<{ Code: string }> };
+            cancel.name = 'TransactionCanceledException';
+            if (reasons) cancel.CancellationReasons = reasons;
+            return cancel;
+        }
+        // Realistic AWS shape: marker (item 0) condition failed, other items 'None'
+        const MARKER_EXISTS_REASONS = [
+            { Code: 'ConditionalCheckFailed' }, { Code: 'None' }, { Code: 'None' }, { Code: 'None' },
+        ];
+
+        it('is idempotent: marker ConditionalCheckFailed returns the original order via consistent reads', async () => {
+            mockTransact.mockRejectedValueOnce(makeCancel(MARKER_EXISTS_REASONS));
+            mockGet
+                .mockResolvedValueOnce({ Item: { PK: 'STRIPE_SESSION#cs_live_test123', orderId: 'ord-20260722-d169' } })
+                .mockResolvedValueOnce({ Item: { ...SAMPLE_ORDER, orderId: 'ord-20260722-d169', status: 'PO_RECEIVED', source: 'STRIPE', matchedOrgId: 'org-1' } });
+            mockQuery.mockResolvedValueOnce({ Items: [SAMPLE_CONTACT] });
+
+            const result = await handler(
+                makeDirectInvokeEvent(STRIPE_INPUT) as any,
+                {} as any,
+                vi.fn(),
+            ) as Record<string, unknown>;
+
+            expect(result.orderId).toBe('ord-20260722-d169');
+            // No partial writes on the duplicate path
+            expect(mockPut).not.toHaveBeenCalled();
+            // Every duplicate-path read must be strongly consistent so a
+            // concurrent loser can't miss the winner's just-committed records
+            for (const call of mockGet.mock.calls) {
+                expect((call[0] as { ConsistentRead?: boolean }).ConsistentRead).toBe(true);
+            }
+            expect((mockQuery.mock.calls[0][0] as { ConsistentRead?: boolean }).ConsistentRead).toBe(true);
+        });
+
+        it('rethrows on TransactionConflict without treating it as a duplicate', async () => {
+            // A loser racing the winner's in-flight transaction gets
+            // TransactionConflict — nothing was written; Stripe must retry.
+            mockTransact.mockRejectedValueOnce(makeCancel([
+                { Code: 'TransactionConflict' }, { Code: 'None' }, { Code: 'None' }, { Code: 'None' },
+            ]));
+
+            await expect(handler(
+                makeDirectInvokeEvent(STRIPE_INPUT) as any,
+                {} as any,
+                vi.fn(),
+            )).rejects.toThrow('Transaction cancelled');
+            // Short-circuits on the cancellation reason — no marker lookup at all
+            expect(mockGet).not.toHaveBeenCalled();
+        });
+
+        it('rethrows when cancelled without reasons and no marker exists on a consistent read', async () => {
+            mockTransact.mockRejectedValueOnce(makeCancel()); // SDK gave no reasons
+            mockGet.mockResolvedValueOnce({}); // consistent marker lookup → not found
+
+            await expect(handler(
+                makeDirectInvokeEvent(STRIPE_INPUT) as any,
+                {} as any,
+                vi.fn(),
+            )).rejects.toThrow('Transaction cancelled');
+            expect((mockGet.mock.calls[0][0] as { ConsistentRead?: boolean }).ConsistentRead).toBe(true);
+        });
+
+        it('throws when the marker points at a missing order (never reports silent success)', async () => {
+            mockTransact.mockRejectedValueOnce(makeCancel(MARKER_EXISTS_REASONS));
+            mockGet
+                .mockResolvedValueOnce({ Item: { PK: 'STRIPE_SESSION#cs_live_test123', orderId: 'ord-gone' } })
+                .mockResolvedValueOnce({}); // consistent META read → order missing
+
+            await expect(handler(
+                makeDirectInvokeEvent(STRIPE_INPUT) as any,
+                {} as any,
+                vi.fn(),
+            )).rejects.toThrow(/missing order/);
+        });
+
+        it('throws when required fields are missing', async () => {
+            await expect(handler(
+                makeDirectInvokeEvent({ stripeSessionId: 'cs_x' }) as any,
+                {} as any,
+                vi.fn(),
+            )).rejects.toThrow(/required/);
+        });
+
+        it('accepts a JSON-string input payload', async () => {
+            const result = await handler(
+                makeDirectInvokeEvent(JSON.stringify(STRIPE_INPUT)) as any,
+                {} as any,
+                vi.fn(),
+            );
+            expect(result).toBeDefined();
+        });
+    });
+
     describe('updateOrder', () => {
         it('writes QUOTE_VALIDITY_UPDATED log when validUntil changes', async () => {
             mockGet.mockResolvedValue({

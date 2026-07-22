@@ -8,7 +8,7 @@ import { LogisticsPanel } from '../../components/admin/LogisticsPanel';
 import { ActivityLog } from '../../components/admin/ActivityLog';
 import { DeclineDialog } from '../../components/admin/DeclineDialog';
 import { EditSpecsDialog } from '../../components/admin/EditSpecsDialog';
-import { formatDate, getNextStatus, STATUS_LABELS, FORWARD_PATH, type OrderStatus } from '../../types/admin';
+import { formatDate, getNextStatus, statusLabelFor, FORWARD_PATH, type OrderStatus } from '../../types/admin';
 import * as svc from '../../services/orderAdminService';
 import { quoteExpiryStatus, daysUntilExpiry } from '../../lib/orderHelpers';
 
@@ -130,7 +130,7 @@ export function OrderDetailPage() {
         <div className="space-y-1">
           <div className="flex items-center gap-3">
             <span className="text-3xl font-headline font-bold text-primary tracking-tighter">{orderRef}</span>
-            <StatusBadge status={order.status} size="lg" />
+            <StatusBadge status={order.status} size="lg" source={order.source} />
           </div>
           <p className="text-lg text-on-surface-variant font-medium">{order.institution}</p>
         </div>
@@ -141,7 +141,7 @@ export function OrderDetailPage() {
               onClick={handleAdvanceStatus}
               disabled={advancing}
             >
-              <span>{advancing ? 'Updating...' : `Advance to ${STATUS_LABELS[nextStatus]}`}</span>
+              <span>{advancing ? 'Updating...' : `Advance to ${statusLabelFor(nextStatus, order.source)}`}</span>
               <span className="material-symbols-outlined text-sm">arrow_forward</span>
             </button>
           )}
@@ -204,6 +204,32 @@ export function OrderDetailPage() {
         </div>
       )}
 
+      {/* Stripe payment banner — prepaid online checkout orders */}
+      {order.source === 'STRIPE' && (
+        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex flex-wrap items-center gap-3">
+          <span className="material-symbols-outlined text-emerald-700 text-[18px]">paid</span>
+          <span className="text-sm font-medium text-emerald-900">
+            Paid online via Stripe{order.quoteAmount ? ` — ${formatCurrency(order.quoteAmount)}` : ''}{order.poDate ? ` on ${formatDate(order.poDate)}` : ''}
+          </span>
+          {order.stripePaymentIntentId && (
+            <a
+              href={`https://dashboard.stripe.com/payments/${order.stripePaymentIntentId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm font-semibold text-emerald-700 hover:underline inline-flex items-center gap-1"
+            >
+              View payment in Stripe
+              <span className="material-symbols-outlined text-[14px]">open_in_new</span>
+            </a>
+          )}
+          {order.stripeSessionId && (
+            <span className="text-[10px] text-emerald-700/70 font-mono ml-auto" title={order.stripeSessionId}>
+              {order.stripeSessionId.slice(0, 20)}…
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Lifecycle Stepper */}
       <section className="bg-surface-container-low rounded-xl p-4 md:p-8 overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: 'none' }}>
         <div className="flex justify-between items-start min-w-[800px]">
@@ -251,7 +277,7 @@ export function OrderDetailPage() {
                   <span className={`text-[10px] font-bold tracking-widest uppercase ${
                     isCurrent ? 'text-primary' : isCompleted ? 'text-primary' : 'text-on-surface-variant'
                   }`}>
-                    {STATUS_LABELS[status]}
+                    {statusLabelFor(status, order.source)}
                   </span>
                   {isCompleted && dateStr && (
                     <p className="text-[10px] text-on-surface-variant mt-1">{formatDate(dateStr).toUpperCase()}</p>
@@ -280,15 +306,25 @@ export function OrderDetailPage() {
               >edit</span>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-y-8 gap-x-4">
+              {order.source !== 'STRIPE' && (
+                <div className="space-y-1">
+                  <label className="text-[0.6875rem] uppercase tracking-widest font-bold text-on-surface-variant/70">Quote #</label>
+                  <p className="text-sm font-semibold">{order.quoteNumber || '-'}</p>
+                </div>
+              )}
               <div className="space-y-1">
-                <label className="text-[0.6875rem] uppercase tracking-widest font-bold text-on-surface-variant/70">Quote #</label>
-                <p className="text-sm font-semibold">{order.quoteNumber || '-'}</p>
-              </div>
-              <div className="space-y-1">
-                <label className="text-[0.6875rem] uppercase tracking-widest font-bold text-on-surface-variant/70">PO #</label>
-                <p className={`text-sm ${order.poNumber ? 'font-semibold' : 'text-outline italic'}`}>
-                  {order.poNumber || 'Pending Reception'}
-                </p>
+                <label className="text-[0.6875rem] uppercase tracking-widest font-bold text-on-surface-variant/70">
+                  {order.source === 'STRIPE' ? 'Payment Ref' : 'PO #'}
+                </label>
+                {order.source === 'STRIPE' ? (
+                  <p className="text-sm font-semibold font-mono" title={order.stripePaymentIntentId || undefined}>
+                    {order.stripePaymentIntentId ? `${order.stripePaymentIntentId.slice(0, 16)}…` : 'Stripe checkout'}
+                  </p>
+                ) : (
+                  <p className={`text-sm ${order.poNumber ? 'font-semibold' : 'text-outline italic'}`}>
+                    {order.poNumber || 'Pending Reception'}
+                  </p>
+                )}
               </div>
               <div className="space-y-1">
                 <label className="text-[0.6875rem] uppercase tracking-widest font-bold text-on-surface-variant/70">Product</label>
@@ -312,6 +348,7 @@ export function OrderDetailPage() {
                 <label className="text-[0.6875rem] uppercase tracking-widest font-bold text-on-surface-variant/70">Created By</label>
                 <p className="text-sm font-semibold">{order.createdByEmail || order.createdBy}</p>
               </div>
+              {order.source !== 'STRIPE' && (
               <div className="space-y-1">
                 <label className="text-[0.6875rem] uppercase tracking-widest font-bold text-on-surface-variant/70">Quote Valid Until</label>
                 {(() => {
@@ -337,6 +374,7 @@ export function OrderDetailPage() {
                   );
                 })()}
               </div>
+              )}
             </div>
           </div>
 

@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useOrders, useOrderStats } from '../../hooks/useOrders';
 import { StatusBadge } from '../../components/admin/StatusBadge';
-import { ORDER_STATUSES, STATUS_LABELS, FORWARD_PATH, type Order, type OrderStatus } from '../../types/admin';
+import { ORDER_STATUSES, STATUS_LABELS, FORWARD_PATH, orderSourceLabel, type Order, type OrderStatus } from '../../types/admin';
 import { quoteExpiryStatus, daysUntilExpiry } from '../../lib/orderHelpers';
 
 const STATUS_ICONS: Record<string, string> = {
@@ -230,7 +230,7 @@ export function OrderListPage() {
               >
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-bold text-on-surface">{order.quoteNumber || order.poNumber || order.orderId.slice(0, 8)}</span>
-                  <StatusBadge status={order.status} />
+                  <StatusBadge status={order.status} source={order.source} />
                   <ExpiryBadge order={order} />
                 </div>
                 <div className="text-sm font-medium text-on-surface">{order.institution}</div>
@@ -241,7 +241,7 @@ export function OrderListPage() {
                 </div>
                 <div className="flex items-center justify-between mt-1">
                   <span className="text-[10px] font-label uppercase tracking-widest text-on-surface-variant">
-                    {order.source === 'RFQ_WEBSITE' ? 'Portal' : order.source === 'MANUAL' ? 'Direct' : order.source || '-'}
+                    {orderSourceLabel(order.source)}
                   </span>
                   <span className="text-xs text-on-surface-variant">{order.daysSinceLastUpdate}d ago</span>
                 </div>
@@ -295,7 +295,7 @@ export function OrderListPage() {
                       {formatCurrency(order.quoteAmount)}
                     </td>
                     <td className="px-6 py-5">
-                      <StatusBadge status={order.status} />
+                      <StatusBadge status={order.status} source={order.source} />
                       <ExpiryBadge order={order} />
                     </td>
                     <td className="px-6 py-5 text-center">
@@ -303,7 +303,7 @@ export function OrderListPage() {
                     </td>
                     <td className="px-6 py-5">
                       <span className="text-[10px] font-label uppercase tracking-widest text-on-surface-variant">
-                        {order.source === 'RFQ_WEBSITE' ? 'Portal' : order.source === 'MANUAL' ? 'Direct' : order.source || '-'}
+                        {orderSourceLabel(order.source)}
                       </span>
                     </td>
                   </tr>

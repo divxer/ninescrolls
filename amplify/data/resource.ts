@@ -331,6 +331,9 @@ const schema = a.schema({
     source: a.string().required(),
     rfqId: a.string(),
     declineReason: a.string(),
+    // Stripe checkout orders (source === 'STRIPE') only
+    stripeSessionId: a.string(),
+    stripePaymentIntentId: a.string(),
   }),
 
   OrderConnection: a.customType({

@@ -4,6 +4,7 @@ import * as sgMail from '@sendgrid/mail';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand } from '@aws-sdk/lib-dynamodb';
 import { env } from '$amplify/env/stripe-webhook';
+import { invokeCreateStripeOrder } from '../../lib/orders/invoke-order-api.js';
 
 const escapeHtml = (value: string): string =>
   value
@@ -184,11 +185,15 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
 
   // Handle different event types
   try {
-    if (stripeEvent.type === 'checkout.session.completed') {
+    if (
+      stripeEvent.type === 'checkout.session.completed'
+      || stripeEvent.type === 'checkout.session.async_payment_succeeded'
+    ) {
       const session = stripeEvent.data.object as Stripe.Checkout.Session;
 
-      console.log('Checkout session completed:', {
+      console.log(`${stripeEvent.type}:`, {
         sessionId: session.id,
+        paymentStatus: session.payment_status,
         customerEmail: session.customer_details?.email,
         amountTotal: session.amount_total,
         currency: session.currency,
@@ -199,28 +204,41 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
         expand: ['line_items', 'line_items.data.price.product'],
       });
 
-      const orderResult = await persistOrder(fullSession);
-      if (orderResult === 'existing') {
-        console.log('Order already persisted for session:', session.id);
+      // Delayed-notification payment methods (e.g. ACH) fire
+      // checkout.session.completed with payment_status 'unpaid'. Do NOT treat
+      // the session as an order yet — checkout.session.async_payment_succeeded
+      // re-enters this block once the payment actually settles.
+      if (fullSession.payment_status !== 'paid') {
+        console.log('Session not paid yet — skipping order processing:', {
+          sessionId: fullSession.id,
+          paymentStatus: fullSession.payment_status,
+        });
         return {
           statusCode: 200,
           body: JSON.stringify({ received: true }),
         };
       }
 
-      try {
-        await recordWebhookEvent(stripeEvent.id);
-      } catch (err: unknown) {
-        console.error('Failed to record webhook event:', err);
+      const orderResult = await persistOrder(fullSession);
+      if (orderResult === 'created') {
+        try {
+          await recordWebhookEvent(stripeEvent.id);
+        } catch (err: unknown) {
+          console.error('Failed to record webhook event:', err);
+        }
+
+        // Send order confirmation email (first delivery only — retries after a
+        // failed bridge below hit the 'existing' branch and skip the emails)
+        await sendOrderConfirmationEmail(fullSession);
+      } else {
+        console.log('Order already persisted for session:', session.id);
       }
 
-      // Send order confirmation email
-      await sendOrderConfirmationEmail(fullSession);
-      
-      // TODO: Additional business logic:
-      // 2. Update order status in database
-      // 3. Trigger fulfillment process
-      // 4. Send notification to sales team
+      // Bridge the paid order into the admin order system (Customer 360).
+      // Idempotent per session (createStripeOrder guards on STRIPE_SESSION#<id>),
+      // so we run it on every delivery. A failure propagates to a 500 so Stripe
+      // retries — that's the recovery path for a transient bridge outage.
+      await bridgeToAdminOrder(fullSession, stripeEvent.created);
 
     } else if (stripeEvent.type === 'payment_intent.succeeded') {
       const paymentIntent = stripeEvent.data.object as Stripe.PaymentIntent;
@@ -248,6 +266,81 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     };
   }
 };
+
+/**
+ * Bridge a PAID checkout session into the admin order system (Customer 360)
+ * via the order-api Lambda's internal createStripeOrder resolver. Without this
+ * bridge, paid orders live only in the StripeOrders archive table, which the
+ * admin order list never reads.
+ *
+ * Throws on bridge failure so the webhook returns 500 and Stripe retries.
+ *
+ * `eventCreatedEpoch` is the Stripe event's `created` timestamp (seconds) —
+ * a stable payment-time approximation that survives delayed webhook delivery
+ * and replays, unlike processing-time `new Date()`.
+ */
+async function bridgeToAdminOrder(session: Stripe.Checkout.Session, eventCreatedEpoch: number): Promise<void> {
+  const customerEmail = session.metadata?.contactEmail || session.customer_details?.email || '';
+  const amountTotalCents = session.amount_total ?? 0;
+  if (!customerEmail || !amountTotalCents) {
+    // Can't build a valid admin order — don't 500 (a retry can never fix a
+    // missing email/amount). The StripeOrders archive + sales email still exist.
+    console.error('bridgeToAdminOrder: missing email or amount, skipping admin order creation:', {
+      sessionId: session.id,
+      hasEmail: Boolean(customerEmail),
+      amountTotalCents,
+    });
+    return;
+  }
+
+  const line = session.line_items?.data?.[0];
+  const lineProduct = line?.price?.product;
+  const productNameCandidate = typeof lineProduct === 'object' && lineProduct !== null && 'name' in lineProduct
+    ? (lineProduct as { name?: string }).name
+    : undefined;
+  const productName = line?.description || productNameCandidate || 'Unknown product';
+
+  // Shipping address string: metadata (checkout form) first, Stripe-collected fallback
+  let shippingAddress = '';
+  if (session.metadata?.shippingLine1) {
+    shippingAddress = [
+      session.metadata.shippingLine1,
+      session.metadata.shippingCity,
+      session.metadata.shippingState,
+      session.metadata.shippingPostalCode,
+      session.metadata.shippingCountry,
+    ].filter((part) => part && part.trim()).join(', ');
+  } else {
+    const sessionShipping = session as Stripe.Checkout.Session & {
+      shipping_details?: { address?: Stripe.Address };
+      shipping?: { address?: Stripe.Address };
+    };
+    const addr = sessionShipping.shipping_details?.address || sessionShipping.shipping?.address;
+    if (addr) {
+      shippingAddress = [addr.line1, addr.line2, addr.city, addr.state, addr.postal_code, addr.country]
+        .filter(Boolean).join(', ');
+    }
+  }
+
+  await invokeCreateStripeOrder({
+    stripeSessionId: session.id,
+    paymentIntentId: typeof session.payment_intent === 'string' ? session.payment_intent : undefined,
+    amountTotalCents,
+    currency: session.currency ?? 'usd',
+    customerEmail,
+    customerName: session.customer_details?.name || session.metadata?.customerName || '',
+    contactFirstName: session.metadata?.contactFirstName || '',
+    contactLastName: session.metadata?.contactLastName || '',
+    contactPhone: session.metadata?.contactPhone || '',
+    contactOrganization: session.metadata?.contactOrganization || '',
+    productName,
+    quantity: line?.quantity ?? 1,
+    shippingAddress,
+    notes: session.metadata?.notes || '',
+    paidAt: new Date(eventCreatedEpoch * 1000).toISOString(),
+  });
+  console.log('Bridged paid Stripe order into admin order system:', session.id);
+}
 
 /**
  * Send professional order confirmation email
