@@ -5,6 +5,7 @@ import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, GetCommand, PutCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
 import { normalizeUtm, extractClickIds } from './utm';
+import { isSecurityProxyOrg } from '../../lib/analytics/proxy-vendors';
 
 /** Check if an IP is private/reserved (RFC 1918, loopback, link-local, CGNAT). */
 export function isPrivateIP(ip: string): boolean {
@@ -197,7 +198,14 @@ async function lookupIP(ip: string): Promise<IPLookupResult> {
     const companyType = merged.companyType as string | undefined;
 
     let organizationType = 'unknown';
-    if (companyType === 'education') organizationType = 'education';
+    // Security-proxy / browser-isolation egress: the vendor's org name says
+    // nothing about the visitor. Highest priority — ipinfo often types these
+    // vendors as 'business', which would send the vendor name to AI
+    // classification (the exact misattribution this prevents).
+    if (isSecurityProxyOrg(merged.org as string, merged.isp as string, orgName)) {
+        organizationType = 'corporate_proxy';
+    }
+    else if (companyType === 'education') organizationType = 'education';
     else if (companyType === 'business') organizationType = 'business';
     else if (companyType === 'government') organizationType = 'government';
     else if (companyType === 'isp') organizationType = 'isp';
@@ -459,7 +467,7 @@ async function writePageTimeFlush(
             }
             if (aiResult) {
                 const TARGET_ORG_TYPES = ['education', 'university', 'research_institute', 'government'];
-                const NEVER_TARGET_TYPES = ['telecom_isp'];
+                const NEVER_TARGET_TYPES = ['telecom_isp', 'corporate_proxy'];
                 const isTargetOrgType = TARGET_ORG_TYPES.includes(aiResult.organizationType);
                 const isAITarget = aiResult.isTargetCustomer === true;
                 const isNeverTarget = NEVER_TARGET_TYPES.includes(aiResult.organizationType);
@@ -754,7 +762,7 @@ async function writePageView(
             if (aiResult) {
                 finalAiResult = aiResult;
                 const TARGET_ORG_TYPES = ['education', 'university', 'research_institute', 'government'];
-                const NEVER_TARGET_TYPES = ['telecom_isp'];
+                const NEVER_TARGET_TYPES = ['telecom_isp', 'corporate_proxy'];
                 const isTargetOrgType = TARGET_ORG_TYPES.includes(aiResult.organizationType);
                 const isAITarget = aiResult.isTargetCustomer === true;
                 const isNeverTarget = NEVER_TARGET_TYPES.includes(aiResult.organizationType);

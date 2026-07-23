@@ -434,4 +434,23 @@ describe('writePageView (via page_view_store branch)', () => {
         const update = cmds('UpdateCommand')[0] as { input: { ExpressionAttributeValues: Record<string, unknown> } };
         expect(update.input.ExpressionAttributeValues[':provider']).toBe('anthropic');
     });
+
+    it('security-proxy egress (Menlo) → organizationType corporate_proxy, AI classify skipped', async () => {
+        // CLASSIFY_ORG_FUNCTION_NAME set: proves the skip is the org-type gate,
+        // not a missing function name.
+        const handler = await loadHandler({ CLASSIFY_ORG_FUNCTION_NAME: 'classify-fn' });
+        // ipinfo reports the vendor as a business — proxy match must win over companyType.
+        stubPageViewFetch({ org: 'AS399629 Menlo Security, Inc.', companyType: 'business' });
+
+        const res = await invoke(handler, pvEvent({ ip: '57.140.1.2' }));
+
+        expect(res.statusCode).toBe(200);
+        const item = putItem();
+        expect(item.organizationType).toBe('corporate_proxy');
+        expect(item.orgName).toBe('Menlo Security, Inc.'); // AS prefix stripped, name retained for display
+        // corporate_proxy is not in AI_CLASSIFY_ORG_TYPES → classify-org never invoked
+        expect(mockLambdaSend).not.toHaveBeenCalled();
+        // and not a categorical target either → no enrichment Update
+        expect(cmds('UpdateCommand')).toHaveLength(0);
+    });
 });

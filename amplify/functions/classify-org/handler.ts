@@ -3,6 +3,7 @@ import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, GetCommand, PutCommand, UpdateCommand, ScanCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
 import { randomUUID } from 'node:crypto';
 import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime';
+import { isSecurityProxyOrg } from '../../lib/analytics/proxy-vendors';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -24,7 +25,7 @@ interface ClassifyRequest {
 }
 
 interface ClassifyResult {
-    organizationType: 'university' | 'research_institute' | 'enterprise' | 'government' | 'hospital' | 'telecom_isp' | 'unknown';
+    organizationType: 'university' | 'research_institute' | 'enterprise' | 'government' | 'hospital' | 'telecom_isp' | 'corporate_proxy' | 'unknown';
     isTargetCustomer: boolean;
     confidence: number;
     reason: string;
@@ -859,23 +860,43 @@ export const handler: APIGatewayProxyHandler = async (event) => {
         // Default: classify flow
         // Check DynamoDB cache first
         const cached = await getCachedClassification(body.orgName);
-        if (cached) {
-            // Manual entries are ALWAYS returned, even with force=true
-            if (cached.source === 'manual') {
-                return {
-                    statusCode: 200,
-                    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-                    body: JSON.stringify(cached),
-                };
-            }
-            // AI cached: return unless force=true
-            if (!body.force) {
-                return {
-                    statusCode: 200,
-                    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-                    body: JSON.stringify(cached),
-                };
-            }
+        // Manual entries are ALWAYS returned, even with force=true
+        if (cached && cached.source === 'manual') {
+            return {
+                statusCode: 200,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                body: JSON.stringify(cached),
+            };
+        }
+
+        // Security-proxy / browser-isolation vendors: deterministic result,
+        // no AI call. The vendor's name says nothing about the visitor behind
+        // the proxy. Checked BEFORE the AI cache so a stale pre-fix AI entry
+        // ("enterprise") is superseded immediately instead of after TTL.
+        // Manual overrides (above) still win.
+        if (isSecurityProxyOrg(body.orgName)) {
+            const proxyResult: ClassifyResult = {
+                organizationType: 'corporate_proxy',
+                isTargetCustomer: false,
+                confidence: 1.0,
+                reason: 'Security proxy / browser-isolation vendor egress — real visitor org unknown',
+                cached: false,
+                source: 'ai',
+            };
+            return {
+                statusCode: 200,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                body: JSON.stringify(proxyResult),
+            };
+        }
+
+        // AI cached: return unless force=true
+        if (cached && !body.force) {
+            return {
+                statusCode: 200,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                body: JSON.stringify(cached),
+            };
         }
 
         // Classify: Bedrock first, Anthropic API fallback

@@ -2,6 +2,7 @@ import type { LifecycleStage } from '../../../services/behaviorAnalytics';
 import type { AnalyticsEvent, OrganizationRecord } from './types';
 import { isPrivateIP, tierRank } from './format';
 import { computePerPageDuration } from './flush';
+import { isSecurityProxyOrg } from '../../../../amplify/lib/analytics/proxy-vendors';
 
 /**
  * Stable identity key for org-override reads/writes.
@@ -124,12 +125,16 @@ export function aggregateByOrg(
     }
   }
 
-  // ── Collect ISP org names (AI telecom_isp + IP-level isp) ───────────
-  // Used to split ISP visitors and prevent merge-back.
-  const ISP_ORG_TYPES = new Set(['telecom_isp', 'isp']);
+  // ── Collect ISP-like org names (AI telecom_isp + IP-level isp + proxies) ──
+  // Used to split ISP/proxy visitors and prevent merge-back. corporate_proxy =
+  // security-proxy / browser-isolation egress (Menlo, Zscaler, …): like an ISP,
+  // the org name identifies the network, never the visitor.
+  const ISP_ORG_TYPES = new Set(['telecom_isp', 'isp', 'corporate_proxy']);
   const ispOrgNames = new Set<string>();
   const addIfISP = (orgName: string, org: string, aiType: string | null | undefined, ipType: string | undefined) => {
-    if (ISP_ORG_TYPES.has(aiType || '') || ISP_ORG_TYPES.has(ipType || '')) {
+    // Name fallback: historical events were AI-classified 'enterprise' under the
+    // proxy vendor's name (pre-corporate_proxy pipeline) and never re-classify.
+    if (ISP_ORG_TYPES.has(aiType || '') || ISP_ORG_TYPES.has(ipType || '') || isSecurityProxyOrg(orgName, org)) {
       if (orgName) ispOrgNames.add(orgName);
       if (org) ispOrgNames.add(org);
     }
@@ -246,6 +251,20 @@ export function aggregateByOrg(
   const records: OrganizationRecord[] = [];
 
   for (const [key, group] of groups) {
+    // Proxy-egress events never contribute identity/targeting signal: their
+    // org fields, AI verdict, target flag, and tier describe the proxy VENDOR
+    // (historically "enterprise, 0.95" for Menlo/Zscaler/…), not the visitor.
+    const isProxyEgress = (e: AnalyticsEvent) =>
+      e.organizationType === 'corporate_proxy' || isSecurityProxyOrg(e.orgName, e.org, e.isp);
+    const groupHasProxyEgress = group.some(isProxyEgress);
+    // Trusted to supply classification/target/tier/confidence state: not proxy
+    // egress itself, and NAMED. Unnamed events (flush/partial/historical) were
+    // grouped here by visitorOrgMap inheritance — when the group contains proxy
+    // egress, their fields may be vendor-derived despite carrying no org name,
+    // so they are only trusted in groups with no proxy egress at all.
+    const isTrustedStateEvent = (e: AnalyticsEvent) =>
+      !isProxyEgress(e) && ((!!e.orgName || !!e.org) || !groupHasProxyEgress);
+
     const pages = new Set<string>();
     const products = new Set<string>();
     let totalTime = 0;
@@ -266,14 +285,18 @@ export function aggregateByOrg(
       }
       if (e.productName) products.add(e.productName);
 
-      const eventConf = e.aiConfidence ?? 0;
-      if (eventConf > maxConf) {
-        maxConf = eventConf;
+      // Confidence/tier/target only from trusted events — vendor-derived
+      // state on proxy events (named or inherited) must not leak into the record.
+      if (isTrustedStateEvent(e)) {
+        const eventConf = e.aiConfidence ?? 0;
+        if (eventConf > maxConf) {
+          maxConf = eventConf;
+        }
+        if (e.leadTier && tierRank(e.leadTier) > tierRank(bestTier)) {
+          bestTier = e.leadTier;
+        }
+        if (e.isTargetCustomer) isTarget = true;
       }
-      if (e.leadTier && tierRank(e.leadTier) > tierRank(bestTier)) {
-        bestTier = e.leadTier;
-      }
-      if (e.isTargetCustomer) isTarget = true;
       if (e.pdfDownloads != null && e.pdfDownloads > maxPdfDownloads) {
         maxPdfDownloads = e.pdfDownloads;
       }
@@ -300,30 +323,59 @@ export function aggregateByOrg(
     // Clear historical tier for non-target customers (pre-fix events may have incorrect tiers)
     if (!isTarget) bestTier = null;
 
-    // Promote AI classification when IP-based org type is unknown
+    // Detect ISP/proxy visitors that were split by the ISP split step.
+    // Prefer non-ISP org name when the visitor has events from multiple networks.
+    // (Computed before org-type promotion: the proxy flag below must suppress
+    // the vendor-derived AI type.)
+    const nonIspEvent = group.find((e) => {
+      const name = e.orgName || e.org || '';
+      return name && !ispOrgNames.has(name);
+    });
+    const orgEvent = nonIspEvent || group.find((e) => e.orgName || e.org) || group[0];
+    const ispOrgName = orgEvent.orgName || orgEvent.org || '';
+    const isISPVisitor = ispOrgNames.has(ispOrgName) && key !== ispOrgName;
+    // The record resolves to a proxy vendor's name (no real-org event found):
+    // its org type must say "corporate proxy", never the vendor's own AI
+    // classification ("enterprise" — historically stored on pre-fix events).
+    const isProxyOrg = isSecurityProxyOrg(ispOrgName);
+    // Proxy-only group: clear any residual target/tier state (e.g. carried on
+    // unnamed events) — vendor-derived, and it would block anonymous-high-intent.
+    if (isProxyOrg) {
+      isTarget = false;
+      bestTier = null;
+    }
+
+    // Promote AI classification when IP-based org type is unknown.
+    // Proxy-egress events are excluded as sources: in a mixed multi-network
+    // group their stored AI verdict would override the real institution's type.
     const aiEvent = group.find((e) =>
       e.aiOrganizationType && e.aiOrganizationType !== 'unknown' && e.aiConfidence != null && e.aiConfidence >= 0.5
+      && isTrustedStateEvent(e)
     );
     // Also check parent ISP AI type and visitorOrgMap (ISP-split groups may lack AI on their own events)
     const aiFromParentISP = !aiEvent ? (() => {
-      const orgEvent = group.find(e => e.orgName || e.org);
-      const orgName = orgEvent?.orgName || orgEvent?.org || '';
-      if (orgName && ispAiType.has(orgName)) return ispAiType.get(orgName)!;
-      // Also check visitorOrgMap
+      // Keyed on the record's resolved org name (prefers the real org in mixed
+      // groups) so a proxy/ISP parent type is only inherited by its own subgroups.
+      if (ispOrgName && ispAiType.has(ispOrgName)) return ispAiType.get(ispOrgName)!;
+      // Also check visitorOrgMap — skipping proxy-vendor metadata
       for (const e of group) {
         const vid = (e as Record<string, unknown>).visitorId as string;
         if (!vid) continue;
         const meta = visitorOrgMap.get(vid);
-        if (meta?.aiOrganizationType && meta.aiOrganizationType !== 'unknown'
+        if (!meta || isSecurityProxyOrg(meta.orgName, meta.org, meta.isp)) continue;
+        if (meta.aiOrganizationType && meta.aiOrganizationType !== 'unknown'
             && meta.aiConfidence != null && meta.aiConfidence >= 0.5) {
           return { aiOrganizationType: meta.aiOrganizationType, aiConfidence: meta.aiConfidence };
         }
       }
       return null;
     })() : null;
-    const ipOrgType = group.find(e => e.organizationType && e.organizationType !== 'unknown')?.organizationType ||
-      geoEvent.organizationType || '';
-    const effectiveOrgType = aiEvent?.aiOrganizationType || aiFromParentISP?.aiOrganizationType || ipOrgType;
+    const ipOrgType = group.find(e => e.organizationType && e.organizationType !== 'unknown'
+        && isTrustedStateEvent(e))?.organizationType ||
+      (isTrustedStateEvent(geoEvent) ? geoEvent.organizationType : '') || '';
+    const effectiveOrgType = isProxyOrg
+      ? 'corporate_proxy'
+      : (aiEvent?.aiOrganizationType || aiFromParentISP?.aiOrganizationType || ipOrgType);
 
     // Backfill tier for old events that lack leadTier.
     // Two paths mirror the pipeline (segmentAnalytics):
@@ -341,8 +393,9 @@ export function aggregateByOrg(
     }
 
     // Anonymous high-intent: unidentified org but strong behavioral signals
-    // Exclude orgs identified by AI as a real organization (not ISP/unknown)
-    const aiIdentifiedRealOrg = aiEvent && aiEvent.aiOrganizationType !== 'telecom_isp';
+    // Exclude orgs identified by AI as a real organization (not ISP/proxy/unknown)
+    const aiIdentifiedRealOrg = aiEvent && aiEvent.aiOrganizationType !== 'telecom_isp'
+      && aiEvent.aiOrganizationType !== 'corporate_proxy' && !isProxyOrg;
     const hasProductPageVisit = group.some(e => e.pathname?.startsWith('/products/'));
     const isAnonymousHighIntent = !isTarget && !bestTier && !aiIdentifiedRealOrg &&
       (
@@ -350,16 +403,8 @@ export function aggregateByOrg(
         (maxBehaviorScore >= 0.1 && hasProductPageVisit)
       );
 
-    // Detect ISP visitors that were split by the ISP split step
-    // Prefer non-ISP org name when the visitor has events from multiple networks
-    const nonIspEvent = group.find((e) => {
-      const name = e.orgName || e.org || '';
-      return name && !ispOrgNames.has(name);
-    });
-    const orgEvent = nonIspEvent || group.find((e) => e.orgName || e.org) || group[0];
-    const ispOrgName = orgEvent.orgName || orgEvent.org || '';
-    const isISPVisitor = ispOrgNames.has(ispOrgName) && key !== ispOrgName;
     // Build a human-readable display name for ISP individual visitors
+    // (nonIspEvent/ispOrgName/isISPVisitor computed above, before org-type promotion)
     const displayName = isISPVisitor
       ? `${ispOrgName} · ${[geoEvent.city, geoEvent.region].filter(Boolean).join(', ') || 'Unknown'}`
       : key;
