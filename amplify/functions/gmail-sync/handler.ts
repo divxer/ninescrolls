@@ -149,9 +149,11 @@ async function syncMailbox(mailbox: string, nowMs: number): Promise<Record<strin
     return { mailbox, status: 'error', error };
   }
   if (rel.lost) {
-    // Ownership lost: the streak write did not land — emit NO streak events (this log covers it).
+    // Ownership lost: NEITHER the summary NOR the streak was persisted — returning the original
+    // outcome (possibly completed:true) would be misleading. Emit NO streak events (this log
+    // covers it) and report lease_lost, matching the aborted mid-run vocabulary.
     console.log(JSON.stringify({ event: 'gmail.sync.lease_lost', mailbox, stage: 'release' }));
-    return outcome;
+    return { mailbox, phase: outcome.phase, status: 'lease_lost' };
   }
   if (runClass === 'blocked') {
     const { blockedMessageId, blockedStreak } = blockedFields;   // the PERSISTED values

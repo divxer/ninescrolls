@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const invokeCrmApi = vi.fn();
 vi.mock('../../../lib/crm/invoke-crm-api', () => ({ invokeCrmApi: (...a: unknown[]) => invokeCrmApi(...a) }));
 
-import { projectMessage, sanitizeDiagnostic } from './emitMessage';
+import { projectMessage, sanitizeDiagnostic, KNOWN_ERROR_NAMES } from './emitMessage';
 import { GmailApiError } from './gmailClient';
 import type { GmailEmit } from './mapMessage';
 
@@ -57,12 +57,20 @@ describe('projectMessage', () => {
     expect((out as { error: string }).error).toBe('crm_api_error');
   });
 
-  it('a crm-api FunctionError carrying a safe errorType name → crm_api_error: <type>', async () => {
+  it('a crm-api FunctionError carrying a KNOWN errorType name → crm_api_error: <type>', async () => {
     const e = new Error('crm-api error: bad input for bob@acme.com');
-    e.name = 'ValidationError';                                   // invoke-crm-api sets this from the payload errorType
+    e.name = 'ValidationException';                               // invoke-crm-api sets this from the payload errorType
     invokeCrmApi.mockRejectedValueOnce(e);
     const out = await projectMessage(sampleEmit);
-    expect((out as { error: string }).error).toBe('crm_api_error: ValidationError');
+    expect((out as { error: string }).error).toBe('crm_api_error: ValidationException');
+  });
+
+  it('a crm-api FunctionError with a payload-controlled NON-known errorType → bare crm_api_error', async () => {
+    const e = new Error('crm-api error: x');
+    e.name = 'BobSmith';                                          // attacker/customer-data-shaped, passes a char-class regex
+    invokeCrmApi.mockRejectedValueOnce(e);
+    const out = await projectMessage(sampleEmit);
+    expect((out as { error: string }).error).toBe('crm_api_error');
   });
 });
 
@@ -77,19 +85,53 @@ describe('sanitizeDiagnostic (allowlist — structured metadata only, never exce
       .toEqual({ errorClass: 'crm_api_error', diagnostic: '' });
   });
 
-  it('crm-api FunctionError with a safe errorType name → that name only', () => {
-    const e = new Error('crm-api error: whatever'); e.name = 'Runtime.HandlerError';
-    expect(sanitizeDiagnostic(e)).toEqual({ errorClass: 'crm_api_error', diagnostic: 'Runtime.HandlerError' });
+  it('crm-api FunctionError with a KNOWN errorType name → that name only', () => {
+    const e = new Error('crm-api error: whatever'); e.name = 'ConditionalCheckFailedException';
+    expect(sanitizeDiagnostic(e)).toEqual({ errorClass: 'crm_api_error', diagnostic: 'ConditionalCheckFailedException' });
   });
 
-  it('AWS SDK invoke error → invoke_error + the SDK error name (safe token)', () => {
+  it('AWS SDK invoke error → invoke_error + the SDK error name (closed-set member)', () => {
     const sdkErr = Object.assign(new Error('rate exceeded for bob@acme.com'), { name: 'ThrottlingException', $metadata: {} });
     expect(sanitizeDiagnostic(sdkErr)).toEqual({ errorClass: 'invoke_error', diagnostic: 'ThrottlingException' });
   });
 
-  it('a weird error name (spaces/symbols) fails the safe-token filter → bare class', () => {
+  it('a weird error name (spaces/symbols) is not in the closed set → bare class', () => {
     const sdkErr = Object.assign(new Error('x'), { name: 'Weird Name! <script>', $metadata: {} });
     expect(sanitizeDiagnostic(sdkErr)).toEqual({ errorClass: 'invoke_error', diagnostic: '' });
+  });
+
+  // A character-class regex is NOT a semantic allowlist: name-shaped customer data passes it.
+  // Only membership in the CLOSED KNOWN_ERROR_NAMES set may surface a name.
+  it.each(['BobSmith', '5550100', 'Customer_42'])('regex-passing but unknown name %s → bare class at EVERY branch', (tainted) => {
+    const crm = new Error('crm-api error: x'); crm.name = tainted;
+    expect(sanitizeDiagnostic(crm)).toEqual({ errorClass: 'crm_api_error', diagnostic: '' });
+    const sdk = Object.assign(new Error('x'), { name: tainted, $metadata: {} });
+    expect(sanitizeDiagnostic(sdk)).toEqual({ errorClass: 'invoke_error', diagnostic: '' });
+  });
+
+  it('KNOWN_ERROR_NAMES is the exported, frozen, closed mapping', () => {
+    expect(Object.isFrozen(KNOWN_ERROR_NAMES)).toBe(true);
+    expect(Array.from(KNOWN_ERROR_NAMES).sort()).toEqual([
+      'AbortError',
+      'AccessDeniedException',
+      'ConditionalCheckFailedException',
+      'Error',
+      'FenceLostError',
+      'MergeFenceLostError',
+      'NotFound',
+      'OrgInactiveError',
+      'ProvisionedThroughputExceededException',
+      'RangeError',
+      'ResourceNotFoundException',
+      'ServiceException',
+      'SyntaxError',
+      'ThrottlingException',
+      'TimeoutError',
+      'TransactionCanceledException',
+      'TypeError',
+      'UnknownError',
+      'ValidationException',
+    ]);
   });
 
   it('PII-laden plain Error → unknown + constructor name only; NO message fragment survives', () => {
@@ -103,12 +145,12 @@ describe('sanitizeDiagnostic (allowlist — structured metadata only, never exce
     expect(diagnostic).toBe('Error');
   });
 
-  it('a custom Error subclass → its constructor name (structured, not prose)', () => {
+  it('an unrecognized custom Error subclass constructor name is NOT surfaced (closed set) → bare unknown', () => {
     class QuoteProjectionFailure extends Error {}
-    expect(sanitizeDiagnostic(new QuoteProjectionFailure('for bob@acme.com')).diagnostic).toBe('QuoteProjectionFailure');
+    expect(sanitizeDiagnostic(new QuoteProjectionFailure('for bob@acme.com'))).toEqual({ errorClass: 'unknown', diagnostic: '' });
   });
 
-  it('non-Error input → unknown + boxed constructor name, no content', () => {
-    expect(sanitizeDiagnostic('raw failure for eve@corp.io')).toEqual({ errorClass: 'unknown', diagnostic: 'String' });
+  it('non-Error input → bare unknown (boxed constructor name is not in the closed set)', () => {
+    expect(sanitizeDiagnostic('raw failure for eve@corp.io')).toEqual({ errorClass: 'unknown', diagnostic: '' });
   });
 });

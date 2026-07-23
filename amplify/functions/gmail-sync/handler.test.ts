@@ -363,6 +363,24 @@ describe('gmail-sync handler poison diagnostics', () => {
     errSpy.mockRestore();
   });
 
+  it('a LOST normal-path release after a would-be-clean run returns lease_lost — never the clean outcome — and the summary log matches', async () => {
+    readState.mockResolvedValue({ phase: 'incremental', historyId: '999' });
+    runIncremental.mockResolvedValue({ checkpoint: '1000', counters: { persisted: 3 }, hasMore: false });
+    releaseLease.mockResolvedValue({ lost: true });
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const res = await handler();
+    expect(res.results[0]).toMatchObject({ mailbox: 'info@ninescrolls.com', status: 'lease_lost' });
+    expect(res.results[0]).not.toHaveProperty('checkpoint');     // the unpersisted summary must not leak out
+    expect(res.results[0]).not.toHaveProperty('counters');
+    expect(res.results[0]).not.toHaveProperty('completed');
+    const summary = logs(logSpy, 'gmail.sync.summary')[0] as { results: Record<string, unknown>[] };
+    expect(summary.results[0]).toMatchObject({ status: 'lease_lost' });
+    expect(summary.results[0].completed).toBeUndefined();
+    expect(summary.results[0].counters).toBeUndefined();
+    expect(writeStateFenced).not.toHaveBeenCalled();             // state item untouched by any later write
+    logSpy.mockRestore();
+  });
+
   it('persist-then-alarm: a LOST fenced release at the poison threshold emits NO blocked/poison events', async () => {
     readState.mockResolvedValue({ phase: 'incremental', historyId: '999', blockedMessageId: 'm1', blockedStreak: 2 });
     runIncremental.mockResolvedValue({ checkpoint: '999', counters: {}, hasMore: false, blockedMessageId: 'm1', blockedError: 'x' });

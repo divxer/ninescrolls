@@ -9,7 +9,22 @@ export type ProjectOutcome =
   | { outcome: 'terminal_skip'; reason: string }
   | { outcome: 'retryable_failure'; error: string };
 
-const SAFE_TOKEN_RE = /^[A-Za-z0-9_.]{1,64}$/;   // error TYPE names only — never free prose
+// CLOSED semantic allowlist of error-type names that may surface in a diagnostic. A character-
+// class regex is NOT an allowlist — 'BobSmith', '5550100', a customer id all pass one — so only
+// MEMBERSHIP here lets a name through; anything else yields the bare error class. Contents: the
+// JS built-ins plus the AWS/DynamoDB error names this stack actually produces/branches on
+// (grep: ConditionalCheckFailedException/TransactionCanceledException/ThrottlingException/
+// AccessDeniedException/AbortError/NotFound/UnknownError in amplify/**) and our own fence/guard
+// error classes (FenceLostError, MergeFenceLostError, OrgInactiveError).
+export const KNOWN_ERROR_NAMES: ReadonlySet<string> = Object.freeze(new Set([
+  'Error', 'TypeError', 'RangeError', 'SyntaxError',
+  'ConditionalCheckFailedException', 'TransactionCanceledException', 'ResourceNotFoundException',
+  'ThrottlingException', 'ProvisionedThroughputExceededException', 'ValidationException',
+  'AccessDeniedException', 'ServiceException', 'TimeoutError',
+  'AbortError', 'NotFound', 'UnknownError',
+  'FenceLostError', 'MergeFenceLostError', 'OrgInactiveError',
+]));
+
 const DIAGNOSTIC_MAX = 200;                       // belt-and-braces cap on the assembled diagnostic
 
 // ALLOWLIST diagnostic sanitizer for error text that leaves the sync run. Exception prose
@@ -19,9 +34,9 @@ const DIAGNOSTIC_MAX = 200;                       // belt-and-braces cap on the 
 //   GmailApiError            → 'gmail_api_error' + "<endpoint> <status> <classification>"
 //                              (all three are our own enum/number values)
 //   crm-api FunctionError    → 'crm_api_error' + the payload errorType (invoke-crm-api carries it
-//                              as err.name) IF it passes SAFE_TOKEN_RE, else bare class
-//   AWS SDK invoke error     → 'invoke_error' + the SDK error name (safe-token filtered)
-//   anything else            → 'unknown' + the error CONSTRUCTOR name only (safe-token filtered)
+//                              as err.name) IF it is a KNOWN_ERROR_NAMES member, else bare class
+//   AWS SDK invoke error     → 'invoke_error' + the SDK error name (KNOWN_ERROR_NAMES member only)
+//   anything else            → 'unknown' + the CONSTRUCTOR name (KNOWN_ERROR_NAMES member only)
 // CHOKE POINTS (the only places error objects become persisted/logged strings): projectMessage's
 // catch below (projection errors → engine summaries → lastSummary/blocked logs) and syncMailbox
 // in handler.ts (thrown-run catch + release-failure catch). Engines only forward these strings.
@@ -33,13 +48,13 @@ export function sanitizeDiagnostic(err: unknown): { errorClass: 'crm_api_error' 
     diagnostic = `${err.endpoint} ${err.status} ${err.classification}`;
   } else if (err instanceof Error && err.message.startsWith('crm-api error:')) {
     errorClass = 'crm_api_error';
-    if (err.name !== 'Error' && SAFE_TOKEN_RE.test(err.name)) diagnostic = err.name;
+    if (err.name !== 'Error' && KNOWN_ERROR_NAMES.has(err.name)) diagnostic = err.name;
   } else if (err instanceof Error && ('$metadata' in err || (err.name !== 'Error' && err.name !== ''))) {
     errorClass = 'invoke_error';                  // AWS SDK error shape
-    if (SAFE_TOKEN_RE.test(err.name)) diagnostic = err.name;
+    if (KNOWN_ERROR_NAMES.has(err.name)) diagnostic = err.name;
   } else {
     const ctor = err === null || err === undefined ? '' : Object(err).constructor?.name ?? '';
-    if (SAFE_TOKEN_RE.test(ctor)) diagnostic = ctor;
+    if (KNOWN_ERROR_NAMES.has(ctor)) diagnostic = ctor;
   }
   return { errorClass, diagnostic: diagnostic.slice(0, DIAGNOSTIC_MAX) };
 }
