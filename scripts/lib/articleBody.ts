@@ -11,8 +11,13 @@
  * "Table of Contents" block (the page auto-generates its own TOC).
  */
 import { readFileSync, existsSync } from 'fs';
-import { join } from 'path';
+import { join, resolve, sep } from 'path';
 import { fileURLToPath } from 'url';
+
+// Canonical article slug: lowercase kebab-case segments only. Anything else
+// (path separators, dots, uppercase, unicode) is rejected before any
+// filesystem access — the resolver must never read outside the articles dir.
+const CANONICAL_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 // Resolve scripts/articles/ relative to THIS file, not process.cwd(), so seeds
 // behave identically no matter which directory the script is launched from.
@@ -46,10 +51,21 @@ export function resolveArticleBody(
   inlineContent: string | undefined | null,
   articlesDir: string = DEFAULT_ARTICLES_DIR,
 ): { content: string | null; source: 'inline' | 'html-file' | 'none' } {
+  // Fail closed on non-canonical slugs BEFORE any branch or filesystem access:
+  // a slug like "../escape" must never resolve a file outside the articles dir.
+  if (!CANONICAL_SLUG.test(slug)) {
+    throw new Error(`Invalid slug "${slug}" — expected lowercase kebab-case ([a-z0-9]+(-[a-z0-9]+)*)`);
+  }
   if (inlineContent && inlineContent.trim()) {
     return { content: inlineContent, source: 'inline' };
   }
-  const htmlPath = join(articlesDir, `${slug}.html`);
+  // Defense in depth: even with a validated slug, verify the resolved path
+  // stays beneath the resolved articles directory.
+  const root = resolve(articlesDir);
+  const htmlPath = resolve(root, `${slug}.html`);
+  if (!htmlPath.startsWith(root + sep)) {
+    throw new Error(`Path containment violation for slug "${slug}": ${htmlPath} is outside ${root}`);
+  }
   if (existsSync(htmlPath)) {
     const cleaned = cleanArticleHtml(readFileSync(htmlPath, 'utf-8'));
     if (cleaned) return { content: cleaned, source: 'html-file' };

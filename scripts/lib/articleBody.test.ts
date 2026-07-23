@@ -40,4 +40,43 @@ describe('resolveArticleBody', () => {
     expect(resolveArticleBody('missing-post', '', dir)).toEqual({ content: null, source: 'none' });
     expect(resolveArticleBody('empty-post', null, dir)).toEqual({ content: null, source: 'none' });
   });
+
+  describe('path containment', () => {
+    let outside: string;
+    beforeAll(() => {
+      // a real file OUTSIDE the articles dir that a traversal slug would reach
+      outside = join(dir, '..', `escape-${Date.now()}`);
+      writeFileSync(`${outside}.html`, '<p>secret</p>');
+    });
+    afterAll(() => rmSync(`${outside}.html`, { force: true }));
+
+    it('rejects traversal slugs before any filesystem access', () => {
+      expect(() => resolveArticleBody('../escape', '', dir)).toThrow(/Invalid slug/);
+      expect(() => resolveArticleBody('..', '', dir)).toThrow(/Invalid slug/);
+      expect(() => resolveArticleBody('foo/../../bar', '', dir)).toThrow(/Invalid slug/);
+    });
+
+    it('rejects absolute-path slugs', () => {
+      expect(() => resolveArticleBody('/etc/passwd', '', dir)).toThrow(/Invalid slug/);
+      expect(() => resolveArticleBody('C:\\Windows\\win', '', dir)).toThrow(/Invalid slug/);
+    });
+
+    it('rejects separator, dot, uppercase, and empty slugs', () => {
+      expect(() => resolveArticleBody('a/b', '', dir)).toThrow(/Invalid slug/);
+      expect(() => resolveArticleBody('a\\b', '', dir)).toThrow(/Invalid slug/);
+      expect(() => resolveArticleBody('a.b', '', dir)).toThrow(/Invalid slug/);
+      expect(() => resolveArticleBody('A-B', '', dir)).toThrow(/Invalid slug/);
+      expect(() => resolveArticleBody('', '', dir)).toThrow(/Invalid slug/);
+      expect(() => resolveArticleBody('-leading', '', dir)).toThrow(/Invalid slug/);
+    });
+
+    it('rejects the slug even when inline content is present (invariant holds on every path)', () => {
+      expect(() => resolveArticleBody('../escape', '<p>inline</p>', dir)).toThrow(/Invalid slug/);
+    });
+
+    it('still resolves canonical slugs, including digit-leading ones', () => {
+      expect(resolveArticleBody('my-post', '', dir).source).toBe('html-file');
+      expect(() => resolveArticleBody('2d-materials-device-fabrication-guide', '', dir)).not.toThrow();
+    });
+  });
 });
