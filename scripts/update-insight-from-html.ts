@@ -47,15 +47,17 @@ async function main(slug: string, filePath: string) {
   console.log(`Found: id=${record.id}  title="${record.title}"`);
   console.log(`  current content: ${(record.content || '').length} chars`);
 
+  // Excerpt and readTime are curated metadata — preserve the live values by default.
+  // Pass --regen-meta to explicitly regenerate them from the new content.
   const plain = stripHtml(content);
-  const readTime = estimateReadTime(plain);
-  const excerpt = plain.replace(/^\s+/, '').slice(0, 200);
+  const meta = regenMeta
+    ? { excerpt: plain.replace(/^\s+/, '').slice(0, 200), readTime: estimateReadTime(plain) }
+    : {};
 
   const { errors } = await client.models.InsightsPost.update({
     id: record.id,
     content,
-    excerpt,
-    readTime,
+    ...meta,
   });
 
   if (errors) {
@@ -63,13 +65,27 @@ async function main(slug: string, filePath: string) {
     process.exit(1);
   }
 
-  console.log(`Updated!  new content: ${content.length} chars  readTime: ${readTime} min`);
+  console.log(
+    `Updated!  new content: ${content.length} chars` +
+    (regenMeta
+      ? `  readTime: ${meta.readTime} min (regenerated)`
+      : `  (excerpt/readTime preserved — use --regen-meta to regenerate)`),
+  );
 }
 
-const slug = process.argv[2];
-const filePath = process.argv[3];
-if (!slug || !filePath) {
-  console.error('Usage: npx tsx scripts/update-insight-from-html.ts <slug> <html-file>');
+const rawArgs = process.argv.slice(2);
+const unknownFlags = rawArgs.filter((a) => a.startsWith('--') && a !== '--regen-meta');
+if (unknownFlags.length > 0) {
+  console.error(`Unknown flag(s): ${unknownFlags.join(', ')}`);
+  console.error('Usage: npx tsx scripts/update-insight-from-html.ts <slug> <html-file> [--regen-meta]');
   process.exit(1);
 }
+const args = rawArgs.filter((a) => !a.startsWith('--'));
+const regenMeta = rawArgs.includes('--regen-meta');
+if (args.length !== 2) {
+  console.error(`Expected exactly 2 arguments (<slug> <html-file>), got ${args.length}: ${args.join(' ')}`);
+  console.error('Usage: npx tsx scripts/update-insight-from-html.ts <slug> <html-file> [--regen-meta]');
+  process.exit(1);
+}
+const [slug, filePath] = args;
 main(slug, filePath).catch((e) => { console.error(e); process.exit(1); });
