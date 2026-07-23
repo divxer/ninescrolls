@@ -254,7 +254,16 @@ export function aggregateByOrg(
     // Proxy-egress events never contribute identity/targeting signal: their
     // org fields, AI verdict, target flag, and tier describe the proxy VENDOR
     // (historically "enterprise, 0.95" for Menlo/Zscaler/…), not the visitor.
-    const isProxyEvent = (e: AnalyticsEvent) => isSecurityProxyOrg(e.orgName, e.org);
+    const isProxyEgress = (e: AnalyticsEvent) =>
+      e.organizationType === 'corporate_proxy' || isSecurityProxyOrg(e.orgName, e.org, e.isp);
+    const groupHasProxyEgress = group.some(isProxyEgress);
+    // Trusted to supply classification/target/tier/confidence state: not proxy
+    // egress itself, and NAMED. Unnamed events (flush/partial/historical) were
+    // grouped here by visitorOrgMap inheritance — when the group contains proxy
+    // egress, their fields may be vendor-derived despite carrying no org name,
+    // so they are only trusted in groups with no proxy egress at all.
+    const isTrustedStateEvent = (e: AnalyticsEvent) =>
+      !isProxyEgress(e) && ((!!e.orgName || !!e.org) || !groupHasProxyEgress);
 
     const pages = new Set<string>();
     const products = new Set<string>();
@@ -276,9 +285,9 @@ export function aggregateByOrg(
       }
       if (e.productName) products.add(e.productName);
 
-      // Confidence/tier/target only from non-proxy events — vendor-derived
-      // state on historical proxy events must not leak into the record.
-      if (!isProxyEvent(e)) {
+      // Confidence/tier/target only from trusted events — vendor-derived
+      // state on proxy events (named or inherited) must not leak into the record.
+      if (isTrustedStateEvent(e)) {
         const eventConf = e.aiConfidence ?? 0;
         if (eventConf > maxConf) {
           maxConf = eventConf;
@@ -341,7 +350,7 @@ export function aggregateByOrg(
     // group their stored AI verdict would override the real institution's type.
     const aiEvent = group.find((e) =>
       e.aiOrganizationType && e.aiOrganizationType !== 'unknown' && e.aiConfidence != null && e.aiConfidence >= 0.5
-      && !isProxyEvent(e)
+      && isTrustedStateEvent(e)
     );
     // Also check parent ISP AI type and visitorOrgMap (ISP-split groups may lack AI on their own events)
     const aiFromParentISP = !aiEvent ? (() => {
@@ -362,8 +371,8 @@ export function aggregateByOrg(
       return null;
     })() : null;
     const ipOrgType = group.find(e => e.organizationType && e.organizationType !== 'unknown'
-        && e.organizationType !== 'corporate_proxy' && !isProxyEvent(e))?.organizationType ||
-      (!isProxyEvent(geoEvent) && geoEvent.organizationType !== 'corporate_proxy' ? geoEvent.organizationType : '') || '';
+        && isTrustedStateEvent(e))?.organizationType ||
+      (isTrustedStateEvent(geoEvent) ? geoEvent.organizationType : '') || '';
     const effectiveOrgType = isProxyOrg
       ? 'corporate_proxy'
       : (aiEvent?.aiOrganizationType || aiFromParentISP?.aiOrganizationType || ipOrgType);

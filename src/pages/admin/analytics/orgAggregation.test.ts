@@ -190,6 +190,47 @@ describe('aggregateByOrg', () => {
     expect(records[0].leadTier).toBeNull();          // vendor tier/confidence must not backfill
   });
 
+  it('ignores vendor-derived state on unnamed events when the group contains proxy egress', () => {
+    // Unnamed events (flush/partial/historical) are grouped by visitorOrgMap
+    // inheritance — they carry no orgName/org of their own, so proxy-derived
+    // enrichment on them must not leak past the name-based guard.
+    const records = aggregateByOrg([
+      ev({ orgName: 'Acme Semiconductor', organizationType: 'business',
+           visitorId: 'v1', ip: '1.2.3.4', pathname: '/a' }),
+      ev({ orgName: 'Menlo Security, Inc.', organizationType: 'enterprise',
+           visitorId: 'v1', ip: '57.140.1.2', pathname: '/b' }),
+      // Unnamed historical event carrying proxy-derived enrichment
+      ev({ visitorId: 'v1', ip: '57.140.1.2', pathname: '/c',
+           aiOrganizationType: 'enterprise', aiConfidence: 0.95,
+           isTargetCustomer: true, leadTier: 'B' }),
+    ]);
+    expect(records).toHaveLength(1);
+    const rec = records[0];
+    expect(rec.orgName).toBe('Acme Semiconductor');
+    expect(rec.organizationType).toBe('business'); // NOT the unnamed event's 'enterprise'
+    expect(rec.isTargetCustomer).toBe(false);
+    expect(rec.leadTier).toBeNull(); // 0.95 vendor confidence must not enable backfill
+    expect(rec.maxConfidence).toBe(0);
+    expect(rec.isAnonymousHighIntent).toBe(false); // no behavior signals present
+  });
+
+  it('suppresses inherited vendor state on unnamed events in proxy-only groups (incl. maxConfidence)', () => {
+    const [rec] = aggregateByOrg([
+      ev({ orgName: 'Menlo Security, Inc.', organizationType: 'enterprise',
+           aiOrganizationType: 'enterprise', aiConfidence: 0.95,
+           visitorId: 'vis-tw', ip: '57.140.1.2', city: 'Taipei', pathname: '/products/icp-etcher' }),
+      // Unnamed event inheriting the proxy grouping, with vendor-derived fields
+      ev({ visitorId: 'vis-tw', ip: '57.140.1.2', pathname: '/insights/ald',
+           aiOrganizationType: 'enterprise', aiConfidence: 0.95,
+           isTargetCustomer: true, leadTier: 'B', behaviorScore: 0.4, returnVisits: 1 }),
+    ]);
+    expect(rec.organizationType).toBe('corporate_proxy');
+    expect(rec.isTargetCustomer).toBe(false);
+    expect(rec.leadTier).toBeNull();
+    expect(rec.maxConfidence).toBe(0); // vendor confidence must not survive
+    expect(rec.isAnonymousHighIntent).toBe(true); // behavior signals still count
+  });
+
   it('prefers the real org type when a proxy visitor also has events from their institution network', () => {
     const records = aggregateByOrg([
       ev({ orgName: 'Menlo Security, Inc.', organizationType: 'corporate_proxy',
