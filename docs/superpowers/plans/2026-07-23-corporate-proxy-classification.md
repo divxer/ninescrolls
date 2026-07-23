@@ -18,7 +18,7 @@
 - Create: `amplify/lib/analytics/proxy-vendors.ts`
 - Test: `amplify/lib/analytics/proxy-vendors.test.ts`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```typescript
 // amplify/lib/analytics/proxy-vendors.test.ts
@@ -58,12 +58,12 @@ describe('isSecurityProxyOrg', () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run amplify/lib/analytics/proxy-vendors.test.ts`
 Expected: FAIL — `Cannot find module './proxy-vendors'` (or equivalent resolve error)
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 ```typescript
 // amplify/lib/analytics/proxy-vendors.ts
@@ -110,12 +110,12 @@ export function isSecurityProxyOrg(...names: Array<string | null | undefined>): 
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `npx vitest run amplify/lib/analytics/proxy-vendors.test.ts`
 Expected: PASS (3 tests)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add amplify/lib/analytics/proxy-vendors.ts amplify/lib/analytics/proxy-vendors.test.ts
@@ -130,7 +130,7 @@ git commit -m "feat(analytics): shared security-proxy vendor matcher"
 - Modify: `amplify/functions/server-track/handler.ts` (lookupIP ~line 194-217; `NEVER_TARGET_TYPES` at ~462 and ~757)
 - Test: `amplify/functions/server-track/handler.writes.test.ts`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Add to the `describe('writePageView (via page_view_store branch)')` block in `amplify/functions/server-track/handler.writes.test.ts` (helpers `loadHandler`, `invoke`, `pvEvent`, `putItem`, `cmds`, `stubPageViewFetch` already exist in the file):
 
@@ -155,12 +155,12 @@ Add to the `describe('writePageView (via page_view_store branch)')` block in `am
     });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run amplify/functions/server-track/handler.writes.test.ts -t 'security-proxy'`
 Expected: FAIL — `organizationType` is `'business'`, and `mockLambdaSend` WAS called
 
-- [ ] **Step 3: Implement in `lookupIP` + `NEVER_TARGET_TYPES`**
+- [x] **Step 3: Implement in `lookupIP` + `NEVER_TARGET_TYPES`**
 
 In `amplify/functions/server-track/handler.ts`, add the import at the top of the file (next to the existing imports):
 
@@ -198,12 +198,12 @@ Then update BOTH `NEVER_TARGET_TYPES` declarations (page_time_flush ~line 462 an
 
 Note: `AI_CLASSIFY_ORG_TYPES` (line 229) and `CATEGORICAL_TARGET_TYPES` are deliberately NOT changed — `corporate_proxy` being absent from both is what skips AI and prevents name-based targeting.
 
-- [ ] **Step 4: Run the file's tests**
+- [x] **Step 4: Run the file's tests**
 
 Run: `npx vitest run amplify/functions/server-track/`
 Expected: PASS (new test + all existing server-track tests)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add amplify/functions/server-track/handler.ts amplify/functions/server-track/handler.writes.test.ts
@@ -218,7 +218,7 @@ git commit -m "feat(server-track): tag security-proxy egress corporate_proxy, sk
 - Modify: `amplify/functions/classify-org/handler.ts` (ClassifyResult type ~line 27; classify flow ~lines 859-891)
 - Test: `amplify/functions/classify-org/handler.test.ts`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Add to `amplify/functions/classify-org/handler.test.ts` (helpers `makeEvent`, `mockGet`, `mockPut`, `handler` already exist; `mockGet` resolves the DDB cache read). Note `makeEvent` adds the admin token, which the classify flow simply ignores:
 
@@ -262,12 +262,12 @@ describe('classify-org security-proxy short-circuit', () => {
 });
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `npx vitest run amplify/functions/classify-org/handler.test.ts -t 'short-circuit'`
 Expected: FAIL — first test returns 500 or a non-proxy type (Bedrock mock returns garbage), second returns the cached `enterprise` entry
 
-- [ ] **Step 3: Implement the short-circuit**
+- [x] **Step 3: Implement the short-circuit**
 
 In `amplify/functions/classify-org/handler.ts`, add the import at the top:
 
@@ -329,12 +329,12 @@ Replace the default classify flow (the block starting `// Default: classify flow
 
 (The subsequent `classifyOrganization` + `cacheClassification` calls are unchanged.)
 
-- [ ] **Step 4: Run the file's tests**
+- [x] **Step 4: Run the file's tests**
 
 Run: `npx vitest run amplify/functions/classify-org/handler.test.ts`
 Expected: PASS (3 new + all existing)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add amplify/functions/classify-org/handler.ts amplify/functions/classify-org/handler.test.ts
@@ -349,7 +349,7 @@ git commit -m "feat(classify-org): deterministic corporate_proxy short-circuit b
 - Modify: `src/pages/admin/analytics/orgAggregation.ts` (ISP_ORG_TYPES ~line 129; addIfISP ~line 131; record loop ~lines 303-365)
 - Test: `src/pages/admin/analytics/orgAggregation.test.ts`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Add to the `describe('aggregateByOrg')` block in `src/pages/admin/analytics/orgAggregation.test.ts` (the `ev()` helper exists at the top of the file):
 
@@ -414,12 +414,12 @@ Add to the `describe('aggregateByOrg')` block in `src/pages/admin/analytics/orgA
 
 Also add this import change at the top of the test file if not present: `orgOverrideKey` is already imported.
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `npx vitest run src/pages/admin/analytics/orgAggregation.test.ts -t 'proxy'`
 Expected: FAIL — first test yields 1 record (no split), third yields `isAnonymousHighIntent: false`
 
-- [ ] **Step 3: Implement in `orgAggregation.ts`**
+- [x] **Step 3: Implement in `orgAggregation.ts`**
 
 Add the import at the top of `src/pages/admin/analytics/orgAggregation.ts`:
 
@@ -506,12 +506,12 @@ import { isSecurityProxyOrg } from '../../../../amplify/lib/analytics/proxy-vend
 
 **(d)** Delete the original `nonIspEvent`/`orgEvent`/`ispOrgName`/`isISPVisitor` block from its old position (~lines 353-361) — it moved up in (b). The `displayName` computation that followed it stays where it is and keeps using `isISPVisitor`/`ispOrgName`.
 
-- [ ] **Step 4: Run the file's tests**
+- [x] **Step 4: Run the file's tests**
 
 Run: `npx vitest run src/pages/admin/analytics/orgAggregation.test.ts`
 Expected: PASS (4 new + all existing — the existing ISP-split, merge-back, consolidation, and override-key tests prove no regression)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/pages/admin/analytics/orgAggregation.ts src/pages/admin/analytics/orgAggregation.test.ts
@@ -526,7 +526,7 @@ git commit -m "feat(admin-analytics): split security-proxy visitors like ISPs, h
 - Modify: `src/services/behaviorAnalytics.ts` (~lines 262-277)
 - Test: `src/services/behaviorAnalytics.test.ts`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Add to `src/services/behaviorAnalytics.test.ts`, inside (or alongside) the existing `isKnownOrganization` coverage — check the file for the existing describe block and match its event-literal style:
 
@@ -543,12 +543,12 @@ Add to `src/services/behaviorAnalytics.test.ts`, inside (or alongside) the exist
 
 (If `isKnownOrganization`/`UtmEvent` are not yet imported in the test file, add them to the existing import from `./behaviorAnalytics`.)
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run src/services/behaviorAnalytics.test.ts -t 'security-proxy'`
 Expected: FAIL — the historical `enterprise`-typed Menlo event returns `true`
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 In `src/services/behaviorAnalytics.ts`, add the import at the top:
 
@@ -576,12 +576,12 @@ export function isKnownOrganization(e: UtmEvent): boolean {
 }
 ```
 
-- [ ] **Step 4: Run the file's tests**
+- [x] **Step 4: Run the file's tests**
 
 Run: `npx vitest run src/services/behaviorAnalytics.test.ts`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/services/behaviorAnalytics.ts src/services/behaviorAnalytics.test.ts
@@ -592,17 +592,17 @@ git commit -m "feat(behavior-analytics): exclude security-proxy vendors from kno
 
 ### Task 6: Full verification
 
-- [ ] **Step 1: Full test suite**
+- [x] **Step 1: Full test suite**
 
 Run: `npm test`
 Expected: all tests pass (suite was 2469 passing before this work; now +~11)
 
-- [ ] **Step 2: Typecheck + lint**
+- [x] **Step 2: Typecheck + lint**
 
 Run: `npx tsc --noEmit && npm run typecheck:amplify && npm run lint`
 Expected: no errors
 
-- [ ] **Step 3: Commit any straggler fixes, then final commit if needed**
+- [x] **Step 3: Commit any straggler fixes, then final commit if needed**
 
 ```bash
 git status --short
