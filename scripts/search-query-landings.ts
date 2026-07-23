@@ -6,24 +6,18 @@ import { Amplify } from 'aws-amplify';
 import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../amplify/data/resource';
 import { authenticate } from './lib/auth';
+// Engine-allowlisted extraction (per-domain param names) — same logic the admin
+// Keywords card uses. Never extracts params from arbitrary/first-party URLs.
+import { extractSearchQuery } from '../src/services/behaviorAnalytics';
 import amplifyOutputs from '../amplify_outputs.json';
 
 Amplify.configure(amplifyOutputs as any);
 const client = generateClient<Schema>({ authMode: 'userPool' });
 
-const DAYS = parseInt(process.argv[2] || '365', 10);
-
-/** Extract q= style search query from a referrer URL (legacy records without searchQuery field). */
-function extractFromReferrer(ref: string | undefined | null): string | undefined {
-  if (!ref) return undefined;
-  try {
-    const u = new URL(ref);
-    for (const k of ['q', 'query', 'p', 'text', 'wd']) {
-      const v = u.searchParams.get(k);
-      if (v && v.trim()) return v.trim();
-    }
-  } catch { /* ignore */ }
-  return undefined;
+const DAYS = Number(process.argv[2] ?? '365');
+if (!Number.isInteger(DAYS) || DAYS <= 0 || DAYS > 3650) {
+  console.error('Usage: npx tsx scripts/search-query-landings.ts [days]   (days: positive integer ≤ 3650)');
+  process.exit(1);
 }
 
 async function main() {
@@ -49,7 +43,7 @@ async function main() {
     for (const r of data || []) {
       scanned++;
       if (r.isBot) continue;
-      const q: string | undefined = (r.searchQuery && String(r.searchQuery).trim()) || extractFromReferrer(r.referrer);
+      const q: string | undefined = (r.searchQuery && String(r.searchQuery).trim()) || extractSearchQuery(r.referrer || undefined);
       if (!q) continue;
       withQuery++;
       const pathname = (r.pathname || '').split('?')[0].replace(/\/$/, '') || '/';
