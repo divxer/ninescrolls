@@ -1,20 +1,29 @@
 import type { OrganizationTimelineItem } from '../../hooks/useOrganizationTimeline';
 
 export const CHIP_LABELS: Record<string, string> = {
-  all: 'All', rfq: 'RFQ', lead: 'Lead', order: 'Order', quote: 'Quote', logistics: 'Logistics', site_visits: 'Site visits',
+  all: 'All', rfq: 'RFQ', lead: 'Lead', order: 'Order', quote: 'Quote', logistics: 'Logistics',
+  site_visits: 'Site visits', email: 'Email',
 };
 
 export const ICON_SYMBOL: Record<string, string> = {
   rfq: 'description', lead: 'mail', order: 'inventory_2', quote: 'request_quote',
   logistics: 'local_shipping', site_visit: 'language', event: 'bolt',
+  mail: 'mail', send: 'send',
 };
 
-export function buildSourceLink(item: Pick<OrganizationTimelineItem, 'source' | 'sourceEntityId' | 'payload'>): string | null {
+// Only ever navigate to an externalUrl whose origin is EXACTLY https://mail.google.com — guards
+// against lookalike hosts (mail.google.com.evil.com), scheme downgrades, and malformed URLs.
+export function safeGmailUrl(u: string | null | undefined): string | null {
+  try { return u && new URL(u).origin === 'https://mail.google.com' ? u : null; } catch { return null; }
+}
+
+export function buildSourceLink(item: Pick<OrganizationTimelineItem, 'source' | 'sourceEntityId' | 'payload' | 'externalUrl'>): string | null {
   switch (item.source) {
     case 'rfq': return `/admin/rfqs/${item.sourceEntityId}`;
     case 'lead': return `/admin/leads/${item.sourceEntityId}`;
     case 'order': return `/admin/orders/${item.sourceEntityId}`;
     case 'logistics': return `/admin/logistics/${item.sourceEntityId}`;
+    case 'gmail': return safeGmailUrl(item.externalUrl);
     case 'quote': {
       const p = item.payload as Record<string, unknown> | null;
       const orderId = p && typeof p.orderId === 'string' ? p.orderId : null;
@@ -42,10 +51,12 @@ const fmtDuration = (s: number): string => {
   return m > 0 ? `${m}m ${sec}s` : `${sec}s`;
 };
 
-type Item = Pick<OrganizationTimelineItem, 'kind' | 'primaryLabel' | 'stageFrom' | 'stageTo' | 'fileName' | 'pageCount' | 'activeSeconds' | 'productModel' | 'equipmentCategory' | 'leadType' | 'productName'>;
+type Item = Pick<OrganizationTimelineItem, 'kind' | 'primaryLabel' | 'stageFrom' | 'stageTo' | 'fileName' | 'pageCount' | 'activeSeconds' | 'productModel' | 'equipmentCategory' | 'leadType' | 'productName' | 'bodySnippet'>;
 
 export function composeTimelineText(item: Item): { title: string; snippet: string | null } {
   switch (item.kind) {
+    case 'email':
+      return { title: item.primaryLabel, snippet: item.bodySnippet ?? null };
     case 'rfq_submitted':
       return { title: 'RFQ submitted', snippet: item.equipmentCategory ?? item.primaryLabel };
     case 'lead_captured':

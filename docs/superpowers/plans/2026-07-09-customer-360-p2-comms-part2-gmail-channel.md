@@ -856,7 +856,7 @@ if (!isSandbox && gmailSyncEnabled) {   // an unconfigured function must not be 
   });
 }
 ```
-Also: register `gmailSync` in `defineBackend`, import its resource, add `reservedConcurrentExecutions: 1` (via `(backend.gmailSync.resources.cfnResources.cfnFunction).reservedConcurrentExecutions = 1` or the defineFunction option if available — check the existing repo idiom first).
+Also: register `gmailSync` in `defineBackend`, import its resource. ~~add `reservedConcurrentExecutions: 1`~~ **DROPPED (execution-discovered constraint, sandbox gate `commsp2gate` 2026-07-21):** CloudFormation rejected the reservation — "Specified ReservedConcurrentExecutions for function decreases account's UnreservedConcurrentExecution below its minimum value of [10]" — the account's Lambda concurrency quota can't absorb ANY reservation, and prod deploys into the same account (this would have broken the prod deploy post-merge). Overlap safety is carried by the 300s fenced lease (`acquireLease` ⇒ concurrent invocations return `skippedLeaseHeld`) + the 600s cron interval; the lease is the correctness mechanism — the reservation was defense-in-depth only. backend.ts carries a rationale comment at the former call site, pinned by the source-contract test.
 
 - [ ] **Step 2: Verification (spec §10 — plan-review fix, repository-valid + executable):** local synth doesn't exist in this repo (the Amplify Console build is the binding synth gate — established project history). So verification is three concrete layers:
   1. **Pre-merge executable assertion** — create `amplify/backend.gmailSync.test.ts`, a source-contract test run by vitest:

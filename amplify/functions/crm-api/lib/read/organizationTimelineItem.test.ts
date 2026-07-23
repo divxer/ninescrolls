@@ -37,7 +37,7 @@ describe('toOrganizationTimelineItem', () => {
   });
 
   it('unknown reason → unknown tone (keeps confidence) and unknown source → other/event', () => {
-    const r = toOrganizationTimelineItem({ ...base, source: 'gmail', kind: 'email_received', resolutionReason: 'weird', confidence: 0.4, payload: {} } as never);
+    const r = toOrganizationTimelineItem({ ...base, source: 'carrier_pigeon', kind: 'email_received', resolutionReason: 'weird', confidence: 0.4, payload: {} } as never);
     expect(r).toMatchObject({ tone: 'unknown', sourceFilterGroup: 'other', icon: 'event', confidence: 0.4 });
   });
 
@@ -51,5 +51,31 @@ describe('toOrganizationTimelineItem', () => {
   it('primaryLabel falls back to summary and payload passes through as escape hatch', () => {
     const r = toOrganizationTimelineItem({ ...base, source: 'quote', kind: 'quote_sent', summary: 'Quote sent — Q-014.pdf', payload: { orderId: 'ord-1', fileName: 'Q-014.pdf' } } as never);
     expect(r).toMatchObject({ primaryLabel: 'Quote sent — Q-014.pdf', fileName: 'Q-014.pdf', sourceFilterGroup: 'quote', payload: { orderId: 'ord-1', fileName: 'Q-014.pdf' } });
+  });
+
+  it('gmail inbound: sourceFilterGroup email, mail icon, subject as primaryLabel, bodySnippet + externalUrl from payload.gmailLink', () => {
+    const r = toOrganizationTimelineItem({
+      ...base, source: 'gmail', kind: 'email', direction: 'inbound', subject: 'RFQ: ICP-RIE pricing',
+      bodySnippet: 'Could you send a quote for the ICP-RIE system?',
+      payload: { customerEmail: 'bob@acme.com', gmailLink: 'https://mail.google.com/mail/u/0/#search/rfc822msgid:abc', mailbox: 'info@ninescrolls.com' },
+    } as never);
+    expect(r).toMatchObject({
+      sourceFilterGroup: 'email', icon: 'mail', primaryLabel: 'RFQ: ICP-RIE pricing',
+      direction: 'inbound', bodySnippet: 'Could you send a quote for the ICP-RIE system?',
+      externalUrl: 'https://mail.google.com/mail/u/0/#search/rfc822msgid:abc',
+    });
+  });
+
+  it('gmail outbound: send icon; empty subject falls back to "(no subject)"; null gmailLink → null externalUrl', () => {
+    const r = toOrganizationTimelineItem({
+      ...base, source: 'gmail', kind: 'email', direction: 'outbound', subject: '', bodySnippet: '',
+      payload: { customerEmail: 'bob@acme.com', gmailLink: null, mailbox: 'info@ninescrolls.com' },
+    } as never);
+    expect(r).toMatchObject({ icon: 'send', primaryLabel: '(no subject)', externalUrl: null });
+  });
+
+  it('non-gmail sources always carry null direction/bodySnippet/externalUrl', () => {
+    const r = toOrganizationTimelineItem({ ...base, source: 'order', kind: 'order_created' } as never);
+    expect(r).toMatchObject({ direction: null, bodySnippet: null, externalUrl: null });
   });
 });

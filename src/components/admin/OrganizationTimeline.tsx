@@ -14,7 +14,7 @@ interface Props {
   setIncludeInternal: (v: boolean) => void;
 }
 
-const CHIPS = ['all', 'rfq', 'lead', 'order', 'quote', 'logistics', 'site_visits'] as const;
+const CHIPS = ['all', 'rfq', 'lead', 'order', 'quote', 'logistics', 'site_visits', 'email'] as const;
 
 export function OrganizationTimeline({ items, loading, error, hasMore, loadMore, reload, includeInternal, setIncludeInternal }: Props) {
   const [chip, setChip] = useState<string>('all');
@@ -71,7 +71,9 @@ export function OrganizationTimeline({ items, loading, error, hasMore, loadMore,
                     <span className="material-symbols-outlined text-slate-500" style={{ fontSize: 20 }}>{ICON_SYMBOL[item.icon] ?? ICON_SYMBOL.event}</span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        {link ? (
+                        {link && item.source === 'gmail' ? (
+                          <a href={link} target="_blank" rel="noopener noreferrer" className="font-medium text-sm text-primary hover:underline">{title}</a>
+                        ) : link ? (
                           <Link to={link} className="font-medium text-sm text-primary hover:underline">{title}</Link>
                         ) : (
                           <span className="font-medium text-sm text-slate-800">{title}</span>

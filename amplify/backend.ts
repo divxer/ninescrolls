@@ -16,6 +16,7 @@ import { orderApi } from './functions/order-api/resource';
 import { logisticsApi } from './functions/logistics-api/resource';
 import { priceApi } from './functions/price-api/resource';
 import { crmApi } from './functions/crm-api/resource';
+import { gmailSync } from './functions/gmail-sync/resource';
 import { optimizeInsightsImage } from './functions/optimize-insights-image/resource';
 import { generateSitemaps } from './functions/generate-sitemaps/resource';
 import { submitLead } from './functions/submit-lead/resource';
@@ -52,6 +53,7 @@ import { Bucket, BlockPublicAccess, BucketEncryption, HttpMethods } from 'aws-cd
 import { Duration } from 'aws-cdk-lib';
 import { LayerVersion, Code, Runtime } from 'aws-cdk-lib/aws-lambda';
 import { PolicyStatement, Effect } from 'aws-cdk-lib/aws-iam';
+import { Secret } from 'aws-cdk-lib/aws-secretsmanager';
 import type { ILocalBundling } from 'aws-cdk-lib';
 import { execSync } from 'node:child_process';
 import { mkdirSync } from 'node:fs';
@@ -92,6 +94,7 @@ const backend = defineBackend({
     logisticsApi,
     priceApi,
     crmApi,
+    gmailSync,
     optimizeInsightsImage,
     generateSitemaps,
     submitLead,
@@ -1333,6 +1336,71 @@ backend.evidenceApi.resources.lambda.addToRolePolicy(
   })
 );
 backend.evidenceApi.addEnvironment('EVIDENCE_TABLE', evidenceTable.tableName);
+
+// =============================================================================
+// gmail-sync (P2 comms): Google adapter + its ONE state item. Spec §10.
+// See docs/runbooks/2026-07-09-gmail-sync-setup.md for GCP/secret setup.
+// =============================================================================
+// plan-review R3 — GMAIL_SA_SECRET_ARN supply & validation, per environment:
+//   prod (Amplify Console build): set as an Amplify Console environment variable (runbook step) —
+//     available to backend.ts at synth via process.env.
+//   sandbox (`ampx sandbox`): developer shell env var; UNSET by default ⇒ the whole gmail-sync
+//     wiring below is SKIPPED (secret grant, cron, env) — the function deploys inert. This keeps
+//     every developer sandbox synthesizable with zero Google setup.
+//   validation: if SET but malformed, FAIL SYNTH LOUDLY (a typo'd ARN must not deploy a broken grant).
+const GMAIL_SA_SECRET_ARN = process.env.GMAIL_SA_SECRET_ARN ?? '';
+const SECRET_ARN_RE = /^arn:aws:secretsmanager:[a-z0-9-]+:\d{12}:secret:[A-Za-z0-9/_+=.@-]+-[A-Za-z0-9]{6}$/;  // COMPLETE arn incl. the 6-char suffix
+if (GMAIL_SA_SECRET_ARN && !SECRET_ARN_RE.test(GMAIL_SA_SECRET_ARN)) {
+  throw new Error(`GMAIL_SA_SECRET_ARN is set but not a complete Secrets Manager ARN (must include the 6-char suffix): ${GMAIL_SA_SECRET_ARN}`);
+}
+const gmailSyncEnabled = GMAIL_SA_SECRET_ARN !== '';
+
+backend.gmailSync.addEnvironment('GMAIL_SA_SECRET_ARN', GMAIL_SA_SECRET_ARN);       // empty in a bare sandbox — the handler validates at runtime and reports 'not_configured' in its summary instead of crash-looping
+backend.gmailSync.addEnvironment('MAILBOXES', 'info@ninescrolls.com');
+backend.gmailSync.addEnvironment('INTELLIGENCE_TABLE', intelligenceTable.tableName);
+// plan-review R2/R3 — EXACT Secrets Manager pattern: CDK import + grantRead.
+// grantRead on an ARN-IMPORTED secret grants secretsmanager:GetSecretValue + DescribeSecret ONLY —
+// it can NOT add kms:Decrypt automatically (the imported ref has no key association). The secret is
+// created with the default aws/secretsmanager key, which needs no extra grant; if it is EVER moved
+// to a customer-managed KMS key, an explicit kms:Decrypt PolicyStatement on that key MUST be added
+// here (runbook carries the same warning). Spec §10 amended to this exact permission set.
+// Import into the gmail-sync stack (Stack.of the lambda) so no cross-stack edge is created.
+const gmailSyncStack = Stack.of(backend.gmailSync.resources.lambda);                 // hoisted — also used by the cron below
+if (gmailSyncEnabled) {
+  const gmailSaSecret = Secret.fromSecretCompleteArn(gmailSyncStack, 'GmailSaSecret', GMAIL_SA_SECRET_ARN);
+  gmailSaSecret.grantRead(backend.gmailSync.resources.lambda);
+}
+// NO reservedConcurrentExecutions here — deliberately. It was intended as a third-layer
+// overlap protection, but the sandbox deploy gate (commsp2gate, 2026-07-21) proved the
+// account's Lambda concurrency quota cannot absorb a reservation: CloudFormation rejects it
+// ("decreases account's UnreservedConcurrentExecution below its minimum value of [10]"),
+// and prod deploys into the SAME account. Overlap safety is carried by the 300s fenced
+// lease (acquireLease ⇒ concurrent invocations return skippedLeaseHeld) plus the 600s cron
+// interval — the lease is the correctness mechanism; the reservation was defense-in-depth only.
+// DynamoDB: gmail-sync owns EXACTLY its own state item(s) — LeadingKeys-scoped to
+// GMAIL_SYNC#* on the BASE TABLE only (no index ARNs; the function never queries a GSI).
+backend.gmailSync.resources.lambda.addToRolePolicy(new PolicyStatement({
+  effect: Effect.ALLOW,
+  actions: ['dynamodb:GetItem', 'dynamodb:PutItem', 'dynamodb:UpdateItem'],
+  resources: [intelligenceTable.tableArn],                                           // base table only, never index ARNs
+  conditions: { 'ForAllValues:StringLike': { 'dynamodb:LeadingKeys': ['GMAIL_SYNC#*'] } },
+}));
+// invoke crm-api (the submit-rfq/lead pattern)
+backend.gmailSync.resources.lambda.addToRolePolicy(new PolicyStatement({
+  effect: Effect.ALLOW, actions: ['lambda:InvokeFunction'], resources: [backend.crmApi.resources.lambda.functionArn],
+}));
+backend.gmailSync.addEnvironment('CRM_API_FUNCTION_NAME', backend.crmApi.resources.lambda.functionName);
+if (!isSandbox && gmailSyncEnabled) {   // an unconfigured function must not be cron-invoked
+  // Rule MUST live in the SAME nested stack as the target Lambda (gmailSyncStack, hoisted
+  // above — shared with the secret import): cross-stack rule placement closed CloudFormation
+  // circular dependencies twice before (see the CRM sweep rules' comment).
+  new Rule(gmailSyncStack, 'GmailSyncRule', {
+    schedule: Schedule.cron({ minute: '*/10', hour: '*', day: '*', month: '*', year: '*' }),
+    targets: [new LambdaFunctionTarget(backend.gmailSync.resources.lambda, {
+      event: RuleTargetInput.fromObject({ action: 'sync' }),
+    })],
+  });
+}
 
 // =============================================================================
 // Auth hardening: disable self-service sign-up on the Cognito user pool.
