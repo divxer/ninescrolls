@@ -373,3 +373,41 @@ describe('classify-org override/undo — displayName (rename) preservation', () 
         expect(JSON.parse(res.body).error).toContain('Conflict');
     });
 });
+
+describe('classify-org security-proxy short-circuit', () => {
+    it('returns deterministic corporate_proxy without AI and without caching', async () => {
+        mockGet.mockResolvedValue({}); // cache miss
+        const res = await handler(makeEvent({ orgName: 'Menlo Security, Inc.', city: 'Taipei', country: 'TW' }), {} as never, vi.fn());
+        expect(res.statusCode).toBe(200);
+        const body = JSON.parse(res.body);
+        expect(body.organizationType).toBe('corporate_proxy');
+        expect(body.isTargetCustomer).toBe(false);
+        expect(body.confidence).toBe(1.0);
+        // Deterministic — never written to the AI cache
+        expect(mockPut).not.toHaveBeenCalled();
+    });
+
+    it('beats a stale AI cache entry (pre-fix "enterprise" classification)', async () => {
+        mockGet.mockResolvedValue({ Item: {
+            orgName: 'Menlo Security, Inc.', organizationType: 'enterprise',
+            isTargetCustomer: false, confidence: 0.95,
+            reason: 'cybersecurity company, does not conduct R&D', source: 'ai',
+        } });
+        const res = await handler(makeEvent({ orgName: 'Menlo Security, Inc.' }), {} as never, vi.fn());
+        expect(res.statusCode).toBe(200);
+        expect(JSON.parse(res.body).organizationType).toBe('corporate_proxy');
+    });
+
+    it('manual override still wins over the short-circuit', async () => {
+        mockGet.mockResolvedValue({ Item: {
+            orgName: 'Zscaler, Inc.', organizationType: 'enterprise',
+            isTargetCustomer: true, confidence: 1,
+            reason: 'admin says so', source: 'manual',
+        } });
+        const res = await handler(makeEvent({ orgName: 'Zscaler, Inc.' }), {} as never, vi.fn());
+        expect(res.statusCode).toBe(200);
+        const body = JSON.parse(res.body);
+        expect(body.organizationType).toBe('enterprise');
+        expect(body.source).toBe('manual');
+    });
+});
