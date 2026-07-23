@@ -61,4 +61,25 @@ describe('invokeCrmAction (generic direct-invoke)', () => {
     expect(errSpy).toHaveBeenCalledWith(expect.stringContaining('crm.action.dispatch_failed'));
     errSpy.mockRestore();
   });
+  it('sync mode uses RequestResponse (order-path retry loops depend on observing execution)', async () => {
+    send.mockResolvedValueOnce({ StatusCode: 200 });
+    await invokeCrmAction({ action: 'reResolveVisitorSessions', visitorId: 'v-1', maxSessions: 10 }, { sync: true });
+    const input = send.mock.calls[0][0].input;
+    expect(input.InvocationType).toBe('RequestResponse');
+    expect(JSON.parse(new TextDecoder().decode(input.Payload)))
+      .toEqual({ action: 'reResolveVisitorSessions', visitorId: 'v-1', maxSessions: 10 });
+  });
+  it('sync mode THROWS on SDK rejection', async () => {
+    send.mockRejectedValueOnce(new Error('lambda unreachable'));
+    await expect(invokeCrmAction({ action: 'reResolveVisitorSessions' }, { sync: true }))
+      .rejects.toThrow('lambda unreachable');
+  });
+  it('sync mode THROWS on FunctionError with the remote errorMessage', async () => {
+    send.mockResolvedValueOnce({
+      FunctionError: 'Unhandled',
+      Payload: new TextEncoder().encode('{"errorMessage":"retro exploded"}'),
+    });
+    await expect(invokeCrmAction({ action: 'reResolveVisitorSessions' }, { sync: true }))
+      .rejects.toThrow('crm-api reResolveVisitorSessions error: retro exploded');
+  });
 });

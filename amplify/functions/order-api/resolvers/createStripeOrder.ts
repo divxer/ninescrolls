@@ -85,7 +85,16 @@ async function linkVisitorToOrder(args: {
         // sync: the default Event invoke swallows dispatch failures AND hides
         // FunctionErrors — either would silently close this link's retry
         // window. Sync + throw keeps the webhook's 500→retry loop honest.
-        await invokeCrmAction({ action: 'reResolveVisitorSessions', visitorId: args.visitorId }, { sync: true });
+        //
+        // maxSessions bounds the synchronous wait to this caller's budget
+        // (order-api 30s, upstream webhook 25s — crm-api's 200-session default
+        // is sized for its own 120s). Leftover sessions persist in the
+        // RETRO#STATE resume cursor and are drained by the existing repair
+        // mechanism — the link itself is already durable at this point.
+        await invokeCrmAction(
+            { action: 'reResolveVisitorSessions', visitorId: args.visitorId, maxSessions: 10 },
+            { sync: true },
+        );
     }
 }
 

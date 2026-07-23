@@ -1,6 +1,6 @@
 import type { APIGatewayProxyHandler } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, GetCommand, PutCommand, ScanCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, GetCommand, PutCommand, UpdateCommand, ScanCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
 import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -617,20 +617,33 @@ async function handleRename(body: ClassifyRequest, corsHeaders: Record<string, s
     }
 
     const displayName = body.displayName.trim();
-    const existing = await getCachedItemStrict(body.orgName);
-    if (existing) {
-        await ddbClient.send(new PutCommand({
-            TableName: TABLE_NAME,
-            Item: { ...existing, displayName },
-        }));
-    } else {
-        // Lossless copy-and-rename: when the target key has no record but the
-        // caller names a legacy record (ISP visitors migrating from a
-        // display-name key to their stable visitorId key), copy the legacy
-        // record VERBATIM — source, confidence, provider, reason,
-        // previousClassification all preserved — under the new key.
-        // Conditional so a concurrent write to the new key is never clobbered;
-        // on that race, merge the displayName onto the winner instead.
+    // Atomic single-attribute update first: NEVER read-modify-write the whole
+    // record — a full Put of a snapshot would clobber any classification/
+    // override/provenance change committed between our read and write.
+    const setDisplayNameIfExists = async (): Promise<boolean> => {
+        try {
+            await ddbClient.send(new UpdateCommand({
+                TableName: TABLE_NAME,
+                Key: { orgName: body.orgName },
+                UpdateExpression: 'SET displayName = :d',
+                ConditionExpression: 'attribute_exists(orgName)',
+                ExpressionAttributeValues: { ':d': displayName },
+            }));
+            return true;
+        } catch (err: unknown) {
+            if (err instanceof Error && err.name === 'ConditionalCheckFailedException') return false;
+            throw err;
+        }
+    };
+
+    if (!(await setDisplayNameIfExists())) {
+        // Target key has no record. Lossless copy-and-rename: when the caller
+        // names a legacy record (ISP visitors migrating from a display-name
+        // key to their stable visitorId key), copy the legacy record VERBATIM
+        // — source, confidence, provider, reason, previousClassification all
+        // preserved — under the new key. Conditional create so a concurrent
+        // write to the new key is never clobbered; on that race, retry the
+        // atomic displayName update against the winner.
         const legacy = body.fromOrgName ? await getCachedItemStrict(body.fromOrgName) : null;
         const item = legacy
             ? { ...legacy, orgName: body.orgName, displayName }
@@ -652,11 +665,11 @@ async function handleRename(body: ClassifyRequest, corsHeaders: Record<string, s
             }));
         } catch (err: unknown) {
             if (!(err instanceof Error && err.name === 'ConditionalCheckFailedException')) throw err;
-            const winner = await getCachedItemStrict(body.orgName);
-            await ddbClient.send(new PutCommand({
-                TableName: TABLE_NAME,
-                Item: { ...(winner ?? item), displayName },
-            }));
+            if (!(await setDisplayNameIfExists())) {
+                // Created-then-deleted between our attempts — give up loudly
+                // rather than looping; the admin simply retries.
+                throw new Error(`rename race: record for "${body.orgName}" appeared and vanished`);
+            }
         }
     }
 

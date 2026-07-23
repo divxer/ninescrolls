@@ -1372,8 +1372,8 @@ describe('order-api handler', () => {
             // reResolve fires UNCONDITIONALLY on the heal path — an unchanged
             // bridge must still cover the reResolve-failed crash window
             expect(mockInvokeCrmAction).toHaveBeenCalledWith(
-                expect.objectContaining({ action: 'reResolveVisitorSessions' }),
-                { sync: true }, // Event invoke would swallow failures and close the retry window
+                expect.objectContaining({ action: 'reResolveVisitorSessions', maxSessions: 10 }),
+                { sync: true }, // Event invoke would swallow failures and close the retry window; maxSessions bounds the sync wait to the caller's budget
             );
             // The NON-idempotent org score upsert must NOT run again
             expect(mockInvokeOrgApi).not.toHaveBeenCalled();

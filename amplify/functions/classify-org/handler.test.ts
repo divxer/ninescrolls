@@ -5,10 +5,12 @@ import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
 // ---------------------------------------------------------------------------
 const mockGet = vi.fn();
 const mockPut = vi.fn();
+const mockUpdate = vi.fn();
 const mockSend = vi.fn().mockImplementation((cmd: unknown) => {
     const name = (cmd as { constructor: { name: string } }).constructor.name;
     if (name === 'GetCommand') return mockGet(cmd);
     if (name === 'PutCommand') return mockPut(cmd);
+    if (name === 'UpdateCommand') return mockUpdate(cmd);
     return Promise.resolve({});
 });
 
@@ -19,6 +21,7 @@ vi.mock('@aws-sdk/lib-dynamodb', () => ({
     DynamoDBDocumentClient: { from: vi.fn().mockReturnValue({ send: mockSend }) },
     GetCommand: vi.fn().mockImplementation((p) => ({ ...p, constructor: { name: 'GetCommand' } })),
     PutCommand: vi.fn().mockImplementation((p) => ({ ...p, constructor: { name: 'PutCommand' } })),
+    UpdateCommand: vi.fn().mockImplementation((p) => ({ ...p, constructor: { name: 'UpdateCommand' } })),
     ScanCommand: vi.fn().mockImplementation((p) => ({ ...p, constructor: { name: 'ScanCommand' } })),
     DeleteCommand: vi.fn().mockImplementation((p) => ({ ...p, constructor: { name: 'DeleteCommand' } })),
 }));
@@ -49,7 +52,15 @@ beforeEach(() => {
     mockGet.mockReset();
     mockPut.mockReset();
     mockPut.mockResolvedValue({});
+    mockUpdate.mockReset();
+    mockUpdate.mockResolvedValue({});
 });
+
+const CONDITIONAL_FAIL = () => {
+    const err = new Error('conditional check failed');
+    err.name = 'ConditionalCheckFailedException';
+    return err;
+};
 
 const MANUAL_RECORD = {
     orgName: 'v-abc123',
@@ -91,11 +102,26 @@ describe('classify-org admin actions — strict cache reads', () => {
     });
 });
 
-describe('classify-org rename — lossless legacy migration', () => {
-    it('copies the legacy record VERBATIM onto the new key (source/confidence/previousClassification preserved)', async () => {
-        mockGet
-            .mockResolvedValueOnce({}) // target key: no record
-            .mockResolvedValueOnce({ Item: MANUAL_RECORD }); // legacy record
+describe('classify-org rename — atomic update + lossless legacy migration', () => {
+    it('existing record: atomic SET displayName only — never a full-record Put that could clobber concurrent writes', async () => {
+        // attribute_exists condition passes → record present
+        const res = await handler(makeEvent({
+            action: 'rename', orgName: 'v-abc123', displayName: 'Renamed',
+        }), {} as never, vi.fn());
+
+        expect(res.statusCode).toBe(200);
+        expect(mockUpdate).toHaveBeenCalledTimes(1);
+        const upd = mockUpdate.mock.calls[0][0] as Record<string, unknown>;
+        expect(upd.UpdateExpression).toBe('SET displayName = :d');
+        expect(upd.ConditionExpression).toBe('attribute_exists(orgName)');
+        // No reads, no full-record writes
+        expect(mockPut).not.toHaveBeenCalled();
+        expect(mockGet).not.toHaveBeenCalled();
+    });
+
+    it('missing target: copies the legacy record VERBATIM (source/confidence/previousClassification preserved)', async () => {
+        mockUpdate.mockRejectedValueOnce(CONDITIONAL_FAIL()); // target key: no record
+        mockGet.mockResolvedValueOnce({ Item: MANUAL_RECORD }); // legacy record
 
         const res = await handler(makeEvent({
             action: 'rename', orgName: 'v-new-key', displayName: 'InnateControl visitor',
@@ -119,9 +145,8 @@ describe('classify-org rename — lossless legacy migration', () => {
     });
 
     it('falls back to the default record only when no legacy record exists either', async () => {
-        mockGet
-            .mockResolvedValueOnce({}) // target key: no record
-            .mockResolvedValueOnce({}); // legacy: no record
+        mockUpdate.mockRejectedValueOnce(CONDITIONAL_FAIL()); // target key: no record
+        mockGet.mockResolvedValueOnce({}); // legacy: no record
 
         const res = await handler(makeEvent({
             action: 'rename', orgName: 'v-new-key', displayName: 'Renamed', fromOrgName: 'old-name',
@@ -132,33 +157,36 @@ describe('classify-org rename — lossless legacy migration', () => {
         expect(put.Item).toMatchObject({ orgName: 'v-new-key', organizationType: 'unknown', isTargetCustomer: false });
     });
 
-    it('race on the new key: merges displayName onto the winner instead of clobbering', async () => {
-        mockGet
-            .mockResolvedValueOnce({}) // target key: no record (stale read)
-            .mockResolvedValueOnce({ Item: MANUAL_RECORD }); // legacy record
-        const conflict = new Error('exists');
-        conflict.name = 'ConditionalCheckFailedException';
-        mockPut.mockRejectedValueOnce(conflict);
-        mockGet.mockResolvedValueOnce({ Item: { orgName: 'v-new-key', organizationType: 'university', isTargetCustomer: true, confidence: 0.8, reason: 'winner', source: 'ai' } });
+    it('race on the new key: retries the ATOMIC displayName update against the winner (no snapshot Put)', async () => {
+        mockUpdate.mockRejectedValueOnce(CONDITIONAL_FAIL()); // target missing at first
+        mockGet.mockResolvedValueOnce({ Item: MANUAL_RECORD }); // legacy record
+        mockPut.mockRejectedValueOnce(CONDITIONAL_FAIL()); // winner appeared meanwhile
+        // second Update (default resolve) succeeds against the winner
 
         const res = await handler(makeEvent({
             action: 'rename', orgName: 'v-new-key', displayName: 'Renamed', fromOrgName: 'old-name',
         }), {} as never, vi.fn());
 
         expect(res.statusCode).toBe(200);
-        const finalPut = mockPut.mock.calls[1][0] as { Item: Record<string, unknown> };
-        expect(finalPut.Item).toMatchObject({ organizationType: 'university', reason: 'winner', displayName: 'Renamed' });
+        expect(mockUpdate).toHaveBeenCalledTimes(2);
+        const finalUpd = mockUpdate.mock.calls[1][0] as Record<string, unknown>;
+        expect(finalUpd.UpdateExpression).toBe('SET displayName = :d');
+        // Exactly one Put attempt (the failed conditional create) — the winner
+        // is never overwritten with a snapshot
+        expect(mockPut).toHaveBeenCalledTimes(1);
     });
 
-    it('existing record under the target key: just adds displayName (unchanged behavior)', async () => {
-        mockGet.mockResolvedValueOnce({ Item: MANUAL_RECORD });
+    it('created-then-deleted between attempts: fails loudly instead of looping', async () => {
+        mockUpdate.mockRejectedValueOnce(CONDITIONAL_FAIL());
+        mockGet.mockResolvedValueOnce({});
+        mockPut.mockRejectedValueOnce(CONDITIONAL_FAIL());
+        mockUpdate.mockRejectedValueOnce(CONDITIONAL_FAIL());
 
         const res = await handler(makeEvent({
-            action: 'rename', orgName: 'v-abc123', displayName: 'Renamed',
+            action: 'rename', orgName: 'v-new-key', displayName: 'Renamed',
         }), {} as never, vi.fn());
 
-        expect(res.statusCode).toBe(200);
-        const put = mockPut.mock.calls[0][0] as { Item: Record<string, unknown> };
-        expect(put.Item).toMatchObject({ ...MANUAL_RECORD, displayName: 'Renamed' });
+        expect(res.statusCode).toBe(500);
+        expect(res.body).toContain('appeared and vanished');
     });
 });
