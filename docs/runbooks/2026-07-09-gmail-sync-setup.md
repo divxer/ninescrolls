@@ -182,8 +182,18 @@ item, written only via the fenced release write) and clears on the first clean r
 Response:
 
 1. Read the `gmail.sync.blocked` / `gmail.sync.poison` lines in the gmail-sync CloudWatch
-   logs — they carry the stuck Gmail message ID (`blockedMessageId`) and the projection
-   error (`blockedError`) directly.
+   logs — they carry the stuck Gmail message ID (`blockedMessageId`) and a CLASSIFIED
+   diagnostic (`blockedError`). The diagnostic is deliberately allowlisted — built only from
+   structured error metadata, never from exception text (which can contain customer
+   emails/subjects): `gmail_api_error: <endpoint> <status> <classification>` (e.g.
+   `gmail_api_error: messagesGet 500 transient`), `crm_api_error[: <errorType>]` (e.g.
+   `crm_api_error: ValidationError`), `invoke_error: <SDKErrorName>`, or
+   `unknown: <ErrorConstructorName>`. To see the REAL underlying error, open the **crm-api
+   Lambda's** CloudWatch logs at the blocked run's timestamp (the projection failure for a
+   given message logs there — correlate by the `blockedMessageId` / event time), or the
+   gmail-sync log stream for Gmail-side failures. Note: streak events are emitted only AFTER
+   the streak has been durably persisted — a `gmail.sync.lease_lost` run emits no streak
+   events for that cycle.
 2. Transient upstream (Gmail 5xx/429): usually self-heals; verify the watermark advances on
    a later cycle.
 3. Genuinely poisonous message (malformed beyond mapping, permanent API error): there is NO

@@ -42,6 +42,10 @@ describe('invokeCrmApi', () => {
     send.mockResolvedValueOnce({ FunctionError: 'Unhandled', Payload: new TextEncoder().encode('{"errorMessage":"bad"}') });
     await expect(emitTimelineEventToCrm(args, { sync: true })).rejects.toThrow(/bad/);
   });
+  it('sync-mode FunctionError carries the payload errorType as the error NAME (structured metadata for sanitizers)', async () => {
+    send.mockResolvedValueOnce({ FunctionError: 'Unhandled', Payload: new TextEncoder().encode('{"errorType":"ValidationError","errorMessage":"bad"}') });
+    await expect(emitTimelineEventToCrm(args, { sync: true })).rejects.toMatchObject({ name: 'ValidationError' });
+  });
 });
 
 describe('invokeCrmAction (generic direct-invoke)', () => {

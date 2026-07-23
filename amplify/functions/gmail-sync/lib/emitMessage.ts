@@ -9,25 +9,46 @@ export type ProjectOutcome =
   | { outcome: 'terminal_skip'; reason: string }
   | { outcome: 'retryable_failure'; error: string };
 
-const EMAIL_RE = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g;
-const LONG_TOKEN_RE = /\S{48,}/g;          // base64 blobs, opaque ids, stack-frame paths
-const DIAGNOSTIC_MAX = 200;
+const SAFE_TOKEN_RE = /^[A-Za-z0-9_.]{1,64}$/;   // error TYPE names only — never free prose
+const DIAGNOSTIC_MAX = 200;                       // belt-and-braces cap on the assembled diagnostic
 
-// Diagnostic sanitizer for error text that leaves the sync run — raw Error.message can carry
-// customer data (crm-api errors embed emails/subjects) or be oversized. errorClass is derived
-// from the error SHAPE, the message text is redacted (emails → '[email]', long token runs →
-// '[token]') and hard-capped. CHOKE POINTS (the only places error objects become persisted/
-// logged strings): projectMessage's catch below (projection errors → engine summaries →
-// lastSummary/blocked logs) and syncMailbox's catch in handler.ts (thrown-run errors →
-// lastSummary/mailbox_failed log). Engines only forward the already-sanitized strings.
+// ALLOWLIST diagnostic sanitizer for error text that leaves the sync run. Exception prose
+// (Error.message) can carry customer data — emails, subjects, names, phones, URLs — so NO
+// `.message` content EVER flows to the boundary. The diagnostic is assembled exclusively from
+// structured error metadata:
+//   GmailApiError            → 'gmail_api_error' + "<endpoint> <status> <classification>"
+//                              (all three are our own enum/number values)
+//   crm-api FunctionError    → 'crm_api_error' + the payload errorType (invoke-crm-api carries it
+//                              as err.name) IF it passes SAFE_TOKEN_RE, else bare class
+//   AWS SDK invoke error     → 'invoke_error' + the SDK error name (safe-token filtered)
+//   anything else            → 'unknown' + the error CONSTRUCTOR name only (safe-token filtered)
+// CHOKE POINTS (the only places error objects become persisted/logged strings): projectMessage's
+// catch below (projection errors → engine summaries → lastSummary/blocked logs) and syncMailbox
+// in handler.ts (thrown-run catch + release-failure catch). Engines only forward these strings.
 export function sanitizeDiagnostic(err: unknown): { errorClass: 'crm_api_error' | 'invoke_error' | 'gmail_api_error' | 'unknown'; diagnostic: string } {
   let errorClass: 'crm_api_error' | 'invoke_error' | 'gmail_api_error' | 'unknown' = 'unknown';
-  if (err instanceof GmailApiError) errorClass = 'gmail_api_error';
-  else if (err instanceof Error && err.message.startsWith('crm-api error:')) errorClass = 'crm_api_error';
-  else if (err instanceof Error && ('$metadata' in err || (err.name !== 'Error' && err.name !== ''))) errorClass = 'invoke_error';   // AWS SDK error shape
-  const message = err instanceof Error ? err.message : String(err);
-  const diagnostic = message.replace(EMAIL_RE, '[email]').replace(LONG_TOKEN_RE, '[token]').slice(0, DIAGNOSTIC_MAX);
-  return { errorClass, diagnostic };
+  let diagnostic = '';
+  if (err instanceof GmailApiError) {
+    errorClass = 'gmail_api_error';
+    diagnostic = `${err.endpoint} ${err.status} ${err.classification}`;
+  } else if (err instanceof Error && err.message.startsWith('crm-api error:')) {
+    errorClass = 'crm_api_error';
+    if (err.name !== 'Error' && SAFE_TOKEN_RE.test(err.name)) diagnostic = err.name;
+  } else if (err instanceof Error && ('$metadata' in err || (err.name !== 'Error' && err.name !== ''))) {
+    errorClass = 'invoke_error';                  // AWS SDK error shape
+    if (SAFE_TOKEN_RE.test(err.name)) diagnostic = err.name;
+  } else {
+    const ctor = err === null || err === undefined ? '' : Object(err).constructor?.name ?? '';
+    if (SAFE_TOKEN_RE.test(ctor)) diagnostic = ctor;
+  }
+  return { errorClass, diagnostic: diagnostic.slice(0, DIAGNOSTIC_MAX) };
+}
+
+// The single string form used at both choke points: "<errorClass>: <diagnostic>" or the bare
+// class when no safe structured detail exists.
+export function diagnosticString(err: unknown): string {
+  const { errorClass, diagnostic } = sanitizeDiagnostic(err);
+  return diagnostic ? `${errorClass}: ${diagnostic}` : errorClass;
 }
 
 export async function projectMessage(e: GmailEmit): Promise<ProjectOutcome> {
@@ -45,7 +66,6 @@ export async function projectMessage(e: GmailEmit): Promise<ProjectOutcome> {
   } catch (err) {
     // Sanitization choke point (see sanitizeDiagnostic): the ONLY place a projection error
     // object becomes a diagnostic string — downstream summaries/state/logs carry only this form.
-    const { errorClass, diagnostic } = sanitizeDiagnostic(err);
-    return { outcome: 'retryable_failure', error: `${errorClass}: ${diagnostic}` };
+    return { outcome: 'retryable_failure', error: diagnosticString(err) };
   }
 }

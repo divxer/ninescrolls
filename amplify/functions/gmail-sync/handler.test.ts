@@ -322,19 +322,57 @@ describe('gmail-sync handler poison diagnostics', () => {
     logSpy.mockRestore();
   });
 
-  it('a thrown run with a PII-bearing error persists/logs only a sanitized diagnostic', async () => {
+  it('a thrown run with a PII-bearing error persists/logs ONLY the allowlisted diagnostic', async () => {
+    readState.mockResolvedValue({ phase: 'incremental', historyId: '999' });
+    runIncremental.mockRejectedValue(new Error('failed for bob@acme.com re: Quote #123 +1-555-0100 https://x.com/y'));
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const res = await handler();
+    const error = (res.results[0] as { error: string }).error;
+    expect(error).toBe('unknown: Error');                      // constructor name only, no message prose
+    const failLog = errSpy.mock.calls.map((c) => c[0]).find((l) => typeof l === 'string' && l.includes('gmail.sync.mailbox_failed')) as string;
+    const persisted = JSON.stringify(releaseLease.mock.calls[0][3]);
+    for (const fragment of ['bob@acme.com', 'Quote', '555', 'x.com', 'failed for']) {
+      expect(failLog).not.toContain(fragment);
+      expect(persisted).not.toContain(fragment);
+    }
+    errSpy.mockRestore();
+  });
+
+  it('a thrown crm-api FunctionError surfaces as the bare crm_api_error class', async () => {
     readState.mockResolvedValue({ phase: 'incremental', historyId: '999' });
     runIncremental.mockRejectedValue(new Error(`crm-api error: emit failed for bob@acme.com ${'Z'.repeat(9000)}`));
     const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const res = await handler();
-    const error = (res.results[0] as { error: string }).error;
-    expect(error).not.toContain('bob@acme.com');
-    expect(error.length).toBeLessThanOrEqual(250);
-    const failLog = errSpy.mock.calls.map((c) => c[0]).find((l) => typeof l === 'string' && l.includes('gmail.sync.mailbox_failed')) as string;
-    expect(failLog).not.toContain('bob@acme.com');
-    const [, , , fields] = releaseLease.mock.calls[0];
-    expect(JSON.stringify(fields)).not.toContain('bob@acme.com');
+    expect((res.results[0] as { error: string }).error).toBe('crm_api_error');
     errSpy.mockRestore();
+  });
+
+  it("mailbox isolation: A's NORMAL-PATH releaseLease throwing a non-CCFE error is mailbox-local — B still fully processed", async () => {
+    process.env.MAILBOXES = 'a@ninescrolls.com,b@ninescrolls.com';
+    releaseLease
+      .mockRejectedValueOnce(Object.assign(new Error('dynamo down'), { name: 'InternalServerError' }))  // A, normal path
+      .mockResolvedValueOnce({ lost: false });                                                          // B
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const res = await handler();
+    expect(res.results).toHaveLength(2);
+    expect(res.results[0]).toMatchObject({ mailbox: 'a@ninescrolls.com', status: 'error' });
+    expect(res.results[1]).toMatchObject({ mailbox: 'b@ninescrolls.com', phase: 'backfill', completed: true });
+    expect(runBackfill).toHaveBeenCalledTimes(2);                // B's run actually happened
+    const relLog = errSpy.mock.calls.map((c) => c[0]).find((l) => typeof l === 'string' && l.includes('gmail.sync.release_failed'));
+    expect(relLog).toBeDefined();
+    errSpy.mockRestore();
+  });
+
+  it('persist-then-alarm: a LOST fenced release at the poison threshold emits NO blocked/poison events', async () => {
+    readState.mockResolvedValue({ phase: 'incremental', historyId: '999', blockedMessageId: 'm1', blockedStreak: 2 });
+    runIncremental.mockResolvedValue({ checkpoint: '999', counters: {}, hasMore: false, blockedMessageId: 'm1', blockedError: 'x' });
+    releaseLease.mockResolvedValue({ lost: true });
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    await handler();
+    expect(logs(logSpy, 'gmail.sync.blocked')).toHaveLength(0);
+    expect(logs(logSpy, 'gmail.sync.poison')).toHaveLength(0);
+    expect(logs(logSpy, 'gmail.sync.lease_lost')).toHaveLength(1);   // the existing lost log still covers it
+    logSpy.mockRestore();
   });
 
   it('a blocked BACKFILL run also tracks the streak (phase-agnostic)', async () => {

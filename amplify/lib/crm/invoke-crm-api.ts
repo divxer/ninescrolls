@@ -24,7 +24,12 @@ export async function invokeCrmApi(payload: CrmEmitPayload, opts?: { sync?: bool
     if (sync && res.FunctionError) {
       const text = res.Payload ? new TextDecoder().decode(res.Payload) : '';
       const parsed = text ? JSON.parse(text) : null;
-      throw new Error(`crm-api error: ${parsed?.errorMessage ?? res.FunctionError}`);
+      const err = new Error(`crm-api error: ${parsed?.errorMessage ?? res.FunctionError}`);
+      // Carry the Lambda error payload's errorType as the error NAME — structured metadata that
+      // downstream sanitizers (gmail-sync sanitizeDiagnostic) can allowlist without ever
+      // forwarding the prose message.
+      if (typeof parsed?.errorType === 'string' && parsed.errorType) err.name = parsed.errorType;
+      throw err;
     }
   } catch (err) {
     if (sync) throw err;

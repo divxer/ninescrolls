@@ -2,7 +2,7 @@ import { readState, acquireLease, releaseLease, writeStateFenced, type GmailSync
 import { createGmailClient } from './lib/gmailClient';
 import { runIncremental } from './lib/incrementalSync';
 import { runBackfill } from './lib/backfill';
-import { projectMessage, sanitizeDiagnostic, type ProjectOutcome } from './lib/emitMessage';
+import { projectMessage, diagnosticString, type ProjectOutcome } from './lib/emitMessage';
 import type { MapResult } from './lib/mapMessage';
 
 // keep in sync with gmail-sync/resource.ts's timeoutSeconds (see that file's comment for the
@@ -97,9 +97,9 @@ async function syncMailbox(mailbox: string, nowMs: number): Promise<Record<strin
     }
   } catch (err) {
     // Thrown-run choke point (see sanitizeDiagnostic in emitMessage.ts): the error text entering
-    // the mailbox_failed log and durable lastSummary is sanitized here — never the raw message.
-    const { errorClass, diagnostic } = sanitizeDiagnostic(err);
-    const error = `${errorClass}: ${diagnostic}`;
+    // the mailbox_failed log and durable lastSummary is the ALLOWLISTED diagnostic — structured
+    // metadata only, never the raw message.
+    const error = diagnosticString(err);
     console.error(JSON.stringify({ event: 'gmail.sync.mailbox_failed', mailbox, error }));
     try {
       // Inconclusive run (thrown): lastSummary only — blockedMessageId/blockedStreak are NOT
@@ -129,24 +129,41 @@ async function syncMailbox(mailbox: string, nowMs: number): Promise<Record<strin
   const blockedFields: Partial<GmailSyncState> = {};
   if (runClass === 'blocked') {
     const blockedMessageId = outcome.blockedMessageId as string;
-    const blockedStreak = state.blockedMessageId === blockedMessageId ? (state.blockedStreak ?? 0) + 1 : 1;
     blockedFields.blockedMessageId = blockedMessageId;
-    blockedFields.blockedStreak = blockedStreak;
-    console.log(JSON.stringify({
-      event: 'gmail.sync.blocked', mailbox, blockedMessageId,
-      blockedError: typeof outcome.blockedError === 'string' ? outcome.blockedError : null, blockedStreak,
-    }));
-    if (blockedStreak >= POISON_STREAK_THRESHOLD) {
-      // Stable, metric-filterable event name — the runbook's poison-mailbox alarm keys on it.
-      console.log(JSON.stringify({ event: 'gmail.sync.poison', mailbox, blockedMessageId, blockedStreak }));
-    }
+    blockedFields.blockedStreak = state.blockedMessageId === blockedMessageId ? (state.blockedStreak ?? 0) + 1 : 1;
   } else if (runClass === 'clean' && (state.blockedMessageId != null || state.blockedStreak != null)) {
     blockedFields.blockedMessageId = null;      // genuine clean completion: clear the streak
     blockedFields.blockedStreak = null;
   }
 
-  const rel = await releaseLease(mailbox, lease, Date.now(), { ...blockedFields, lastSummary: outcome });
-  if (rel.lost) console.log(JSON.stringify({ event: 'gmail.sync.lease_lost', mailbox, stage: 'release' }));
+  // PERSIST-THEN-ALARM: the fenced release comes first; streak events are emitted only after the
+  // streak value is durably persisted ({lost:false}) — an alarm must never report a streak that
+  // never became durable. A non-CCFE store failure here is MAILBOX-LOCAL (the loop in `handler`
+  // must keep going; the 300s lease TTL is the backstop that frees the mailbox for the next cron).
+  let rel: { lost: boolean };
+  try {
+    rel = await releaseLease(mailbox, lease, Date.now(), { ...blockedFields, lastSummary: outcome });
+  } catch (err) {
+    const error = diagnosticString(err);
+    console.error(JSON.stringify({ event: 'gmail.sync.release_failed', mailbox, error }));
+    return { mailbox, status: 'error', error };
+  }
+  if (rel.lost) {
+    // Ownership lost: the streak write did not land — emit NO streak events (this log covers it).
+    console.log(JSON.stringify({ event: 'gmail.sync.lease_lost', mailbox, stage: 'release' }));
+    return outcome;
+  }
+  if (runClass === 'blocked') {
+    const { blockedMessageId, blockedStreak } = blockedFields;   // the PERSISTED values
+    console.log(JSON.stringify({
+      event: 'gmail.sync.blocked', mailbox, blockedMessageId,
+      blockedError: typeof outcome.blockedError === 'string' ? outcome.blockedError : null, blockedStreak,
+    }));
+    if ((blockedStreak ?? 0) >= POISON_STREAK_THRESHOLD) {
+      // Stable, metric-filterable event name — the runbook's poison-mailbox alarm keys on it.
+      console.log(JSON.stringify({ event: 'gmail.sync.poison', mailbox, blockedMessageId, blockedStreak }));
+    }
+  }
   return outcome;
 }
 
