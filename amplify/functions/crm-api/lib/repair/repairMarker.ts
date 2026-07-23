@@ -25,6 +25,11 @@ export function repairMarkerKeys(unitType: RepairUnitType, unitKey: string) {
 
 // Deterministic-PK Put — overwrites the same committed unit's metadata; never mints a duplicate.
 // Reached ONLY after a durable commit (moved>0 / bridge upsert written), so targetOrgId is committed.
+// ⚠️ DEPRECATED for publish paths: this unconditional, version-LESS Put enables an ABA — a drainer
+// that read a version-less marker can have its attribute_not_exists(workVersion) completion delete
+// succeed against a DIFFERENT version-less marker put here meanwhile, killing fresh work. Use
+// ensureRepairMarker (versioned publish, returns the written workVersion) instead. No production
+// callers remain; kept only for the v1-shape regression tests.
 export async function putRepairMarker(args: {
   unitType: RepairUnitType; unitKey: string; targetOrgId: string; operator: string; createdAt: string;
   sourceType?: string; sourceEntityId?: string; backfillPk?: string | null;
@@ -63,7 +68,7 @@ export async function putRepairMarker(args: {
  */
 export async function ensureRepairMarker(args: {
   unitType: RepairUnitType; unitKey: string; targetOrgId: string; operator: string; createdAt: string;
-}): Promise<{ created: boolean }> {
+}): Promise<{ created: boolean; workVersion: number }> {
   const keys = repairMarkerKeys(args.unitType, args.unitKey);
   const freshItem: RepairMarkerItem = {
     ...keys,
@@ -75,6 +80,13 @@ export async function ensureRepairMarker(args: {
     workVersion: 1,
   };
   const isConditional = (err: unknown) => err instanceof Error && err.name === 'ConditionalCheckFailedException';
+  // The version the write actually produced — publishers (linkVisitor) hold it
+  // for their own version-fenced completion delete, so a concurrent publish
+  // (different version) can never be killed by their delete (no ABA).
+  const readWorkVersion = (attrs: Record<string, unknown> | undefined): number => {
+    const v = Number((attrs as { workVersion?: unknown } | undefined)?.workVersion);
+    return Number.isFinite(v) && v > 0 ? v : 1;
+  };
 
   // State machine, retried until ONE transition lands atomically:
   //   absent  → create pending (workVersion 1)
@@ -94,14 +106,14 @@ export async function ensureRepairMarker(args: {
         TableName: TABLE_NAME(), Item: freshItem,
         ConditionExpression: 'attribute_not_exists(PK)',
       }));
-      return { created: true };
+      return { created: true, workVersion: 1 };
     } catch (err: unknown) {
       if (!isConditional(err)) throw err;
     }
 
     // stuck → republish pending (new identity evidence earns a fresh budget)
     try {
-      await docClient.send(new UpdateCommand({
+      const res = await docClient.send(new UpdateCommand({
         TableName: TABLE_NAME(), Key: keys,
         UpdateExpression: 'SET GSI1PK = :pending, GSI1SK = :gsi1sk, #s = :st, stuckReason = :null, attemptCount = :zero, lastError = :null, workVersion = if_not_exists(workVersion, :zero) + :one',
         ConditionExpression: '#s = :stuck',
@@ -110,22 +122,24 @@ export async function ensureRepairMarker(args: {
           ':pending': 'CRM_REPAIR#pending', ':gsi1sk': `${args.createdAt}#${args.unitKey}`,
           ':st': 'pending', ':stuck': 'stuck', ':null': null, ':zero': 0, ':one': 1,
         },
+        ReturnValues: 'ALL_NEW',
       }));
-      return { created: false };
+      return { created: false, workVersion: readWorkVersion(res.Attributes) };
     } catch (err: unknown) {
       if (!isConditional(err)) throw err;
     }
 
     // pending → bump workVersion (fences an in-flight drain's completion delete)
     try {
-      await docClient.send(new UpdateCommand({
+      const res = await docClient.send(new UpdateCommand({
         TableName: TABLE_NAME(), Key: keys,
         UpdateExpression: 'SET workVersion = if_not_exists(workVersion, :zero) + :one',
         ConditionExpression: '#s = :pending',
         ExpressionAttributeNames: { '#s': 'status' },
         ExpressionAttributeValues: { ':zero': 0, ':one': 1, ':pending': 'pending' },
+        ReturnValues: 'ALL_NEW',
       }));
-      return { created: false };
+      return { created: false, workVersion: readWorkVersion(res.Attributes) };
     } catch (err: unknown) {
       if (!isConditional(err)) throw err;
     }

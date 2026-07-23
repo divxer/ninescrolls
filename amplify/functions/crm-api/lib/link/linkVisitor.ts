@@ -2,7 +2,7 @@ import { docClient, TABLE_NAME } from '../dynamodb';
 import { orgExists } from '../orgStore';
 import { readVisitorBridge, upsertManualVisitorBridge, toSend } from '../../../../lib/crm/visitor-bridge';
 import { reResolveVisitorSessions } from '../analytics/reResolveVisitorSessions';
-import { putRepairMarker, deleteRepairMarkerIfUnchanged } from '../repair/repairMarker';
+import { ensureRepairMarker, deleteRepairMarkerIfUnchanged } from '../repair/repairMarker';
 import { replayAnalyticsSideEffects } from '../repair/replaySideEffects';
 
 export async function linkVisitor(args: { visitorId: string; targetOrgId: string; operator: string }): Promise<Record<string, unknown>> {
@@ -27,8 +27,14 @@ export async function linkVisitor(args: { visitorId: string; targetOrgId: string
   if (!up.written) return { alreadyResolved: true, existingOrgId: up.existingOrgId };
 
   let postCommitStatus: 'ok' | 'post_commit_failed' = 'ok';
+  // Versioned publish (NEVER the version-less putRepairMarker: a drainer that
+  // read a version-less marker could complete-delete a version-less overwrite
+  // — ABA — killing this fresh work). We hold the written version for our own
+  // fenced completion delete below.
+  let publishedVersion: number | undefined;
   try {
-    await putRepairMarker({ unitType: 'analytics', unitKey: args.visitorId, targetOrgId: args.targetOrgId, operator: args.operator, createdAt: nowIso });
+    const pub = await ensureRepairMarker({ unitType: 'analytics', unitKey: args.visitorId, targetOrgId: args.targetOrgId, operator: args.operator, createdAt: nowIso });
+    publishedVersion = pub.workVersion;
   } catch (err) {
     postCommitStatus = 'post_commit_failed';
     console.error(JSON.stringify({ event: 'crm.link.marker_put_error', visitorId: args.visitorId, error: err instanceof Error ? err.message : String(err) }));
@@ -40,13 +46,14 @@ export async function linkVisitor(args: { visitorId: string; targetOrgId: string
   // pending marker for the drainer to find.
   const replay = await replayAnalyticsSideEffects({ visitorId: args.visitorId, targetOrgId: args.targetOrgId, operator: args.operator, createdAt: nowIso });
   if (replay.ok) {
-    // Version-fenced completion delete: we created a version-LESS marker, so
-    // the fence is attribute_not_exists(workVersion). If concurrent work was
-    // published meanwhile (ensure bump → workVersion present), the delete is
-    // fenced out and the marker stays pending for the drainer — that is
-    // success for us, not a failure.
+    // Version-fenced completion delete with the version WE published. A
+    // concurrent publish bumps it (different version) → our delete is fenced
+    // out and the marker stays pending for the drainer — success for us, not
+    // a failure. If our publish failed (publishedVersion undefined), the
+    // absence-fence either no-ops on a missing marker or is fenced out by
+    // any versioned marker another publisher created — never kills it.
     try {
-      await deleteRepairMarkerIfUnchanged({ unitType: 'analytics', unitKey: args.visitorId });
+      await deleteRepairMarkerIfUnchanged({ unitType: 'analytics', unitKey: args.visitorId, workVersion: publishedVersion });
     }
     catch { postCommitStatus = 'post_commit_failed'; }
   } else if (replay.errorType !== 'in_progress') {

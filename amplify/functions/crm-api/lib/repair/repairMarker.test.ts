@@ -305,18 +305,21 @@ const analyticsMarker = (over: Partial<RepairMarkerItem> = {}): RepairMarkerItem
 describe('ensureRepairMarker (publish/republish as consumable pending)', () => {
   it('fresh create: pending marker with workVersion 1', async () => {
     const r = await ensureRepairMarker({ unitType: 'analytics', unitKey: 'v-1', targetOrgId: 'acme.com', operator: 'retro-truncation', createdAt: 'T0' });
-    expect(r).toEqual({ created: true });
+    expect(r).toEqual({ created: true, workVersion: 1 });
     const item = send.mock.calls[0][0].input.Item;
     expect(item).toMatchObject({ PK: 'CRM_REPAIR#analytics#v-1', GSI1PK: 'CRM_REPAIR#pending', status: 'pending', workVersion: 1 });
     expect(send.mock.calls[0][0].input.ConditionExpression).toBe('attribute_not_exists(PK)');
   });
   it('existing STUCK marker: republished to pending with a fresh attempt budget + version bump', async () => {
     send.mockRejectedValueOnce(COND_FAIL()); // create: exists
-    // stuck-republish update succeeds
+    send.mockResolvedValueOnce({ Attributes: { workVersion: 5 } }); // stuck-republish succeeds (ALL_NEW)
     const r = await ensureRepairMarker({ unitType: 'analytics', unitKey: 'v-1', targetOrgId: 'acme.com', operator: 'retro-truncation', createdAt: 'T1' });
-    expect(r).toEqual({ created: false });
+    // The WRITTEN version is returned — publishers hold it for their own
+    // fenced completion delete (ABA closure)
+    expect(r).toEqual({ created: false, workVersion: 5 });
     const u = send.mock.calls[1][0].input;
     expect(u.ConditionExpression).toBe('#s = :stuck');
+    expect(u.ReturnValues).toBe('ALL_NEW');
     expect(u.UpdateExpression).toContain('GSI1PK = :pending');
     expect(u.UpdateExpression).toContain('attemptCount = :zero');
     expect(u.UpdateExpression).toContain('workVersion = if_not_exists(workVersion, :zero) + :one');
@@ -324,8 +327,9 @@ describe('ensureRepairMarker (publish/republish as consumable pending)', () => {
   it('existing PENDING marker: only bumps workVersion — attempt state untouched', async () => {
     send.mockRejectedValueOnce(COND_FAIL()); // create: exists
     send.mockRejectedValueOnce(COND_FAIL()); // stuck-republish: not stuck
+    send.mockResolvedValueOnce({ Attributes: { workVersion: 7 } }); // pending-bump succeeds (ALL_NEW)
     const r = await ensureRepairMarker({ unitType: 'analytics', unitKey: 'v-1', targetOrgId: 'acme.com', operator: 'retro-truncation', createdAt: 'T1' });
-    expect(r).toEqual({ created: false });
+    expect(r).toEqual({ created: false, workVersion: 7 });
     const u = send.mock.calls[2][0].input;
     expect(u.UpdateExpression).toBe('SET workVersion = if_not_exists(workVersion, :zero) + :one');
     expect(u.UpdateExpression).not.toContain('attemptCount');
@@ -339,8 +343,9 @@ describe('ensureRepairMarker (publish/republish as consumable pending)', () => {
     send.mockRejectedValueOnce(COND_FAIL()); // round 1: pending-bump — drainer just stucked it
     send.mockRejectedValueOnce(COND_FAIL()); // round 2: create — still exists
     // round 2: stuck-republish succeeds
+    send.mockResolvedValueOnce({ Attributes: { workVersion: 2 } });
     const r = await ensureRepairMarker({ unitType: 'analytics', unitKey: 'v-1', targetOrgId: 'acme.com', operator: 'retro-truncation', createdAt: 'T4' });
-    expect(r).toEqual({ created: false });
+    expect(r).toEqual({ created: false, workVersion: 2 });
     const u = send.mock.calls[4][0].input;
     expect(u.ConditionExpression).toBe('#s = :stuck');
     expect(u.UpdateExpression).toContain('GSI1PK = :pending');
@@ -355,7 +360,7 @@ describe('ensureRepairMarker (publish/republish as consumable pending)', () => {
     send.mockRejectedValueOnce(COND_FAIL()); // republish: gone
     send.mockRejectedValueOnce(COND_FAIL()); // bump: gone
     const r = await ensureRepairMarker({ unitType: 'analytics', unitKey: 'v-1', targetOrgId: 'acme.com', operator: 'retro-truncation', createdAt: 'T2' });
-    expect(r).toEqual({ created: true });
+    expect(r).toEqual({ created: true, workVersion: 1 });
     expect(send.mock.calls[3][0].input.Item.workVersion).toBe(1);
   });
 });
