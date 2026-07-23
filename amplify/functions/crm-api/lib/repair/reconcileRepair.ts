@@ -39,7 +39,9 @@ function asV2(m: DrainMarker): StructuredMarkerV2 | null {
 
 async function replayFor(m: DrainMarker): Promise<ReplayResult> {
   if (m.unitType === 'analytics') {
-    return replayAnalyticsSideEffects({ visitorId: m.unitKey, targetOrgId: m.targetOrgId, operator: m.operator, createdAt: m.createdAt });
+    // markerOwned: the drainer read this marker off the pending partition and
+    // does version-fenced bookkeeping on it — the retro must not self-bump.
+    return replayAnalyticsSideEffects({ visitorId: m.unitKey, targetOrgId: m.targetOrgId, operator: m.operator, createdAt: m.createdAt, markerOwned: true });
   }
   const v2 = m.generation !== undefined;
   return replayStructuredSideEffects({

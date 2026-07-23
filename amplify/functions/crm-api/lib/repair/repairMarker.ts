@@ -139,7 +139,9 @@ export async function ensureRepairMarker(args: {
  * — a concurrent ensureRepairMarker bump means new work was published, so the
  * marker must survive ({ lost: true }; next sweep drains it).
  */
-export async function deleteRepairMarkerIfUnchanged(m: RepairMarkerItem): Promise<{ lost: boolean }> {
+export async function deleteRepairMarkerIfUnchanged(
+  m: Pick<RepairMarkerItem, 'unitType' | 'unitKey' | 'workVersion'>,
+): Promise<{ lost: boolean }> {
   try {
     await docClient.send(new DeleteCommand({
       TableName: TABLE_NAME(), Key: repairMarkerKeys(m.unitType, m.unitKey),

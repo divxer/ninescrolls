@@ -165,6 +165,9 @@ describe('reconcileRepair', () => {
     deleteRepairMarkerIfUnchanged.mockRejectedValueOnce(new Error('ddb down')); // ...but delete throws
     replayAnalytics.mockResolvedValueOnce({ ok: true });           // ana: fully succeeds
     const out = await reconcileRepair({});
+    // The drainer is the marker OWNER — its replay must declare it so the
+    // retro doesn't self-bump the version it is consuming
+    expect(replayAnalytics).toHaveBeenCalledWith(expect.objectContaining({ markerOwned: true }));
     expect(out.errors).toBe(1);
     expect(out.repaired).toBe(1);     // ana still repaired despite struct's failure
     expect(out.examined).toBe(2);

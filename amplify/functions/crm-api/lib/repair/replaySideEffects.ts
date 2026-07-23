@@ -374,18 +374,25 @@ async function replayStructuredGenerational(args: ReplayStructuredArgs, generati
 
 export async function replayAnalyticsSideEffects(args: {
   visitorId: string; targetOrgId: string; operator: string; createdAt: string;
+  // TRUE only for the scheduled drainer (reconcileRepair), which read the
+  // marker off the pending partition and does version-fenced bookkeeping —
+  // its truncation is its own continuation, and a version bump would fence
+  // out its own markStuck/delete (poison visitors could never age into
+  // stuck). Foreground callers (linkVisitor) are NOT owners: their initial
+  // marker Put is best-effort (failure only logged), so a truncated retro
+  // MUST publish via ensureRepairMarker or RETRO#STATE is stranded with no
+  // pending marker at all.
+  markerOwned?: boolean;
 }): Promise<ReplayResult> {
   let transientError: string | undefined;
   let summary: Record<string, unknown> = {};
   let hasMore = false;
 
   try {
-    // markerManagedByCaller: this replay runs INSIDE a marker consumer (the
-    // drainer / linkVisitor) — a truncation here is the consumer's own
-    // continuation, and publishing a version bump would fence out the
-    // consumer's own bookkeeping (markStuck/delete carry the version it
-    // read → always lost → poison visitors could never age into stuck).
-    const retro = await reResolveVisitorSessions({ visitorId: args.visitorId, markerManagedByCaller: true });
+    const retro = await reResolveVisitorSessions({
+      visitorId: args.visitorId,
+      markerManagedByCaller: args.markerOwned === true,
+    });
     summary = (retro?.summary ?? {}) as Record<string, unknown>;
     hasMore = summary.hasMore === true;
   } catch (err) { transientError = msg(err); }

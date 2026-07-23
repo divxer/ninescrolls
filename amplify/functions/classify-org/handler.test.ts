@@ -251,6 +251,31 @@ describe('classify-org override/undo — displayName (rename) preservation', () 
         expect(u.ConditionExpression).toContain('#src = :manual');
     });
 
+    it('override stamps a UUID revision token (CAS basis for later undos)', async () => {
+        mockGet.mockResolvedValueOnce({ Item: RENAMED_AI_RECORD });
+        await handler(makeEvent({ action: 'override', orgName: 'v-abc123', isTargetCustomer: true }), {} as never, vi.fn());
+        const u = mockUpdate.mock.calls[0][0] as Record<string, any>;
+        expect(u.UpdateExpression).toContain('revision = :rev');
+        expect(u.ExpressionAttributeValues[':rev']).toMatch(/^[0-9a-f-]{36}$/);
+    });
+
+    it('undo CAS prefers the revision token over classifiedAt (same-millisecond overrides cannot collide)', async () => {
+        mockGet.mockResolvedValueOnce({
+            Item: {
+                orgName: 'v-abc123', organizationType: 'enterprise', isTargetCustomer: true, confidence: 1,
+                reason: 'M', source: 'manual', classifiedAt: 'T-SAME-MS', revision: 'rev-A',
+                previousClassification: { organizationType: 'telecom_isp', isTargetCustomer: false, confidence: 0.9, reason: 'AI', source: 'ai' },
+            },
+        });
+        const res = await handler(makeEvent({ action: 'undo', orgName: 'v-abc123' }), {} as never, vi.fn());
+        expect(res.statusCode).toBe(200);
+        const u = mockUpdate.mock.calls[0][0] as Record<string, any>;
+        // revision equality — NOT the collidable classifiedAt timestamp
+        expect(u.ConditionExpression).toContain('revision = :readRev');
+        expect(u.ConditionExpression).not.toContain('classifiedAt = :readAt');
+        expect(u.ExpressionAttributeValues[':readRev']).toBe('rev-A');
+    });
+
     it('undo restore race: a newer override landing mid-flight re-dispatches against the fresh record', async () => {
         const prevA = { organizationType: 'telecom_isp', isTargetCustomer: false, confidence: 0.9, reason: 'AI', source: 'ai' };
         const manualV1 = { orgName: 'v-abc123', organizationType: 'enterprise', isTargetCustomer: true, confidence: 1, reason: 'M1', source: 'manual', classifiedAt: 'T1', previousClassification: prevA };

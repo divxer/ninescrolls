@@ -1,6 +1,7 @@
 import type { APIGatewayProxyHandler } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, GetCommand, PutCommand, UpdateCommand, ScanCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
+import { randomUUID } from 'node:crypto';
 import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -79,6 +80,9 @@ interface CachedItem {
     provider?: 'bedrock' | 'anthropic';
     previousClassification?: PreviousClassification;
     ttl?: number;
+    // Concurrency token for admin CAS writes (classifiedAt alone can collide
+    // at millisecond resolution when two overrides land in the same ms)
+    revision?: string;
 }
 
 async function getCachedItem(orgName: string): Promise<CachedItem | null> {
@@ -431,7 +435,7 @@ async function handleOverride(body: ClassifyRequest, corsHeaders: Record<string,
         TableName: TABLE_NAME,
         Key: { orgName: body.orgName },
         UpdateExpression:
-            'SET organizationType = :ot, isTargetCustomer = :it, confidence = :c, reason = :r, classifiedAt = :at, #src = :src'
+            'SET organizationType = :ot, isTargetCustomer = :it, confidence = :c, reason = :r, classifiedAt = :at, #src = :src, revision = :rev'
             + (previousClassification ? ', previousClassification = :prev' : '')
             + ' REMOVE #ttl, provider',
         ExpressionAttributeNames: { '#src': 'source', '#ttl': 'ttl' },
@@ -442,6 +446,7 @@ async function handleOverride(body: ClassifyRequest, corsHeaders: Record<string,
             ':r': newItem.reason,
             ':at': newItem.classifiedAt,
             ':src': 'manual',
+            ':rev': randomUUID(),
             ...(previousClassification ? { ':prev': previousClassification } : {}),
         },
     }));
@@ -457,6 +462,17 @@ async function handleOverride(body: ClassifyRequest, corsHeaders: Record<string,
             cached: false,
         }),
     };
+}
+
+/**
+ * CAS clause for undo writes: prefer the explicit UUID revision (written by
+ * every admin mutation since it was introduced); fall back to classifiedAt
+ * for legacy records, and to attribute-absence for records with neither.
+ */
+function undoCasClause(existing: CachedItem): { clause: string; values: Record<string, unknown> } {
+    if (existing.revision) return { clause: 'revision = :readRev', values: { ':readRev': existing.revision } };
+    if (existing.classifiedAt) return { clause: 'classifiedAt = :readAt AND attribute_not_exists(revision)', values: { ':readAt': existing.classifiedAt } };
+    return { clause: 'attribute_not_exists(classifiedAt) AND attribute_not_exists(revision)', values: {} };
 }
 
 async function handleUndo(body: ClassifyRequest, corsHeaders: Record<string, string>) {
@@ -525,11 +541,10 @@ async function handleUndo(body: ClassifyRequest, corsHeaders: Record<string, str
                 TableName: TABLE_NAME,
                 Key: { orgName: body.orgName },
                 UpdateExpression:
-                    'SET organizationType = :ot, isTargetCustomer = :it, confidence = :c, reason = :r, classifiedAt = :at, #src = :src, #ttl = :ttl'
+                    'SET organizationType = :ot, isTargetCustomer = :it, confidence = :c, reason = :r, classifiedAt = :at, #src = :src, #ttl = :ttl, revision = :rev'
                     + (restored.provider ? ', provider = :p' : '')
                     + ' REMOVE previousClassification' + (restored.provider ? '' : ', provider'),
-                ConditionExpression: '#src = :manual AND '
-                    + (existing.classifiedAt ? 'classifiedAt = :readAt' : 'attribute_not_exists(classifiedAt)'),
+                ConditionExpression: '#src = :manual AND ' + undoCasClause(existing).clause,
                 ExpressionAttributeNames: { '#src': 'source', '#ttl': 'ttl' },
                 ExpressionAttributeValues: {
                     ':ot': restored.organizationType,
@@ -540,7 +555,8 @@ async function handleUndo(body: ClassifyRequest, corsHeaders: Record<string, str
                     ':src': restored.source,
                     ':ttl': ttl,
                     ':manual': 'manual',
-                    ...(existing.classifiedAt ? { ':readAt': existing.classifiedAt } : {}),
+                    ':rev': randomUUID(),
+                    ...undoCasClause(existing).values,
                     ...(restored.provider ? { ':p': restored.provider } : {}),
                 },
             }));
@@ -569,15 +585,14 @@ async function handleUndo(body: ClassifyRequest, corsHeaders: Record<string, str
                 TableName: TABLE_NAME,
                 Key: { orgName: body.orgName },
                 UpdateExpression:
-                    'SET organizationType = :ot, isTargetCustomer = :it, confidence = :c, reason = :r, classifiedAt = :at, #src = :src'
+                    'SET organizationType = :ot, isTargetCustomer = :it, confidence = :c, reason = :r, classifiedAt = :at, #src = :src, revision = :rev'
                     + ' REMOVE previousClassification, provider, #ttl',
-                ConditionExpression: '#src = :manual AND displayName = :dn AND '
-                    + (existing.classifiedAt ? 'classifiedAt = :readAt' : 'attribute_not_exists(classifiedAt)'),
+                ConditionExpression: '#src = :manual AND displayName = :dn AND ' + undoCasClause(existing).clause,
                 ExpressionAttributeNames: { '#src': 'source', '#ttl': 'ttl' },
                 ExpressionAttributeValues: {
                     ':ot': 'unknown', ':it': false, ':c': 0, ':r': '', ':at': new Date().toISOString(), ':src': 'manual',
-                    ':manual': 'manual', ':dn': existing.displayName,
-                    ...(existing.classifiedAt ? { ':readAt': existing.classifiedAt } : {}),
+                    ':manual': 'manual', ':dn': existing.displayName, ':rev': randomUUID(),
+                    ...undoCasClause(existing).values,
                 },
             }));
         } catch (err: unknown) {
