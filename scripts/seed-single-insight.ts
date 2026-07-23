@@ -13,6 +13,7 @@ import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../amplify/data/resource';
 import { insightsPosts } from './insightsPostsData';
 import { authenticate } from './lib/auth';
+import { resolveArticleBody } from './lib/articleBody';
 
 import amplifyOutputs from '../amplify_outputs.json';
 Amplify.configure(amplifyOutputs as any);
@@ -46,20 +47,21 @@ async function seedSingleInsight(slug: string) {
   console.log(`  relatedProducts: ${post.relatedProducts?.length || 0}`);
   console.log(`  content length: ${(post.content || '').length} chars\n`);
 
-  // Some articles source their body from scripts/articles/<slug>.html (synced via
-  // update-insight-from-html.ts) and carry no inline content here. Seed the metadata
-  // record, then sync the body separately — this create would otherwise store empty content.
-  if (!post.content || !post.content.trim()) {
+  // HTML-backed articles keep content:'' in insightsPostsData.ts and store their
+  // body in scripts/articles/<slug>.html — load it so the seeded record is complete.
+  const body = resolveArticleBody(slug, post.content);
+  if (body.source === 'html-file') {
+    console.log(`  Body loaded from scripts/articles/${slug}.html (${body.content!.length} chars)`);
+  } else if (body.source === 'none') {
     console.warn(
-      `  Note: "${slug}" has no inline content in insightsPostsData.ts.\n` +
-      `  After creating, sync the body: run update-insight-from-html.ts ${slug} scripts/articles/${slug}.html\n`
+      `  WARNING: "${slug}" has no inline content and no scripts/articles/${slug}.html — seeding metadata only.\n`
     );
   }
 
   const { data, errors } = await client.models.InsightsPost.create({
     slug: post.slug,
     title: post.title,
-    content: post.content || null,
+    content: body.content,
     excerpt: post.excerpt || null,
     author: post.author,
     publishDate: post.publishDate,

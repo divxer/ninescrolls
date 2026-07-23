@@ -12,6 +12,7 @@
 import { Amplify } from 'aws-amplify';
 import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../amplify/data/resource';
+import { resolveArticleBody } from './lib/articleBody';
 
 // Load Amplify config
 import amplifyOutputs from '../amplify_outputs.json';
@@ -236,13 +237,15 @@ async function seedInsights() {
       continue;
     }
 
-    // Some articles source their body from scripts/articles/<slug>.html (synced via
-    // update-insight-from-html.ts) and carry no inline content here. On a fresh table this
-    // seeds a metadata-only record; sync the body afterward with:
-    //   update-insight-from-html.ts <slug> scripts/articles/<slug>.html
-    if (!post.content || !post.content.trim()) {
+    // HTML-backed articles keep content:'' here and store their body in
+    // scripts/articles/<slug>.html — load it so a fresh-table seed produces a
+    // complete record, not a metadata-only stub.
+    const body = resolveArticleBody(post.slug, post.content);
+    if (body.source === 'html-file') {
+      console.log(`  Body loaded from scripts/articles/${post.slug}.html (${body.content!.length} chars)`);
+    } else if (body.source === 'none') {
       console.warn(
-        `  Note: ${post.slug} has no inline content — seeding metadata only; sync body from scripts/articles/${post.slug}.html`
+        `  WARNING: ${post.slug} has no inline content and no scripts/articles/${post.slug}.html — seeding metadata only`
       );
     }
 
@@ -250,7 +253,7 @@ async function seedInsights() {
       const { data, errors } = await client.models.InsightsPost.create({
         slug: post.slug,
         title: post.title,
-        content: post.content || null,
+        content: body.content,
         excerpt: post.excerpt || null,
         author: post.author,
         publishDate: post.publishDate,
