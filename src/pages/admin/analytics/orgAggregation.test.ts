@@ -77,6 +77,63 @@ describe('aggregateByOrg', () => {
     expect(records).toHaveLength(1);
     expect(records[0].totalEvents).toBe(2);
   });
+
+  it('splits security-proxy visitors by visitorId even when historical events carry an enterprise AI type', () => {
+    // Historical shape: pre-fix events were AI-classified 'enterprise' with the
+    // vendor's org name — no corporate_proxy type anywhere on the events.
+    const records = aggregateByOrg([
+      ev({ orgName: 'Menlo Security, Inc.', org: 'AS399629 Menlo Security, Inc.',
+           organizationType: 'enterprise', aiOrganizationType: 'enterprise', aiConfidence: 0.95,
+           visitorId: 'vis-tw', ip: '57.140.1.2', city: 'Taipei', pathname: '/products/icp-etcher' }),
+      ev({ orgName: 'Menlo Security, Inc.', org: 'AS399629 Menlo Security, Inc.',
+           organizationType: 'enterprise', aiOrganizationType: 'enterprise', aiConfidence: 0.95,
+           visitorId: 'vis-us', ip: '57.140.9.9', city: 'Needham', pathname: '/insights/ald' }),
+    ]);
+    expect(records).toHaveLength(2);
+    for (const r of records) {
+      expect(r.isISPVisitor).toBe(true);
+      expect(r.organizationType).toBe('corporate_proxy'); // vendor's AI type suppressed
+      expect(r.leadTier).toBeNull(); // no tier backfill from the vendor's 'enterprise' type
+      expect(r.orgName).toMatch(/^Menlo Security, Inc\. · /); // per-visitor display name
+    }
+    // Stable override key (PR #341) applies: keyed by visitorId, not display name
+    const keys = records.map(r => orgOverrideKey(r)).sort();
+    expect(keys).toEqual(['vis-tw', 'vis-us']);
+  });
+
+  it('splits proxy visitors tagged corporate_proxy by the new pipeline', () => {
+    const records = aggregateByOrg([
+      ev({ orgName: 'Zscaler, Inc.', organizationType: 'corporate_proxy',
+           visitorId: 'z1', ip: '165.225.1.1', city: 'Frankfurt', pathname: '/a' }),
+      ev({ orgName: 'Zscaler, Inc.', organizationType: 'corporate_proxy',
+           visitorId: 'z2', ip: '165.225.2.2', city: 'Tokyo', pathname: '/b' }),
+    ]);
+    expect(records).toHaveLength(2);
+    expect(records.every(r => r.isISPVisitor)).toBe(true);
+  });
+
+  it('lets behavior-based anonymous-high-intent fire for proxy visitors despite the enterprise AI event', () => {
+    const [rec] = aggregateByOrg([
+      ev({ orgName: 'Menlo Security, Inc.', organizationType: 'enterprise',
+           aiOrganizationType: 'enterprise', aiConfidence: 0.95,
+           visitorId: 'vis-tw', ip: '57.140.1.2', city: 'Taipei',
+           pathname: '/products/icp-etcher', behaviorScore: 0.4, returnVisits: 1 }),
+    ]);
+    // Pre-fix: aiIdentifiedRealOrg (enterprise) blocked this flag entirely.
+    expect(rec.isAnonymousHighIntent).toBe(true);
+  });
+
+  it('prefers the real org type when a proxy visitor also has events from their institution network', () => {
+    const records = aggregateByOrg([
+      ev({ orgName: 'Menlo Security, Inc.', organizationType: 'corporate_proxy',
+           visitorId: 'v1', ip: '57.140.1.2', pathname: '/a' }),
+      ev({ orgName: 'National Taiwan University', organizationType: 'education',
+           visitorId: 'v1', ip: '140.112.1.1', pathname: '/b' }),
+    ]);
+    expect(records).toHaveLength(1);
+    expect(records[0].organizationType).toBe('education');
+    expect(records[0].leadTier).toBe('B'); // IP-reliable education backfill still applies
+  });
 });
 
 describe('orgOverrideKey', () => {
