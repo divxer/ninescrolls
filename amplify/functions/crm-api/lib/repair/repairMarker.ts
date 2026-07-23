@@ -76,55 +76,61 @@ export async function ensureRepairMarker(args: {
   };
   const isConditional = (err: unknown) => err instanceof Error && err.name === 'ConditionalCheckFailedException';
 
-  // 1. Fresh create
-  try {
-    await docClient.send(new PutCommand({
-      TableName: TABLE_NAME(), Item: freshItem,
-      ConditionExpression: 'attribute_not_exists(PK)',
-    }));
-    return { created: true };
-  } catch (err: unknown) {
-    if (!isConditional(err)) throw err;
-  }
+  // State machine, retried until ONE transition lands atomically:
+  //   absent  → create pending (workVersion 1)
+  //   stuck   → republish pending with a fresh attempt budget
+  //   pending → bump workVersion (attempt state deliberately untouched)
+  // Every step is state-CONDITIONAL — step 3 requires status = pending, so a
+  // marker that turned stuck between steps can never take a silent version
+  // bump while sitting off the pending partition. A CCFE means the state
+  // moved under us; loop and re-dispatch. Bounded: each interleaving needs
+  // one extra round, so exhaustion means something is thrashing — fail loud
+  // (callers retry via their own durable loops).
+  const MAX_PUBLISH_ATTEMPTS = 4;
+  for (let attempt = 0; attempt < MAX_PUBLISH_ATTEMPTS; attempt++) {
+    // absent → create pending
+    try {
+      await docClient.send(new PutCommand({
+        TableName: TABLE_NAME(), Item: freshItem,
+        ConditionExpression: 'attribute_not_exists(PK)',
+      }));
+      return { created: true };
+    } catch (err: unknown) {
+      if (!isConditional(err)) throw err;
+    }
 
-  // 2. Republish a STUCK marker to pending with a fresh attempt budget —
-  //    new identity evidence earns a new run through the drainer.
-  try {
-    await docClient.send(new UpdateCommand({
-      TableName: TABLE_NAME(), Key: keys,
-      UpdateExpression: 'SET GSI1PK = :pending, GSI1SK = :gsi1sk, #s = :st, stuckReason = :null, attemptCount = :zero, lastError = :null, workVersion = if_not_exists(workVersion, :zero) + :one',
-      ConditionExpression: '#s = :stuck',
-      ExpressionAttributeNames: { '#s': 'status' },
-      ExpressionAttributeValues: {
-        ':pending': 'CRM_REPAIR#pending', ':gsi1sk': `${args.createdAt}#${args.unitKey}`,
-        ':st': 'pending', ':stuck': 'stuck', ':null': null, ':zero': 0, ':one': 1,
-      },
-    }));
-    return { created: false };
-  } catch (err: unknown) {
-    if (!isConditional(err)) throw err;
-  }
+    // stuck → republish pending (new identity evidence earns a fresh budget)
+    try {
+      await docClient.send(new UpdateCommand({
+        TableName: TABLE_NAME(), Key: keys,
+        UpdateExpression: 'SET GSI1PK = :pending, GSI1SK = :gsi1sk, #s = :st, stuckReason = :null, attemptCount = :zero, lastError = :null, workVersion = if_not_exists(workVersion, :zero) + :one',
+        ConditionExpression: '#s = :stuck',
+        ExpressionAttributeNames: { '#s': 'status' },
+        ExpressionAttributeValues: {
+          ':pending': 'CRM_REPAIR#pending', ':gsi1sk': `${args.createdAt}#${args.unitKey}`,
+          ':st': 'pending', ':stuck': 'stuck', ':null': null, ':zero': 0, ':one': 1,
+        },
+      }));
+      return { created: false };
+    } catch (err: unknown) {
+      if (!isConditional(err)) throw err;
+    }
 
-  // 3. Already pending — bump workVersion so an in-flight drain's completion
-  //    delete is fenced out (attempt state deliberately untouched).
-  try {
-    await docClient.send(new UpdateCommand({
-      TableName: TABLE_NAME(), Key: keys,
-      UpdateExpression: 'SET workVersion = if_not_exists(workVersion, :zero) + :one',
-      ConditionExpression: 'attribute_exists(PK)',
-      ExpressionAttributeValues: { ':zero': 0, ':one': 1 },
-    }));
-    return { created: false };
-  } catch (err: unknown) {
-    if (!isConditional(err)) throw err;
+    // pending → bump workVersion (fences an in-flight drain's completion delete)
+    try {
+      await docClient.send(new UpdateCommand({
+        TableName: TABLE_NAME(), Key: keys,
+        UpdateExpression: 'SET workVersion = if_not_exists(workVersion, :zero) + :one',
+        ConditionExpression: '#s = :pending',
+        ExpressionAttributeNames: { '#s': 'status' },
+        ExpressionAttributeValues: { ':zero': 0, ':one': 1, ':pending': 'pending' },
+      }));
+      return { created: false };
+    } catch (err: unknown) {
+      if (!isConditional(err)) throw err;
+    }
   }
-
-  // 4. Deleted between attempts (drain completed mid-ensure) — create fresh.
-  await docClient.send(new PutCommand({
-    TableName: TABLE_NAME(), Item: freshItem,
-    ConditionExpression: 'attribute_not_exists(PK)',
-  }));
-  return { created: true };
+  throw new Error(`ensureRepairMarker: could not publish ${args.unitType}#${args.unitKey} as pending after ${MAX_PUBLISH_ATTEMPTS} attempts`);
 }
 
 /**

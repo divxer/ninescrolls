@@ -329,6 +329,26 @@ describe('ensureRepairMarker (publish/republish as consumable pending)', () => {
     const u = send.mock.calls[2][0].input;
     expect(u.UpdateExpression).toBe('SET workVersion = if_not_exists(workVersion, :zero) + :one');
     expect(u.UpdateExpression).not.toContain('attemptCount');
+    // status = pending REQUIRED: a marker that turned stuck between steps
+    // must never take a silent version bump off the pending partition
+    expect(u.ConditionExpression).toBe('#s = :pending');
+  });
+  it('pending→stuck interleaving mid-ensure: loops and republishes instead of bumping a stuck marker', async () => {
+    send.mockRejectedValueOnce(COND_FAIL()); // round 1: create — exists
+    send.mockRejectedValueOnce(COND_FAIL()); // round 1: stuck-republish — was pending
+    send.mockRejectedValueOnce(COND_FAIL()); // round 1: pending-bump — drainer just stucked it
+    send.mockRejectedValueOnce(COND_FAIL()); // round 2: create — still exists
+    // round 2: stuck-republish succeeds
+    const r = await ensureRepairMarker({ unitType: 'analytics', unitKey: 'v-1', targetOrgId: 'acme.com', operator: 'retro-truncation', createdAt: 'T4' });
+    expect(r).toEqual({ created: false });
+    const u = send.mock.calls[4][0].input;
+    expect(u.ConditionExpression).toBe('#s = :stuck');
+    expect(u.UpdateExpression).toContain('GSI1PK = :pending');
+  });
+  it('publish livelock exhausts loudly instead of reporting false success', async () => {
+    for (let i = 0; i < 12; i++) send.mockRejectedValueOnce(COND_FAIL());
+    await expect(ensureRepairMarker({ unitType: 'analytics', unitKey: 'v-1', targetOrgId: 'acme.com', operator: 'retro-truncation', createdAt: 'T5' }))
+      .rejects.toThrow('could not publish');
   });
   it('deleted between attempts (ensure-vs-delete race): creates fresh', async () => {
     send.mockRejectedValueOnce(COND_FAIL()); // create: existed then

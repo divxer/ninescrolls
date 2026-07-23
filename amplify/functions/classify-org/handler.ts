@@ -468,13 +468,36 @@ async function handleUndo(body: ClassifyRequest, corsHeaders: Record<string, str
         };
     }
 
-    const existing = await getCachedItemStrict(body.orgName);
+    let existing = await getCachedItemStrict(body.orgName);
     if (!existing || existing.source !== 'manual') {
         return {
             statusCode: 404,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             body: JSON.stringify({ error: 'No manual override found' }),
         };
+    }
+
+    // Branch dispatch retries on a conditional-delete conflict: the delete
+    // fallback is CONDITIONAL on the state it read (a concurrent rename may
+    // have just written displayName — an unconditional delete would erase
+    // it). On CCFE we re-read and re-dispatch into the branch that now
+    // applies; exhaustion returns a retryable 409.
+    const MAX_UNDO_ATTEMPTS = 3;
+    for (let attempt = 0; attempt < MAX_UNDO_ATTEMPTS; attempt++) {
+    if (attempt > 0) {
+        existing = await getCachedItemStrict(body.orgName);
+        if (!existing) {
+            // Concurrently deleted — the goal state was reached.
+            invalidateCorrectionsCache();
+            return {
+                statusCode: 200,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ undone: true, deleted: true }),
+            };
+        }
+        if (existing.source !== 'manual') {
+            break; // concurrent restore already undid the override → 409 below
+        }
     }
 
     if (existing.previousClassification) {
@@ -545,11 +568,25 @@ async function handleUndo(body: ClassifyRequest, corsHeaders: Record<string, str
             body: JSON.stringify({ undone: true, deleted: false, displayName: existing.displayName }),
         };
     } else {
-        // No previous — delete the entry entirely
-        await ddbClient.send(new DeleteCommand({
-            TableName: TABLE_NAME,
-            Key: { orgName: body.orgName },
-        }));
+        // No previous, no rename — delete the entry entirely. CONDITIONAL on
+        // the exact state we based this decision on: a rename can land
+        // displayName (or an override can land previousClassification)
+        // between our read and this delete, and an unconditional delete
+        // would erase it. CCFE → re-read and re-dispatch (loop).
+        try {
+            await ddbClient.send(new DeleteCommand({
+                TableName: TABLE_NAME,
+                Key: { orgName: body.orgName },
+                ConditionExpression: '#src = :manual AND attribute_not_exists(previousClassification) AND attribute_not_exists(displayName)',
+                ExpressionAttributeNames: { '#src': 'source' },
+                ExpressionAttributeValues: { ':manual': 'manual' },
+            }));
+        } catch (err: unknown) {
+            if (err instanceof Error && err.name === 'ConditionalCheckFailedException') {
+                continue; // state moved under us — re-read and re-dispatch
+            }
+            throw err;
+        }
 
         invalidateCorrectionsCache();
 
@@ -559,6 +596,13 @@ async function handleUndo(body: ClassifyRequest, corsHeaders: Record<string, str
             body: JSON.stringify({ undone: true, deleted: true }),
         };
     }
+    }
+
+    return {
+        statusCode: 409,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: 'Conflict: record changed concurrently — retry the undo' }),
+    };
 }
 
 async function handleGetOverride(body: ClassifyRequest, corsHeaders: Record<string, string>) {

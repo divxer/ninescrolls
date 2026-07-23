@@ -6,11 +6,13 @@ import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
 const mockGet = vi.fn();
 const mockPut = vi.fn();
 const mockUpdate = vi.fn();
+const mockDelete = vi.fn();
 const mockSend = vi.fn().mockImplementation((cmd: unknown) => {
     const name = (cmd as { constructor: { name: string } }).constructor.name;
     if (name === 'GetCommand') return mockGet(cmd);
     if (name === 'PutCommand') return mockPut(cmd);
     if (name === 'UpdateCommand') return mockUpdate(cmd);
+    if (name === 'DeleteCommand') return mockDelete(cmd);
     return Promise.resolve({});
 });
 
@@ -54,6 +56,8 @@ beforeEach(() => {
     mockPut.mockResolvedValue({});
     mockUpdate.mockReset();
     mockUpdate.mockResolvedValue({});
+    mockDelete.mockReset();
+    mockDelete.mockResolvedValue({});
 });
 
 const CONDITIONAL_FAIL = () => {
@@ -270,5 +274,51 @@ describe('classify-org override/undo — displayName (rename) preservation', () 
         expect(res.statusCode).toBe(200);
         expect(mockUpdate).not.toHaveBeenCalled();
         expect(JSON.parse(res.body)).toMatchObject({ undone: true, deleted: true });
+        // Delete is CONDITIONAL on the state the decision was based on — a
+        // concurrent rename/override between read and delete must fence it out
+        const d = mockDelete.mock.calls[0][0] as Record<string, any>;
+        expect(d.ConditionExpression).toBe('#src = :manual AND attribute_not_exists(previousClassification) AND attribute_not_exists(displayName)');
+    });
+
+    it('undo delete race: a rename landing between read and delete re-dispatches into the neutralize branch', async () => {
+        const bare = { orgName: 'v-abc123', organizationType: 'enterprise', isTargetCustomer: true, confidence: 1, reason: 'Manual', source: 'manual' };
+        mockGet.mockResolvedValueOnce({ Item: bare }); // initial read: deletable
+        const conflict = new Error('conditional');
+        conflict.name = 'ConditionalCheckFailedException';
+        mockDelete.mockRejectedValueOnce(conflict); // rename landed displayName meanwhile
+        mockGet.mockResolvedValueOnce({ Item: { ...bare, displayName: 'InnateControl visitor' } }); // re-read
+
+        const res = await handler(makeEvent({ action: 'undo', orgName: 'v-abc123' }), {} as never, vi.fn());
+
+        expect(res.statusCode).toBe(200);
+        // Second dispatch neutralized instead of deleting — rename survives
+        expect(mockUpdate).toHaveBeenCalledTimes(1);
+        expect(JSON.parse(res.body)).toMatchObject({ undone: true, deleted: false, displayName: 'InnateControl visitor' });
+    });
+
+    it('undo delete race: record vanishing concurrently reports the reached goal state', async () => {
+        const bare = { orgName: 'v-abc123', organizationType: 'enterprise', isTargetCustomer: true, confidence: 1, reason: 'Manual', source: 'manual' };
+        mockGet.mockResolvedValueOnce({ Item: bare });
+        const conflict = new Error('conditional');
+        conflict.name = 'ConditionalCheckFailedException';
+        mockDelete.mockRejectedValueOnce(conflict);
+        mockGet.mockResolvedValueOnce({}); // re-read: gone
+
+        const res = await handler(makeEvent({ action: 'undo', orgName: 'v-abc123' }), {} as never, vi.fn());
+
+        expect(res.statusCode).toBe(200);
+        expect(JSON.parse(res.body)).toMatchObject({ undone: true, deleted: true });
+    });
+
+    it('undo exhausting the conflict retries returns a retryable 409', async () => {
+        const bare = { orgName: 'v-abc123', organizationType: 'enterprise', isTargetCustomer: true, confidence: 1, reason: 'Manual', source: 'manual' };
+        const conflict = () => Object.assign(new Error('conditional'), { name: 'ConditionalCheckFailedException' });
+        mockGet.mockResolvedValue({ Item: bare }); // every read: still deletable
+        mockDelete.mockRejectedValue(conflict()); // every delete: fenced out
+
+        const res = await handler(makeEvent({ action: 'undo', orgName: 'v-abc123' }), {} as never, vi.fn());
+
+        expect(res.statusCode).toBe(409);
+        expect(JSON.parse(res.body).error).toContain('Conflict');
     });
 });
