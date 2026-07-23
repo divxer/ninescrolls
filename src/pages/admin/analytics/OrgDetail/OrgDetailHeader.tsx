@@ -89,26 +89,17 @@ export function OrgDetailHeader({
     try {
       // Same stable key as target overrides — a display name stored under the
       // synthesized ISP label would drift with city/#N changes and split from
-      // the visitor's target override.
+      // the visitor's target override. For ISP visitors, pass the legacy
+      // display-name key so the backend can migrate that record LOSSLESSLY
+      // (verbatim copy — source/confidence/provider/previousClassification all
+      // preserved) instead of creating a default unknown/non-target record
+      // that would shadow it under stable-key-first reads.
       const stableKey = orgOverrideKey(org);
-      // Legacy-only ISP records: renaming a stable key with NO record makes the
-      // backend create a default unknown/non-target one, which would SHADOW the
-      // legacy record's classification (stable key wins on read). Migrate the
-      // resolved classification onto the stable key first.
-      if (stableKey !== org.orgName && override?.found && override.organizationType) {
-        const stable = await getOrgOverride(stableKey);
-        if (!stable.found) {
-          await setOrgOverride(
-            stableKey,
-            override.isTargetCustomer ?? false,
-            override.organizationType,
-            override.reason
-              ? `${override.reason} (migrated from legacy display-name record)`
-              : 'Migrated from legacy display-name record',
-          );
-        }
+      if (stableKey !== org.orgName) {
+        await renameOrg(stableKey, trimmed, org.orgName);
+      } else {
+        await renameOrg(stableKey, trimmed);
       }
-      await renameOrg(stableKey, trimmed);
       setOverride((prev) => prev ? { ...prev, displayName: trimmed } : { found: true, displayName: trimmed });
       setEditingName(false);
       setOverrideMsg({ type: 'success', text: `Renamed to "${trimmed}"` });

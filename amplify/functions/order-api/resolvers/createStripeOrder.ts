@@ -82,7 +82,10 @@ async function linkVisitorToOrder(args: {
         },
     );
     if (args.alwaysReResolve || bridge.created || bridge.orgUpgraded || bridge.orgChanged) {
-        await invokeCrmAction({ action: 'reResolveVisitorSessions', visitorId: args.visitorId });
+        // sync: the default Event invoke swallows dispatch failures AND hides
+        // FunctionErrors — either would silently close this link's retry
+        // window. Sync + throw keeps the webhook's 500→retry loop honest.
+        await invokeCrmAction({ action: 'reResolveVisitorSessions', visitorId: args.visitorId }, { sync: true });
     }
 }
 

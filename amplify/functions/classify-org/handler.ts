@@ -17,6 +17,8 @@ interface ClassifyRequest {
     organizationType?: string;
     reason?: string;
     displayName?: string;
+    // rename only: legacy record to migrate when the target key has none
+    fromOrgName?: string;
     adminToken?: string;
 }
 
@@ -82,15 +84,28 @@ interface CachedItem {
 async function getCachedItem(orgName: string): Promise<CachedItem | null> {
     if (!TABLE_NAME) return null;
     try {
-        const result = await ddbClient.send(new GetCommand({
-            TableName: TABLE_NAME,
-            Key: { orgName },
-        }));
-        return (result.Item as CachedItem) || null;
+        return await getCachedItemStrict(orgName);
     } catch (err) {
         console.error('DynamoDB cache read error:', err);
         return null;
     }
+}
+
+/**
+ * Strict cache read for ADMIN actions (override/undo/get-override/rename):
+ * a DynamoDB failure (throttle, IAM, network) THROWS → top-level 500, instead
+ * of masquerading as "record not found". Undo would otherwise report a false
+ * 404 ("No manual override found") and rename would overwrite a record it
+ * merely failed to read. The lenient getCachedItem stays for the classify
+ * flow, where read-failure→re-classify is the deliberate fallback.
+ */
+async function getCachedItemStrict(orgName: string): Promise<CachedItem | null> {
+    if (!TABLE_NAME) return null;
+    const result = await ddbClient.send(new GetCommand({
+        TableName: TABLE_NAME,
+        Key: { orgName },
+    }));
+    return (result.Item as CachedItem) || null;
 }
 
 async function getCachedClassification(orgName: string): Promise<ClassifyResult | null> {
@@ -384,7 +399,7 @@ async function handleOverride(body: ClassifyRequest, corsHeaders: Record<string,
     }
 
     // Read current item for previousClassification
-    const existing = await getCachedItem(body.orgName);
+    const existing = await getCachedItemStrict(body.orgName);
     const previousClassification: PreviousClassification | undefined = existing ? {
         organizationType: existing.organizationType,
         isTargetCustomer: existing.isTargetCustomer,
@@ -434,7 +449,7 @@ async function handleUndo(body: ClassifyRequest, corsHeaders: Record<string, str
         };
     }
 
-    const existing = await getCachedItem(body.orgName);
+    const existing = await getCachedItemStrict(body.orgName);
     if (!existing || existing.source !== 'manual') {
         return {
             statusCode: 404,
@@ -496,7 +511,7 @@ async function handleGetOverride(body: ClassifyRequest, corsHeaders: Record<stri
         };
     }
 
-    const item = await getCachedItem(body.orgName);
+    const item = await getCachedItemStrict(body.orgName);
     if (!item) {
         return {
             statusCode: 200,
@@ -601,26 +616,48 @@ async function handleRename(body: ClassifyRequest, corsHeaders: Record<string, s
         };
     }
 
-    const existing = await getCachedItem(body.orgName);
+    const displayName = body.displayName.trim();
+    const existing = await getCachedItemStrict(body.orgName);
     if (existing) {
         await ddbClient.send(new PutCommand({
             TableName: TABLE_NAME,
-            Item: { ...existing, displayName: body.displayName.trim() },
+            Item: { ...existing, displayName },
         }));
     } else {
-        await ddbClient.send(new PutCommand({
-            TableName: TABLE_NAME,
-            Item: {
+        // Lossless copy-and-rename: when the target key has no record but the
+        // caller names a legacy record (ISP visitors migrating from a
+        // display-name key to their stable visitorId key), copy the legacy
+        // record VERBATIM — source, confidence, provider, reason,
+        // previousClassification all preserved — under the new key.
+        // Conditional so a concurrent write to the new key is never clobbered;
+        // on that race, merge the displayName onto the winner instead.
+        const legacy = body.fromOrgName ? await getCachedItemStrict(body.fromOrgName) : null;
+        const item = legacy
+            ? { ...legacy, orgName: body.orgName, displayName }
+            : {
                 orgName: body.orgName,
-                displayName: body.displayName.trim(),
+                displayName,
                 organizationType: 'unknown',
                 isTargetCustomer: false,
                 confidence: 0,
                 reason: '',
                 classifiedAt: new Date().toISOString(),
                 source: 'manual' as const,
-            },
-        }));
+            };
+        try {
+            await ddbClient.send(new PutCommand({
+                TableName: TABLE_NAME,
+                Item: item,
+                ConditionExpression: 'attribute_not_exists(orgName)',
+            }));
+        } catch (err: unknown) {
+            if (!(err instanceof Error && err.name === 'ConditionalCheckFailedException')) throw err;
+            const winner = await getCachedItemStrict(body.orgName);
+            await ddbClient.send(new PutCommand({
+                TableName: TABLE_NAME,
+                Item: { ...(winner ?? item), displayName },
+            }));
+        }
     }
 
     return {
@@ -645,7 +682,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
         const body: ClassifyRequest = JSON.parse(event.body || '{}');
 
         // list-overrides does not require orgName
-        if (body.action === 'list-overrides') return handleListOverrides(body, corsHeaders);
+        if (body.action === 'list-overrides') return await handleListOverrides(body, corsHeaders);
 
         if (!body.orgName || body.orgName.length < 2) {
             return {
@@ -656,10 +693,10 @@ export const handler: APIGatewayProxyHandler = async (event) => {
         }
 
         // Route by action
-        if (body.action === 'override') return handleOverride(body, corsHeaders);
-        if (body.action === 'undo') return handleUndo(body, corsHeaders);
-        if (body.action === 'get-override') return handleGetOverride(body, corsHeaders);
-        if (body.action === 'rename') return handleRename(body, corsHeaders);
+        if (body.action === 'override') return await handleOverride(body, corsHeaders);
+        if (body.action === 'undo') return await handleUndo(body, corsHeaders);
+        if (body.action === 'get-override') return await handleGetOverride(body, corsHeaders);
+        if (body.action === 'rename') return await handleRename(body, corsHeaders);
 
         // Default: classify flow
         // Check DynamoDB cache first

@@ -98,9 +98,14 @@ export async function undoOrgOverride(orgName: string): Promise<OrgOverride> {
 
 /**
  * Rename an organization (set a display name override).
+ *
+ * `fromOrgName`: legacy record to migrate losslessly when `orgName` has no
+ * record yet (ISP visitors moving from a display-name key to their stable
+ * visitorId key) — the backend copies the legacy record verbatim instead of
+ * creating a default unknown/non-target one that would shadow it.
  */
-export async function renameOrg(orgName: string, displayName: string): Promise<{ orgName: string; displayName: string }> {
-  const result = await callClassifyOrg({ action: 'rename', orgName, displayName });
+export async function renameOrg(orgName: string, displayName: string, fromOrgName?: string): Promise<{ orgName: string; displayName: string }> {
+  const result = await callClassifyOrg({ action: 'rename', orgName, displayName, ...(fromOrgName ? { fromOrgName } : {}) });
   return result as { orgName: string; displayName: string };
 }
 

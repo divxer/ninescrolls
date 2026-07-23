@@ -1373,6 +1373,7 @@ describe('order-api handler', () => {
             // bridge must still cover the reResolve-failed crash window
             expect(mockInvokeCrmAction).toHaveBeenCalledWith(
                 expect.objectContaining({ action: 'reResolveVisitorSessions' }),
+                { sync: true }, // Event invoke would swallow failures and close the retry window
             );
             // The NON-idempotent org score upsert must NOT run again
             expect(mockInvokeOrgApi).not.toHaveBeenCalled();
@@ -1434,6 +1435,7 @@ describe('order-api handler', () => {
             // New bridge → retro-resolve this visitor's sessions
             expect(mockInvokeCrmAction).toHaveBeenCalledWith(
                 expect.objectContaining({ action: 'reResolveVisitorSessions', visitorId: '550e8400-e29b-41d4-a716-446655440000' }),
+                { sync: true },
             );
         });
 
