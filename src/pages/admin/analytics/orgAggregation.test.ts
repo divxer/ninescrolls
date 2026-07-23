@@ -123,6 +123,73 @@ describe('aggregateByOrg', () => {
     expect(rec.isAnonymousHighIntent).toBe(true);
   });
 
+  it('does not adopt the proxy vendor AI classification for a record resolved to a real org', () => {
+    // Mixed multi-network visitor: a historical proxy event carries the VENDOR's
+    // AI verdict (enterprise 0.95); the real-org event has no AI fields. The
+    // consolidated record resolves to the real org name — its type must come
+    // from the real-org event, never from the proxy event's stored AI.
+    const records = aggregateByOrg([
+      ev({ orgName: 'National Taiwan University', organizationType: 'education',
+           visitorId: 'v1', ip: '140.112.1.1', pathname: '/b' }),
+      ev({ orgName: 'Menlo Security, Inc.', org: 'AS399629 Menlo Security, Inc.',
+           organizationType: 'enterprise', aiOrganizationType: 'enterprise', aiConfidence: 0.95,
+           visitorId: 'v1', ip: '57.140.1.2', city: 'Taipei', country: 'TW', pathname: '/a' }),
+    ]);
+    expect(records).toHaveLength(1);
+    expect(records[0].orgName).toBe('National Taiwan University');
+    expect(records[0].organizationType).toBe('education'); // NOT the vendor's 'enterprise'
+    expect(records[0].leadTier).toBe('B'); // via IP-reliable education, not the vendor's AI confidence
+  });
+
+  it('does not adopt corporate_proxy as the IP org type for a record resolved to a real org', () => {
+    // Real-org events without an organizationType + a new-pipeline proxy event:
+    // the corporate_proxy type must not leak onto the real-org record.
+    const records = aggregateByOrg([
+      ev({ orgName: 'National Taiwan University',
+           visitorId: 'v1', ip: '140.112.1.1', pathname: '/b' }),
+      ev({ orgName: 'Menlo Security, Inc.', organizationType: 'corporate_proxy',
+           visitorId: 'v1', ip: '57.140.1.2', pathname: '/a' }),
+    ]);
+    expect(records).toHaveLength(1);
+    expect(records[0].orgName).toBe('National Taiwan University');
+    expect(records[0].organizationType).toBe(''); // unknown — NOT 'corporate_proxy'
+  });
+
+  it('clears historical target/tier state on proxy-only visitors so behavior scoring applies', () => {
+    // Pre-corporate_proxy events could carry isTargetCustomer/leadTier derived
+    // from the VENDOR's classification. Those must not survive: proxy vendors
+    // are never targets, and retained state would also block anonymous-high-intent.
+    const [rec] = aggregateByOrg([
+      ev({ orgName: 'Menlo Security, Inc.', organizationType: 'enterprise',
+           aiOrganizationType: 'enterprise', aiConfidence: 0.95,
+           isTargetCustomer: true, leadTier: 'B',
+           visitorId: 'vis-tw', ip: '57.140.1.2', city: 'Taipei',
+           pathname: '/products/icp-etcher', behaviorScore: 0.4, returnVisits: 1 }),
+    ]);
+    expect(rec.organizationType).toBe('corporate_proxy');
+    expect(rec.isTargetCustomer).toBe(false);
+    expect(rec.leadTier).toBeNull();
+    expect(rec.isAnonymousHighIntent).toBe(true);
+  });
+
+  it('derives target/tier only from real-org events in mixed proxy/institution groups', () => {
+    // The vendor's target flag / tier / AI confidence must not leak onto the
+    // real organization's record when the same visitor spans both networks.
+    const records = aggregateByOrg([
+      ev({ orgName: 'Acme Semiconductor', organizationType: 'business',
+           aiOrganizationType: 'enterprise', aiConfidence: 0.3, // low-confidence real-org AI
+           visitorId: 'v1', ip: '1.2.3.4', pathname: '/a' }),
+      ev({ orgName: 'Menlo Security, Inc.', organizationType: 'enterprise',
+           aiOrganizationType: 'enterprise', aiConfidence: 0.95,
+           isTargetCustomer: true, leadTier: 'B',
+           visitorId: 'v1', ip: '57.140.1.2', pathname: '/b' }),
+    ]);
+    expect(records).toHaveLength(1);
+    expect(records[0].orgName).toBe('Acme Semiconductor');
+    expect(records[0].isTargetCustomer).toBe(false); // vendor's target flag must not leak
+    expect(records[0].leadTier).toBeNull();          // vendor tier/confidence must not backfill
+  });
+
   it('prefers the real org type when a proxy visitor also has events from their institution network', () => {
     const records = aggregateByOrg([
       ev({ orgName: 'Menlo Security, Inc.', organizationType: 'corporate_proxy',
