@@ -1,6 +1,8 @@
 // Behavior Analytics Service
 // Tracks user behavior signals for intent scoring
 
+import { isSecurityProxyOrg } from '../../amplify/lib/analytics/proxy-vendors';
+
 // --- Search Query Extraction from Referrer ---
 
 // Different search engines use different query parameters
@@ -260,7 +262,7 @@ export interface UtmSummaryRow {
 
 // Org types NOT counted as a "known organization" (matches the admin's existing
 // ISP handling in AdminAnalyticsPage.tsx).
-const NON_KNOWN_ORG_TYPES = new Set(['telecom_isp', 'isp', 'unknown']);
+const NON_KNOWN_ORG_TYPES = new Set(['telecom_isp', 'isp', 'corporate_proxy', 'unknown']);
 
 /** Trim a UTM/string value; null/undefined/empty/whitespace-only -> undefined. */
 export function normalizeUtmValue(v: string | null | undefined): string | undefined {
@@ -269,9 +271,12 @@ export function normalizeUtmValue(v: string | null | undefined): string | undefi
   return trimmed === '' ? undefined : trimmed;
 }
 
-/** True when the event resolves to a real organization (not ISP/telecom/unknown). */
+/** True when the event resolves to a real organization (not ISP/telecom/proxy/unknown). */
 export function isKnownOrganization(e: UtmEvent): boolean {
   if (!normalizeUtmValue(e.orgName)) return false;
+  // Security-proxy egress: historical events carry the vendor name with a
+  // pre-fix AI type ('enterprise') — name match catches those.
+  if (isSecurityProxyOrg(e.orgName)) return false;
   const type = (e.organizationType || 'unknown').toLowerCase();
   return !NON_KNOWN_ORG_TYPES.has(type);
 }

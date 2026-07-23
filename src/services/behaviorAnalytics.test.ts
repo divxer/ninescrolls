@@ -158,6 +158,14 @@ describe('isKnownOrganization', () => {
     expect(isKnownOrganization({ orgName: '', organizationType: 'education' })).toBe(false);
     expect(isKnownOrganization({ organizationType: 'education' })).toBe(false);
   });
+  it('does not count security-proxy vendors as known organizations', () => {
+    // New pipeline: corporate_proxy org type
+    expect(isKnownOrganization({ orgName: 'Zscaler, Inc.', organizationType: 'corporate_proxy' })).toBe(false);
+    // Historical events: vendor name with pre-fix 'enterprise' type
+    expect(isKnownOrganization({ orgName: 'Menlo Security, Inc.', organizationType: 'enterprise' })).toBe(false);
+    // Real org still counts
+    expect(isKnownOrganization({ orgName: 'MIT', organizationType: 'education' })).toBe(true);
+  });
 });
 
 describe('matchesUtmFilter', () => {
