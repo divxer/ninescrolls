@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { aggregateByOrg, computeOrgLifecycleStage } from './orgAggregation';
+import { aggregateByOrg, computeOrgLifecycleStage, orgOverrideKey, resolveOrgOverride } from './orgAggregation';
 import type { AnalyticsEvent } from './types';
 
 const ev = (p: Record<string, unknown>): AnalyticsEvent =>
@@ -76,5 +76,59 @@ describe('aggregateByOrg', () => {
     ]);
     expect(records).toHaveLength(1);
     expect(records[0].totalEvents).toBe(2);
+  });
+});
+
+describe('orgOverrideKey', () => {
+  it('keys ISP visitors by their stable group key (visitorId), not the display name', () => {
+    expect(orgOverrideKey({ key: 'v-abc123', orgName: 'Cloudflare, Inc. · Needham, Massachusetts', isISPVisitor: true }))
+      .toBe('v-abc123');
+  });
+
+  it('keys real organizations by org name', () => {
+    expect(orgOverrideKey({ key: 'MIT', orgName: 'MIT', isISPVisitor: false })).toBe('MIT');
+  });
+
+  it('is stable for ISP visitors even when the display name shifts (#N suffix / city change)', () => {
+    const before = orgOverrideKey({ key: 'v-abc123', orgName: 'Cloudflare, Inc. · Needham, Massachusetts', isISPVisitor: true });
+    const after = orgOverrideKey({ key: 'v-abc123', orgName: 'Cloudflare, Inc. · Needham, Massachusetts #2', isISPVisitor: true });
+    expect(before).toBe(after);
+  });
+
+  it('override written by key is found by the shared resolver', () => {
+    const records = aggregateByOrg([
+      ev({ orgName: 'Comcast', aiOrganizationType: 'telecom_isp', aiConfidence: 0.9, visitorId: 'v1', ip: '1.2.3.4', city: 'Boston', region: 'MA', timestamp: '2026-01-01T00:00:01Z' }),
+    ]);
+    const rec = records[0];
+    const overrideMap = new Map([[orgOverrideKey(rec), { isTargetCustomer: true }]]);
+    expect(resolveOrgOverride(overrideMap, rec)).toEqual({ isTargetCustomer: true });
+  });
+});
+
+describe('resolveOrgOverride', () => {
+  const ispOrg = { key: 'v-abc123', orgName: 'Cloudflare, Inc. · Needham, Massachusetts', isISPVisitor: true };
+
+  it('prefers the stable key when both stable and legacy records exist (list/detail parity)', () => {
+    const map = new Map([
+      ['Cloudflare, Inc. · Needham, Massachusetts', { isTargetCustomer: false, from: 'legacy' }],
+      ['v-abc123', { isTargetCustomer: true, from: 'stable' }],
+    ]);
+    expect(resolveOrgOverride(map, ispOrg)).toMatchObject({ from: 'stable' });
+  });
+
+  it('falls back to a legacy display-name record when no stable record exists', () => {
+    const map = new Map([
+      ['Cloudflare, Inc. · Needham, Massachusetts', { isTargetCustomer: true, from: 'legacy' }],
+    ]);
+    expect(resolveOrgOverride(map, ispOrg)).toMatchObject({ from: 'legacy' });
+  });
+
+  it('keeps org-name precedence for real organizations', () => {
+    const map = new Map([['MIT', { isTargetCustomer: true }]]);
+    expect(resolveOrgOverride(map, { key: 'v-x', orgName: 'MIT', isISPVisitor: false })).toBeTruthy();
+  });
+
+  it('returns undefined when nothing matches', () => {
+    expect(resolveOrgOverride(new Map(), ispOrg)).toBeUndefined();
   });
 });

@@ -5,15 +5,15 @@ const orgExistsMock = vi.fn(); const readBridgeMock = vi.fn(); const upsertManua
 vi.mock('../orgStore', () => ({ orgExists: (o: string) => orgExistsMock(o) }));
 vi.mock('../../../../lib/crm/visitor-bridge', () => ({ readVisitorBridge: (...a: unknown[]) => readBridgeMock(...a), upsertManualVisitorBridge: (...a: unknown[]) => upsertManualMock(...a), toSend: () => 'send' }));
 vi.mock('../analytics/reResolveVisitorSessions', () => ({ reResolveVisitorSessions: (a: unknown) => retroMock(a) }));
-const putRepairMarker = vi.fn(); const deleteRepairMarker = vi.fn();
-vi.mock('../repair/repairMarker', () => ({ putRepairMarker: (...a: unknown[]) => putRepairMarker(...a), deleteRepairMarker: (...a: unknown[]) => deleteRepairMarker(...a) }));
+const ensureRepairMarker = vi.fn(); const deleteRepairMarkerIfUnchanged = vi.fn();
+vi.mock('../repair/repairMarker', () => ({ ensureRepairMarker: (...a: unknown[]) => ensureRepairMarker(...a), deleteRepairMarkerIfUnchanged: (...a: unknown[]) => deleteRepairMarkerIfUnchanged(...a) }));
 const replayAnalyticsSideEffects = vi.fn();
 vi.mock('../repair/replaySideEffects', () => ({ replayAnalyticsSideEffects: (...a: unknown[]) => replayAnalyticsSideEffects(...a) }));
 import { linkVisitor } from './linkVisitor';
 
 beforeEach(() => {
   mockSend.mockReset(); orgExistsMock.mockReset(); readBridgeMock.mockReset(); upsertManualMock.mockReset(); retroMock.mockReset();
-  putRepairMarker.mockReset(); deleteRepairMarker.mockReset(); replayAnalyticsSideEffects.mockReset();
+  ensureRepairMarker.mockReset(); ensureRepairMarker.mockResolvedValue({ created: true, workVersion: 3 }); deleteRepairMarkerIfUnchanged.mockReset(); deleteRepairMarkerIfUnchanged.mockResolvedValue({ lost: false }); replayAnalyticsSideEffects.mockReset();
   replayAnalyticsSideEffects.mockResolvedValue({ ok: true, sessionsResolved: 2, pending: false });
 });
 
@@ -22,8 +22,14 @@ describe('linkVisitor', () => {
     orgExistsMock.mockResolvedValueOnce(true); readBridgeMock.mockResolvedValueOnce(undefined);
     upsertManualMock.mockResolvedValueOnce({ written: true, existingOrgId: 'acme.com' });
     const out = await linkVisitor({ visitorId: 'v1', targetOrgId: 'acme.com', operator: 'op' });
-    expect(putRepairMarker).toHaveBeenCalledWith(expect.objectContaining({ unitType: 'analytics', unitKey: 'v1', targetOrgId: 'acme.com' }));
-    expect(deleteRepairMarker).toHaveBeenCalledWith('analytics', 'v1');
+    expect(ensureRepairMarker).toHaveBeenCalledWith(expect.objectContaining({ unitType: 'analytics', unitKey: 'v1', targetOrgId: 'acme.com' }));
+    // ABA closed: the publish is VERSIONED (ensureRepairMarker) and the
+    // completion delete carries the exact version we published — a concurrent
+    // publish (different version) can never be killed by our delete
+    expect(deleteRepairMarkerIfUnchanged).toHaveBeenCalledWith({ unitType: 'analytics', unitKey: 'v1', workVersion: 3 });
+    // NOT markerOwned: a truncated retro must publish its own marker (the
+    // initial Put above is best-effort and may have failed)
+    expect(replayAnalyticsSideEffects).toHaveBeenCalledWith(expect.not.objectContaining({ markerOwned: true }));
     expect(out.postCommitStatus).toBe('ok');
     expect(out.sessionsResolved).toBe(2);
   });
@@ -33,7 +39,7 @@ describe('linkVisitor', () => {
     upsertManualMock.mockResolvedValueOnce({ written: true, existingOrgId: 'acme.com' });
     replayAnalyticsSideEffects.mockResolvedValueOnce({ ok: false, errorType: 'transient', pending: false, sessionsResolved: 0 });
     const out = await linkVisitor({ visitorId: 'v1', targetOrgId: 'acme.com', operator: 'op' });
-    expect(deleteRepairMarker).not.toHaveBeenCalled();
+    expect(deleteRepairMarkerIfUnchanged).not.toHaveBeenCalled();
     expect(out.postCommitStatus).toBe('post_commit_failed');
   });
 
@@ -42,7 +48,7 @@ describe('linkVisitor', () => {
     upsertManualMock.mockResolvedValueOnce({ written: true, existingOrgId: 'acme.com' });
     replayAnalyticsSideEffects.mockResolvedValueOnce({ ok: false, errorType: 'in_progress', pending: true, sessionsResolved: 200 });
     const out = await linkVisitor({ visitorId: 'v1', targetOrgId: 'acme.com', operator: 'op' });
-    expect(deleteRepairMarker).not.toHaveBeenCalled();
+    expect(deleteRepairMarkerIfUnchanged).not.toHaveBeenCalled();
     expect(out.postCommitStatus).toBe('ok');
     expect(out.pending).toBe(true);
   });
@@ -52,7 +58,7 @@ describe('linkVisitor', () => {
     retroMock.mockResolvedValueOnce({ summary: { resolved: 0, hasMore: false } });
     const out = await linkVisitor({ visitorId: 'v1', targetOrgId: 'acme.com', operator: 'op' });
     expect(out.alreadyLinked).toBe(true);
-    expect(putRepairMarker).not.toHaveBeenCalled();
+    expect(ensureRepairMarker).not.toHaveBeenCalled();
   });
 
   it('lost race (upsert not written) → NO marker', async () => {
@@ -60,7 +66,7 @@ describe('linkVisitor', () => {
     upsertManualMock.mockResolvedValueOnce({ written: false, existingOrgId: 'x' });
     const out = await linkVisitor({ visitorId: 'v1', targetOrgId: 'acme.com', operator: 'op' });
     expect(out.alreadyResolved).toBe(true);
-    expect(putRepairMarker).not.toHaveBeenCalled();
+    expect(ensureRepairMarker).not.toHaveBeenCalled();
   });
 
   it('conditional manual write loses the race (written:false) → alreadyResolved, NO retro, NO replay, NO marker', async () => {
@@ -70,7 +76,7 @@ describe('linkVisitor', () => {
     expect(r).toMatchObject({ alreadyResolved: true, existingOrgId: 'winner.com' });
     expect(retroMock).not.toHaveBeenCalled();
     expect(replayAnalyticsSideEffects).not.toHaveBeenCalled();
-    expect(putRepairMarker).not.toHaveBeenCalled();
+    expect(ensureRepairMarker).not.toHaveBeenCalled();
   });
 
   it('already manual → alreadyLinked no-op, repairs retro (no upsert, no bridge re-write)', async () => {
@@ -87,7 +93,7 @@ describe('linkVisitor', () => {
     const r = await linkVisitor({ visitorId: 'v1', targetOrgId: 'other.com', operator: 'op' });
     expect(r).toMatchObject({ alreadyResolved: true, existingOrgId: 'acme.com' });
     expect(upsertManualMock).not.toHaveBeenCalled();
-    expect(putRepairMarker).not.toHaveBeenCalled();
+    expect(ensureRepairMarker).not.toHaveBeenCalled();
   });
 
   it('rejects invalid target', async () => {

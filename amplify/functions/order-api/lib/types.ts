@@ -81,6 +81,7 @@ export interface OrderItem {
     declineReason?: string;
     stripeSessionId?: string;
     stripePaymentIntentId?: string;
+    visitorId?: string;
     quoteDate?: string;
     quoteValidUntil?: string;
     poDate?: string;

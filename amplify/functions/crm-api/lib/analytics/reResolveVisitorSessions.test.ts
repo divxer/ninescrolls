@@ -6,8 +6,19 @@ vi.mock('./sessionMarkers', () => ({
 }));
 const materialize = vi.fn();
 vi.mock('./materializeSession', () => ({ materializeSession: (o: unknown) => materialize(o) }));
+// Truncation-marker closure: every hasMore return must land a pending analytics repair marker
+const ensureMarker = vi.fn();
+vi.mock('../repair/repairMarker', () => ({ ensureRepairMarker: (...a: unknown[]) => ensureMarker(...a) }));
+const readBridge = vi.fn();
+vi.mock('../../../../lib/crm/visitor-bridge', () => ({ readVisitorBridge: (...a: unknown[]) => readBridge(...a), toSend: (x: unknown) => x }));
+vi.mock('../dynamodb', () => ({ docClient: { send: vi.fn() }, TABLE_NAME: () => 'TBL' }));
 import { reResolveVisitorSessions } from './reResolveVisitorSessions';
-beforeEach(() => { [listMarkersMock, readRetro, writeRetro, clearRetro, materialize].forEach((m) => m.mockReset()); readRetro.mockResolvedValue(null); });
+beforeEach(() => {
+  [listMarkersMock, readRetro, writeRetro, clearRetro, materialize, ensureMarker, readBridge].forEach((m) => m.mockReset());
+  readRetro.mockResolvedValue(null);
+  ensureMarker.mockResolvedValue({ created: true });
+  readBridge.mockResolvedValue(null);
+});
 
 const M = (sid: string, status: string) => ({ sessionId: sid, resolutionStatus: status, resolvedOrgId: null, emittedAt: 'x' });
 
@@ -123,5 +134,57 @@ describe('reResolveVisitorSessions', () => {
     materialize.mockResolvedValue({ outcome: 'emitted' });
     const out = await reResolveVisitorSessions({ visitorId: 'v-1', maxSessions: 2 });
     expect(out.summary).toMatchObject({ hasMore: true, churning: false });
+  });
+
+  // ── Truncation-marker closure ─────────────────────────────────────────────
+  // RETRO#STATE only stores WHERE to resume — nothing scans it. The pending
+  // CRM_REPAIR#analytics marker is what the scheduled drainer actually
+  // queries, so every hasMore return must ensure it exists.
+  it('truncation (cap hit with more pages) lands a pending analytics repair marker', async () => {
+    readBridge.mockResolvedValueOnce({ matchedOrgId: 'innatecontrol.com' });
+    listMarkersMock.mockResolvedValueOnce({ markers: [M('s-1', 'unresolved'), M('s-2', 'unresolved')], lastKey: { PK: 'VISITOR#v-1', SK: 'SESSION#s-2' } });
+    materialize.mockResolvedValue({ outcome: 'emitted' });
+    const out = await reResolveVisitorSessions({ visitorId: 'v-1', maxSessions: 2 });
+    expect(out.summary).toMatchObject({ hasMore: true });
+    expect(ensureMarker).toHaveBeenCalledWith(expect.objectContaining({
+      unitType: 'analytics', unitKey: 'v-1', targetOrgId: 'innatecontrol.com', operator: 'retro-truncation',
+    }));
+  });
+  it('failed-session persistence also lands the marker (retry closure)', async () => {
+    listMarkersMock.mockResolvedValueOnce({ markers: [M('s-1', 'unresolved')] });
+    materialize.mockRejectedValueOnce(new Error('boom'));
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    await reResolveVisitorSessions({ visitorId: 'v-1' });
+    expect(ensureMarker).toHaveBeenCalledWith(expect.objectContaining({ unitType: 'analytics', unitKey: 'v-1' }));
+    errSpy.mockRestore();
+  });
+  it('an unresolved bridge yields an empty targetOrgId, never a crash', async () => {
+    readBridge.mockResolvedValueOnce(null);
+    listMarkersMock.mockResolvedValueOnce({ markers: [M('s-1', 'unresolved'), M('s-2', 'unresolved')], lastKey: { PK: 'VISITOR#v-1', SK: 'SESSION#s-2' } });
+    materialize.mockResolvedValue({ outcome: 'emitted' });
+    await reResolveVisitorSessions({ visitorId: 'v-1', maxSessions: 2 });
+    expect(ensureMarker).toHaveBeenCalledWith(expect.objectContaining({ targetOrgId: '' }));
+  });
+  it('clean completion does NOT create a marker', async () => {
+    listMarkersMock.mockResolvedValueOnce({ markers: [M('s-1', 'unresolved')] });
+    materialize.mockResolvedValue({ outcome: 'emitted' });
+    const out = await reResolveVisitorSessions({ visitorId: 'v-1' });
+    expect(out.summary).toMatchObject({ hasMore: false });
+    expect(ensureMarker).not.toHaveBeenCalled();
+  });
+  it('markerManagedByCaller (drainer/linkVisitor context): truncation does NOT publish a version bump', async () => {
+    listMarkersMock.mockResolvedValueOnce({ markers: [M('s-1', 'unresolved'), M('s-2', 'unresolved')], lastKey: { PK: 'VISITOR#v-1', SK: 'SESSION#s-2' } });
+    materialize.mockResolvedValue({ outcome: 'emitted' });
+    const out = await reResolveVisitorSessions({ visitorId: 'v-1', maxSessions: 2, markerManagedByCaller: true });
+    expect(out.summary).toMatchObject({ hasMore: true });
+    // The consumer's own continuation — bumping would fence out its own
+    // markStuck/delete (poison visitors could never age into stuck)
+    expect(ensureMarker).not.toHaveBeenCalled();
+  });
+  it('marker write failure propagates (durable intent must commit before reporting hasMore)', async () => {
+    ensureMarker.mockRejectedValueOnce(new Error('ddb down'));
+    listMarkersMock.mockResolvedValueOnce({ markers: [M('s-1', 'unresolved'), M('s-2', 'unresolved')], lastKey: { PK: 'VISITOR#v-1', SK: 'SESSION#s-2' } });
+    materialize.mockResolvedValue({ outcome: 'emitted' });
+    await expect(reResolveVisitorSessions({ visitorId: 'v-1', maxSessions: 2 })).rejects.toThrow('ddb down');
   });
 });

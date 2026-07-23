@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getOrgOverride, classifyOrg, type OrgOverride } from '../../../../services/adminClassificationService';
+import { orgOverrideKey } from '../orgAggregation';
 import { matchLinkedLeadsByVisitor } from '../../linkedLeadsMatch';
 import * as orderAdminService from '../../../../services/orderAdminService';
 import type { RfqSubmission, LeadSubmission } from '../../../../types/admin';
@@ -26,8 +27,21 @@ export function OrgDetail({ org, onBack, allContactLeads, allDownloadGateLeads, 
   useEffect(() => {
     let cancelled = false;
     setOverrideLoading(true);
-    getOrgOverride(org.orgName).then(async (result) => {
+    // ISP visitors are keyed by their stable visitorId; display names are
+    // city-scoped and unstable. Fall back to the display name for overrides
+    // written before this keying change.
+    const overrideKey = orgOverrideKey(org);
+    getOrgOverride(overrideKey).then(async (initial) => {
       if (cancelled) return;
+      let result = initial;
+      // Same precedence as resolveOrgOverride (list view): stable key →
+      // legacy display name → legacy group key.
+      for (const fallback of [org.orgName, org.key]) {
+        if (result.found || fallback === overrideKey) continue;
+        const legacy = await getOrgOverride(fallback);
+        if (cancelled) return;
+        if (legacy.found) result = legacy;
+      }
       // Auto-classify if no cached classification exists.
       if (!result.found) {
         try {
@@ -77,8 +91,10 @@ export function OrgDetail({ org, onBack, allContactLeads, allDownloadGateLeads, 
       if (!cancelled) setOverrideLoading(false);
     });
     return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- classify once per org name; org.events would re-trigger AI classification
-  }, [org.orgName]);
+    // org.key: two ISP visitors can share a display name — switching between
+    // them must not carry the previous visitor's override state.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- classify once per org identity; org.events would re-trigger AI classification
+  }, [org.orgName, org.key, org.isISPVisitor]);
 
   // ── Linked RFQ lookup ──────────────────────────────────────────────────
   const [linkedRfqs, setLinkedRfqs] = useState<RfqSubmission[]>([]);

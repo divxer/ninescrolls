@@ -1,9 +1,11 @@
 /**
  * Stripe Checkout Service
- * 
+ *
  * This service handles Stripe Checkout Session creation.
  * For production, you'll need a backend API endpoint to create the session securely.
  */
+
+import { getVisitorId } from './analyticsStorageService';
 
 
 export interface StripeCheckoutItem {
@@ -97,6 +99,10 @@ export async function createCheckoutSession(
         notes: params.notes,
         successUrl: params.successUrl,
         cancelUrl: params.cancelUrl,
+        // First-party visitor identity — flows through Stripe metadata to the
+        // webhook so the resulting order can be linked back to this visitor's
+        // analytics sessions (IP-org attribution alone can't identify anyone).
+        visitorId: getVisitorId(),
       }),
     });
 

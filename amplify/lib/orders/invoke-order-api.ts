@@ -20,6 +20,8 @@ export interface CreateStripeOrderPayload {
     shippingAddress?: string;
     notes?: string;
     paidAt?: string;
+    /** First-party analytics visitor id (from checkout → Stripe metadata) */
+    visitorId?: string;
 }
 
 /**

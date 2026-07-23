@@ -939,7 +939,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
                         sourceEntityType: 'rfq', sourceEntityId: rfqId, now: submittedAt,
                     },
                 );
-                if (bridge.created || bridge.orgUpgraded) {
+                if (bridge.created || bridge.orgUpgraded || bridge.orgChanged) {
                     await invokeCrmAction({ action: 'reResolveVisitorSessions', visitorId: data.visitorId });
                 }
             } catch (err) {

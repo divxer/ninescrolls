@@ -7,7 +7,7 @@ vi.mock('../sweep/sweepState', () => ({
   readState: (...a: unknown[]) => readState(...a),
   persistPage: (...a: unknown[]) => persistPage(...a),
 }));
-const queryPendingMarkers = vi.fn(); const deleteRepairMarker = vi.fn();
+const queryPendingMarkers = vi.fn(); const deleteRepairMarker = vi.fn(); const deleteRepairMarkerIfUnchanged = vi.fn();
 const markStuck = vi.fn(); const bumpAttempt = vi.fn(); const touchInProgress = vi.fn();
 const queryBuildingOlderThan = vi.fn(); const promoteAbandonedBuilding = vi.fn();
 const markStuckV2 = vi.fn(); const bumpAttemptFenced = vi.fn(); const deleteRepairMarkerFenced = vi.fn();
@@ -15,6 +15,7 @@ const queryStuckByReason = vi.fn(); const republishStuckFenced = vi.fn();
 vi.mock('./repairMarker', () => ({
   queryPendingMarkers: (...a: unknown[]) => queryPendingMarkers(...a),
   deleteRepairMarker: (...a: unknown[]) => deleteRepairMarker(...a),
+  deleteRepairMarkerIfUnchanged: (...a: unknown[]) => deleteRepairMarkerIfUnchanged(...a),
   markStuck: (...a: unknown[]) => markStuck(...a),
   bumpAttempt: (...a: unknown[]) => bumpAttempt(...a),
   touchInProgress: (...a: unknown[]) => touchInProgress(...a),
@@ -74,7 +75,7 @@ const updateCalls = () => send.mock.calls.filter((c) => (c[0] as CmdArg).constru
 
 beforeEach(() => {
   [acquireLease, releaseLeaseKeepCursor, readState, persistPage,
-   queryPendingMarkers, deleteRepairMarker, markStuck, bumpAttempt, touchInProgress,
+   queryPendingMarkers, deleteRepairMarker, deleteRepairMarkerIfUnchanged, markStuck, bumpAttempt, touchInProgress,
    queryBuildingOlderThan, promoteAbandonedBuilding, markStuckV2, bumpAttemptFenced,
    deleteRepairMarkerFenced, queryStuckByReason, republishStuckFenced,
    replayStructured, replayAnalytics, resolveEffectiveTarget, send].forEach((m) => m.mockReset());
@@ -85,6 +86,8 @@ beforeEach(() => {
   markStuckV2.mockResolvedValue({ lost: false });
   bumpAttemptFenced.mockResolvedValue({ lost: false });
   deleteRepairMarkerFenced.mockResolvedValue({ lost: false });
+  deleteRepairMarkerIfUnchanged.mockResolvedValue({ lost: false });
+  markStuck.mockResolvedValue({ lost: false });
   queryStuckByReason.mockResolvedValue({ markers: [], lastKey: undefined });
   republishStuckFenced.mockResolvedValue({ lost: false });
   resolveEffectiveTarget.mockResolvedValue({ status: 'active', orgId: 'acme.com' });
@@ -106,7 +109,7 @@ describe('reconcileRepair', () => {
     queryPendingMarkers.mockResolvedValueOnce({ markers: [struct], hasMore: false });
     replayStructured.mockResolvedValueOnce({ ok: true, backfillStatus: 'written' });
     const out = await reconcileRepair({});
-    expect(deleteRepairMarker).toHaveBeenCalledWith('structured', 'u1');
+    expect(deleteRepairMarkerIfUnchanged).toHaveBeenCalledWith(expect.objectContaining({ unitType: 'structured', unitKey: 'u1' }));
     expect(out.repaired).toBe(1);
     expect(releaseLeaseKeepCursor).toHaveBeenCalledWith('repair', 'drain', 'tok', expect.objectContaining({ hasMore: false }));
   });
@@ -115,7 +118,7 @@ describe('reconcileRepair', () => {
     replayAnalytics.mockResolvedValueOnce({ ok: false, errorType: 'in_progress', pending: true });
     const out = await reconcileRepair({});
     expect(touchInProgress).toHaveBeenCalled();
-    expect(deleteRepairMarker).not.toHaveBeenCalled();
+    expect(deleteRepairMarkerIfUnchanged).not.toHaveBeenCalled();
     expect(out.inProgress).toBe(1);
   });
   it('churning in_progress below MAX → bumpAttempt (retrying++), NOT touched', async () => {
@@ -159,9 +162,12 @@ describe('reconcileRepair', () => {
   it('isolates a per-marker bookkeeping failure: counts it, keeps draining the rest, still releases lease', async () => {
     queryPendingMarkers.mockResolvedValueOnce({ markers: [struct, ana], hasMore: false });
     replayStructured.mockResolvedValueOnce({ ok: true });          // struct: replay ok...
-    deleteRepairMarker.mockRejectedValueOnce(new Error('ddb down')); // ...but delete throws
+    deleteRepairMarkerIfUnchanged.mockRejectedValueOnce(new Error('ddb down')); // ...but delete throws
     replayAnalytics.mockResolvedValueOnce({ ok: true });           // ana: fully succeeds
     const out = await reconcileRepair({});
+    // The drainer is the marker OWNER — its replay must declare it so the
+    // retro doesn't self-bump the version it is consuming
+    expect(replayAnalytics).toHaveBeenCalledWith(expect.objectContaining({ markerOwned: true }));
     expect(out.errors).toBe(1);
     expect(out.repaired).toBe(1);     // ana still repaired despite struct's failure
     expect(out.examined).toBe(2);
@@ -208,7 +214,7 @@ describe('reconcileRepair v2 — generation-aware draining', () => {
     expect(markStuck).not.toHaveBeenCalled();
     expect(markStuckV2).not.toHaveBeenCalled();
     expect(deleteRepairMarkerFenced).toHaveBeenCalledTimes(2);   // fenced v2 transitions, per generation
-    expect(deleteRepairMarker).not.toHaveBeenCalled();           // v1 delete untouched for v2 markers
+    expect(deleteRepairMarkerIfUnchanged).not.toHaveBeenCalled();           // v1 delete untouched for v2 markers
   });
   it('a fenced-transition CCFE (lost) is counted, not retried blindly', async () => {
     queryPendingMarkers.mockResolvedValueOnce({ markers: [genA], hasMore: false });

@@ -1,6 +1,7 @@
 import type { APIGatewayProxyHandler } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, GetCommand, PutCommand, ScanCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, GetCommand, PutCommand, UpdateCommand, ScanCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
+import { randomUUID } from 'node:crypto';
 import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -17,6 +18,8 @@ interface ClassifyRequest {
     organizationType?: string;
     reason?: string;
     displayName?: string;
+    // rename only: legacy record to migrate when the target key has none
+    fromOrgName?: string;
     adminToken?: string;
 }
 
@@ -77,20 +80,36 @@ interface CachedItem {
     provider?: 'bedrock' | 'anthropic';
     previousClassification?: PreviousClassification;
     ttl?: number;
+    // Concurrency token for admin CAS writes (classifiedAt alone can collide
+    // at millisecond resolution when two overrides land in the same ms)
+    revision?: string;
 }
 
 async function getCachedItem(orgName: string): Promise<CachedItem | null> {
     if (!TABLE_NAME) return null;
     try {
-        const result = await ddbClient.send(new GetCommand({
-            TableName: TABLE_NAME,
-            Key: { orgName },
-        }));
-        return (result.Item as CachedItem) || null;
+        return await getCachedItemStrict(orgName);
     } catch (err) {
         console.error('DynamoDB cache read error:', err);
         return null;
     }
+}
+
+/**
+ * Strict cache read for ADMIN actions (override/undo/get-override/rename):
+ * a DynamoDB failure (throttle, IAM, network) THROWS → top-level 500, instead
+ * of masquerading as "record not found". Undo would otherwise report a false
+ * 404 ("No manual override found") and rename would overwrite a record it
+ * merely failed to read. The lenient getCachedItem stays for the classify
+ * flow, where read-failure→re-classify is the deliberate fallback.
+ */
+async function getCachedItemStrict(orgName: string): Promise<CachedItem | null> {
+    if (!TABLE_NAME) return null;
+    const result = await ddbClient.send(new GetCommand({
+        TableName: TABLE_NAME,
+        Key: { orgName },
+    }));
+    return (result.Item as CachedItem) || null;
 }
 
 async function getCachedClassification(orgName: string): Promise<ClassifyResult | null> {
@@ -384,7 +403,7 @@ async function handleOverride(body: ClassifyRequest, corsHeaders: Record<string,
     }
 
     // Read current item for previousClassification
-    const existing = await getCachedItem(body.orgName);
+    const existing = await getCachedItemStrict(body.orgName);
     const previousClassification: PreviousClassification | undefined = existing ? {
         organizationType: existing.organizationType,
         isTargetCustomer: existing.isTargetCustomer,
@@ -407,9 +426,29 @@ async function handleOverride(body: ClassifyRequest, corsHeaders: Record<string,
         // No TTL — manual entries never expire
     };
 
-    await ddbClient.send(new PutCommand({
+    // Field-level update, NEVER a full-record Put: a Put would drop
+    // displayName (a saved rename) and clobber any field committed
+    // concurrently. Only the classification/manual fields are touched;
+    // ttl is removed (manual entries never expire) along with the stale
+    // AI provider.
+    await ddbClient.send(new UpdateCommand({
         TableName: TABLE_NAME,
-        Item: newItem,
+        Key: { orgName: body.orgName },
+        UpdateExpression:
+            'SET organizationType = :ot, isTargetCustomer = :it, confidence = :c, reason = :r, classifiedAt = :at, #src = :src, revision = :rev'
+            + (previousClassification ? ', previousClassification = :prev' : '')
+            + ' REMOVE #ttl, provider',
+        ExpressionAttributeNames: { '#src': 'source', '#ttl': 'ttl' },
+        ExpressionAttributeValues: {
+            ':ot': newItem.organizationType,
+            ':it': newItem.isTargetCustomer,
+            ':c': newItem.confidence,
+            ':r': newItem.reason,
+            ':at': newItem.classifiedAt,
+            ':src': 'manual',
+            ':rev': randomUUID(),
+            ...(previousClassification ? { ':prev': previousClassification } : {}),
+        },
     }));
 
     // Invalidate few-shot corrections cache
@@ -425,6 +464,17 @@ async function handleOverride(body: ClassifyRequest, corsHeaders: Record<string,
     };
 }
 
+/**
+ * CAS clause for undo writes: prefer the explicit UUID revision (written by
+ * every admin mutation since it was introduced); fall back to classifiedAt
+ * for legacy records, and to attribute-absence for records with neither.
+ */
+function undoCasClause(existing: CachedItem): { clause: string; values: Record<string, unknown> } {
+    if (existing.revision) return { clause: 'revision = :readRev', values: { ':readRev': existing.revision } };
+    if (existing.classifiedAt) return { clause: 'classifiedAt = :readAt AND attribute_not_exists(revision)', values: { ':readAt': existing.classifiedAt } };
+    return { clause: 'attribute_not_exists(classifiedAt) AND attribute_not_exists(revision)', values: {} };
+}
+
 async function handleUndo(body: ClassifyRequest, corsHeaders: Record<string, string>) {
     if (!verifyAdminToken(body.adminToken)) {
         return {
@@ -434,13 +484,36 @@ async function handleUndo(body: ClassifyRequest, corsHeaders: Record<string, str
         };
     }
 
-    const existing = await getCachedItem(body.orgName);
+    let existing = await getCachedItemStrict(body.orgName);
     if (!existing || existing.source !== 'manual') {
         return {
             statusCode: 404,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             body: JSON.stringify({ error: 'No manual override found' }),
         };
+    }
+
+    // Branch dispatch retries on a conditional-delete conflict: the delete
+    // fallback is CONDITIONAL on the state it read (a concurrent rename may
+    // have just written displayName — an unconditional delete would erase
+    // it). On CCFE we re-read and re-dispatch into the branch that now
+    // applies; exhaustion returns a retryable 409.
+    const MAX_UNDO_ATTEMPTS = 3;
+    for (let attempt = 0; attempt < MAX_UNDO_ATTEMPTS; attempt++) {
+    if (attempt > 0) {
+        existing = await getCachedItemStrict(body.orgName);
+        if (!existing) {
+            // Concurrently deleted — the goal state was reached.
+            invalidateCorrectionsCache();
+            return {
+                statusCode: 200,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ undone: true, deleted: true }),
+            };
+        }
+        if (existing.source !== 'manual') {
+            break; // concurrent restore already undid the override → 409 below
+        }
     }
 
     if (existing.previousClassification) {
@@ -458,10 +531,41 @@ async function handleUndo(body: ClassifyRequest, corsHeaders: Record<string, str
             ttl,
         };
 
-        await ddbClient.send(new PutCommand({
-            TableName: TABLE_NAME,
-            Item: restored,
-        }));
+        // Field-level update (same rationale as handleOverride): a full Put
+        // would drop a saved rename's displayName. CAS on the snapshot this
+        // decision was based on (source + classifiedAt revision token) — a
+        // NEWER override committed between our read and this restore must not
+        // be overwritten with stale previous-classification data.
+        try {
+            await ddbClient.send(new UpdateCommand({
+                TableName: TABLE_NAME,
+                Key: { orgName: body.orgName },
+                UpdateExpression:
+                    'SET organizationType = :ot, isTargetCustomer = :it, confidence = :c, reason = :r, classifiedAt = :at, #src = :src, #ttl = :ttl, revision = :rev'
+                    + (restored.provider ? ', provider = :p' : '')
+                    + ' REMOVE previousClassification' + (restored.provider ? '' : ', provider'),
+                ConditionExpression: '#src = :manual AND ' + undoCasClause(existing).clause,
+                ExpressionAttributeNames: { '#src': 'source', '#ttl': 'ttl' },
+                ExpressionAttributeValues: {
+                    ':ot': restored.organizationType,
+                    ':it': restored.isTargetCustomer,
+                    ':c': restored.confidence,
+                    ':r': restored.reason,
+                    ':at': restored.classifiedAt,
+                    ':src': restored.source,
+                    ':ttl': ttl,
+                    ':manual': 'manual',
+                    ':rev': randomUUID(),
+                    ...undoCasClause(existing).values,
+                    ...(restored.provider ? { ':p': restored.provider } : {}),
+                },
+            }));
+        } catch (err: unknown) {
+            if (err instanceof Error && err.name === 'ConditionalCheckFailedException') {
+                continue; // record changed under us — re-read and re-dispatch
+            }
+            throw err;
+        }
 
         invalidateCorrectionsCache();
 
@@ -470,12 +574,61 @@ async function handleUndo(body: ClassifyRequest, corsHeaders: Record<string, str
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             body: JSON.stringify({ ...restored, cached: false, undone: true }),
         };
+    } else if (existing.displayName) {
+        // No previous classification, but the record carries a saved rename —
+        // deleting would lose it. Neutralize to the same default shape a
+        // rename-of-missing creates, keeping displayName. CAS on the snapshot
+        // (source + revision token + the displayName we intend to preserve):
+        // a newer override/rename between read and write re-dispatches.
+        try {
+            await ddbClient.send(new UpdateCommand({
+                TableName: TABLE_NAME,
+                Key: { orgName: body.orgName },
+                UpdateExpression:
+                    'SET organizationType = :ot, isTargetCustomer = :it, confidence = :c, reason = :r, classifiedAt = :at, #src = :src, revision = :rev'
+                    + ' REMOVE previousClassification, provider, #ttl',
+                ConditionExpression: '#src = :manual AND displayName = :dn AND ' + undoCasClause(existing).clause,
+                ExpressionAttributeNames: { '#src': 'source', '#ttl': 'ttl' },
+                ExpressionAttributeValues: {
+                    ':ot': 'unknown', ':it': false, ':c': 0, ':r': '', ':at': new Date().toISOString(), ':src': 'manual',
+                    ':manual': 'manual', ':dn': existing.displayName, ':rev': randomUUID(),
+                    ...undoCasClause(existing).values,
+                },
+            }));
+        } catch (err: unknown) {
+            if (err instanceof Error && err.name === 'ConditionalCheckFailedException') {
+                continue; // record changed under us — re-read and re-dispatch
+            }
+            throw err;
+        }
+
+        invalidateCorrectionsCache();
+
+        return {
+            statusCode: 200,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ undone: true, deleted: false, displayName: existing.displayName }),
+        };
     } else {
-        // No previous — delete the entry entirely
-        await ddbClient.send(new DeleteCommand({
-            TableName: TABLE_NAME,
-            Key: { orgName: body.orgName },
-        }));
+        // No previous, no rename — delete the entry entirely. CONDITIONAL on
+        // the exact state we based this decision on: a rename can land
+        // displayName (or an override can land previousClassification)
+        // between our read and this delete, and an unconditional delete
+        // would erase it. CCFE → re-read and re-dispatch (loop).
+        try {
+            await ddbClient.send(new DeleteCommand({
+                TableName: TABLE_NAME,
+                Key: { orgName: body.orgName },
+                ConditionExpression: '#src = :manual AND attribute_not_exists(previousClassification) AND attribute_not_exists(displayName)',
+                ExpressionAttributeNames: { '#src': 'source' },
+                ExpressionAttributeValues: { ':manual': 'manual' },
+            }));
+        } catch (err: unknown) {
+            if (err instanceof Error && err.name === 'ConditionalCheckFailedException') {
+                continue; // state moved under us — re-read and re-dispatch
+            }
+            throw err;
+        }
 
         invalidateCorrectionsCache();
 
@@ -485,6 +638,13 @@ async function handleUndo(body: ClassifyRequest, corsHeaders: Record<string, str
             body: JSON.stringify({ undone: true, deleted: true }),
         };
     }
+    }
+
+    return {
+        statusCode: 409,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: 'Conflict: record changed concurrently — retry the undo' }),
+    };
 }
 
 async function handleGetOverride(body: ClassifyRequest, corsHeaders: Record<string, string>) {
@@ -496,7 +656,7 @@ async function handleGetOverride(body: ClassifyRequest, corsHeaders: Record<stri
         };
     }
 
-    const item = await getCachedItem(body.orgName);
+    const item = await getCachedItemStrict(body.orgName);
     if (!item) {
         return {
             statusCode: 200,
@@ -601,26 +761,61 @@ async function handleRename(body: ClassifyRequest, corsHeaders: Record<string, s
         };
     }
 
-    const existing = await getCachedItem(body.orgName);
-    if (existing) {
-        await ddbClient.send(new PutCommand({
-            TableName: TABLE_NAME,
-            Item: { ...existing, displayName: body.displayName.trim() },
-        }));
-    } else {
-        await ddbClient.send(new PutCommand({
-            TableName: TABLE_NAME,
-            Item: {
+    const displayName = body.displayName.trim();
+    // Atomic single-attribute update first: NEVER read-modify-write the whole
+    // record — a full Put of a snapshot would clobber any classification/
+    // override/provenance change committed between our read and write.
+    const setDisplayNameIfExists = async (): Promise<boolean> => {
+        try {
+            await ddbClient.send(new UpdateCommand({
+                TableName: TABLE_NAME,
+                Key: { orgName: body.orgName },
+                UpdateExpression: 'SET displayName = :d',
+                ConditionExpression: 'attribute_exists(orgName)',
+                ExpressionAttributeValues: { ':d': displayName },
+            }));
+            return true;
+        } catch (err: unknown) {
+            if (err instanceof Error && err.name === 'ConditionalCheckFailedException') return false;
+            throw err;
+        }
+    };
+
+    if (!(await setDisplayNameIfExists())) {
+        // Target key has no record. Lossless copy-and-rename: when the caller
+        // names a legacy record (ISP visitors migrating from a display-name
+        // key to their stable visitorId key), copy the legacy record VERBATIM
+        // — source, confidence, provider, reason, previousClassification all
+        // preserved — under the new key. Conditional create so a concurrent
+        // write to the new key is never clobbered; on that race, retry the
+        // atomic displayName update against the winner.
+        const legacy = body.fromOrgName ? await getCachedItemStrict(body.fromOrgName) : null;
+        const item = legacy
+            ? { ...legacy, orgName: body.orgName, displayName }
+            : {
                 orgName: body.orgName,
-                displayName: body.displayName.trim(),
+                displayName,
                 organizationType: 'unknown',
                 isTargetCustomer: false,
                 confidence: 0,
                 reason: '',
                 classifiedAt: new Date().toISOString(),
                 source: 'manual' as const,
-            },
-        }));
+            };
+        try {
+            await ddbClient.send(new PutCommand({
+                TableName: TABLE_NAME,
+                Item: item,
+                ConditionExpression: 'attribute_not_exists(orgName)',
+            }));
+        } catch (err: unknown) {
+            if (!(err instanceof Error && err.name === 'ConditionalCheckFailedException')) throw err;
+            if (!(await setDisplayNameIfExists())) {
+                // Created-then-deleted between our attempts — give up loudly
+                // rather than looping; the admin simply retries.
+                throw new Error(`rename race: record for "${body.orgName}" appeared and vanished`);
+            }
+        }
     }
 
     return {
@@ -645,7 +840,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
         const body: ClassifyRequest = JSON.parse(event.body || '{}');
 
         // list-overrides does not require orgName
-        if (body.action === 'list-overrides') return handleListOverrides(body, corsHeaders);
+        if (body.action === 'list-overrides') return await handleListOverrides(body, corsHeaders);
 
         if (!body.orgName || body.orgName.length < 2) {
             return {
@@ -656,10 +851,10 @@ export const handler: APIGatewayProxyHandler = async (event) => {
         }
 
         // Route by action
-        if (body.action === 'override') return handleOverride(body, corsHeaders);
-        if (body.action === 'undo') return handleUndo(body, corsHeaders);
-        if (body.action === 'get-override') return handleGetOverride(body, corsHeaders);
-        if (body.action === 'rename') return handleRename(body, corsHeaders);
+        if (body.action === 'override') return await handleOverride(body, corsHeaders);
+        if (body.action === 'undo') return await handleUndo(body, corsHeaders);
+        if (body.action === 'get-override') return await handleGetOverride(body, corsHeaders);
+        if (body.action === 'rename') return await handleRename(body, corsHeaders);
 
         // Default: classify flow
         // Check DynamoDB cache first

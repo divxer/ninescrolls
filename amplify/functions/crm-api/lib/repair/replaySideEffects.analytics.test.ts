@@ -14,6 +14,15 @@ describe('replayAnalyticsSideEffects', () => {
     reResolve.mockResolvedValueOnce({ summary: { reemitted: 2, hasMore: false } });
     const r = await replayAnalyticsSideEffects(base);
     expect(r.ok).toBe(true); expect(r.pending).toBe(false);
+    // Ownership is EXPLICIT: without markerOwned (foreground linkVisitor),
+    // the retro must publish its own truncation marker — its caller's
+    // initial Put is best-effort and may have failed
+    expect(reResolve).toHaveBeenCalledWith({ visitorId: 'v1', markerManagedByCaller: false });
+  });
+  it('markerOwned (scheduled drainer): the retro must NOT self-bump the marker it is consuming', async () => {
+    reResolve.mockResolvedValueOnce({ summary: { reemitted: 1, hasMore: false } });
+    await replayAnalyticsSideEffects({ ...base, markerOwned: true });
+    expect(reResolve).toHaveBeenCalledWith({ visitorId: 'v1', markerManagedByCaller: true });
     expect(writeLinkAuditLog).toHaveBeenCalledWith(expect.objectContaining({
       id: expect.stringMatching(/^audit-[0-9a-f]{16}$/), reason: 'manual_link_visitor',
       details: expect.objectContaining({ unitType: 'analytics', retroSummary: expect.any(Object) }),

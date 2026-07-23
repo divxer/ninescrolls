@@ -89,7 +89,9 @@ describe('repairMarker', () => {
   });
   it('markStuck / bumpAttempt / touchInProgress guard on attribute_exists(PK) (no zombie upsert)', async () => {
     await markStuck({ unitType: 'analytics', unitKey: 'v1', attemptCount: 0 } as never, 'max_attempts', 'e', 't');
-    expect(send.mock.calls.at(-1)![0].input.ConditionExpression).toBe('attribute_exists(PK)');
+    // legacy (version-less) marker: existence guard + absence fence — a
+    // version bump after the read must block the stuck transition
+    expect(send.mock.calls.at(-1)![0].input.ConditionExpression).toBe('attribute_exists(PK) AND attribute_not_exists(workVersion)');
     await bumpAttempt({ unitType: 'analytics', unitKey: 'v1', attemptCount: 0 } as never, 'e', 't');
     expect(send.mock.calls.at(-1)![0].input.ConditionExpression).toBe('attribute_exists(PK)');
     await touchInProgress({ unitType: 'analytics', unitKey: 'v1' } as never, 't');
@@ -282,5 +284,113 @@ describe('mergeReconKey / acknowledgeMergeReconFenced (Task 13, R9)', () => {
     send.mockResolvedValueOnce({ Item: { version: 1, state: 'needs_review' } });
     send.mockRejectedValueOnce(new Error('network blip'));
     await expect(acknowledgeMergeReconFenced('src.com', 'tgt.com', 'admin@x.com')).rejects.toThrow('network blip');
+  });
+});
+
+// ── Analytics work fence (ensureRepairMarker + fenced consumption) ──────────
+// "Exists" ≠ "consumable": a stuck marker is off the pending partition, and a
+// pending marker mid-drain can be completion-deleted right after new work is
+// published. ensure must republish/bump; delete/stuck must be version-fenced.
+import { ensureRepairMarker, deleteRepairMarkerIfUnchanged, type RepairMarkerItem } from './repairMarker';
+
+const COND_FAIL = () => Object.assign(new Error('conditional'), { name: 'ConditionalCheckFailedException' });
+const analyticsMarker = (over: Partial<RepairMarkerItem> = {}): RepairMarkerItem => ({
+  PK: 'CRM_REPAIR#analytics#v-1', SK: 'STATE', GSI1PK: 'CRM_REPAIR#pending', GSI1SK: 't#v-1',
+  entityType: 'CRM_REPAIR', unitType: 'analytics', unitKey: 'v-1',
+  targetOrgId: 'acme.com', operator: 'retro-truncation', createdAt: 't',
+  status: 'pending', stuckReason: null, attemptCount: 0, lastAttemptAt: null, lastError: null,
+  ...over,
+});
+
+describe('ensureRepairMarker (publish/republish as consumable pending)', () => {
+  it('fresh create: pending marker with workVersion 1', async () => {
+    const r = await ensureRepairMarker({ unitType: 'analytics', unitKey: 'v-1', targetOrgId: 'acme.com', operator: 'retro-truncation', createdAt: 'T0' });
+    expect(r).toEqual({ created: true, workVersion: 1 });
+    const item = send.mock.calls[0][0].input.Item;
+    expect(item).toMatchObject({ PK: 'CRM_REPAIR#analytics#v-1', GSI1PK: 'CRM_REPAIR#pending', status: 'pending', workVersion: 1 });
+    expect(send.mock.calls[0][0].input.ConditionExpression).toBe('attribute_not_exists(PK)');
+  });
+  it('existing STUCK marker: republished to pending with a fresh attempt budget + version bump', async () => {
+    send.mockRejectedValueOnce(COND_FAIL()); // create: exists
+    send.mockResolvedValueOnce({ Attributes: { workVersion: 5 } }); // stuck-republish succeeds (ALL_NEW)
+    const r = await ensureRepairMarker({ unitType: 'analytics', unitKey: 'v-1', targetOrgId: 'acme.com', operator: 'retro-truncation', createdAt: 'T1' });
+    // The WRITTEN version is returned — publishers hold it for their own
+    // fenced completion delete (ABA closure)
+    expect(r).toEqual({ created: false, workVersion: 5 });
+    const u = send.mock.calls[1][0].input;
+    expect(u.ConditionExpression).toBe('#s = :stuck');
+    expect(u.ReturnValues).toBe('ALL_NEW');
+    expect(u.UpdateExpression).toContain('GSI1PK = :pending');
+    expect(u.UpdateExpression).toContain('attemptCount = :zero');
+    expect(u.UpdateExpression).toContain('workVersion = if_not_exists(workVersion, :zero) + :one');
+  });
+  it('existing PENDING marker: only bumps workVersion — attempt state untouched', async () => {
+    send.mockRejectedValueOnce(COND_FAIL()); // create: exists
+    send.mockRejectedValueOnce(COND_FAIL()); // stuck-republish: not stuck
+    send.mockResolvedValueOnce({ Attributes: { workVersion: 7 } }); // pending-bump succeeds (ALL_NEW)
+    const r = await ensureRepairMarker({ unitType: 'analytics', unitKey: 'v-1', targetOrgId: 'acme.com', operator: 'retro-truncation', createdAt: 'T1' });
+    expect(r).toEqual({ created: false, workVersion: 7 });
+    const u = send.mock.calls[2][0].input;
+    expect(u.UpdateExpression).toBe('SET workVersion = if_not_exists(workVersion, :zero) + :one');
+    expect(u.UpdateExpression).not.toContain('attemptCount');
+    // status = pending REQUIRED: a marker that turned stuck between steps
+    // must never take a silent version bump off the pending partition
+    expect(u.ConditionExpression).toBe('#s = :pending');
+  });
+  it('pending→stuck interleaving mid-ensure: loops and republishes instead of bumping a stuck marker', async () => {
+    send.mockRejectedValueOnce(COND_FAIL()); // round 1: create — exists
+    send.mockRejectedValueOnce(COND_FAIL()); // round 1: stuck-republish — was pending
+    send.mockRejectedValueOnce(COND_FAIL()); // round 1: pending-bump — drainer just stucked it
+    send.mockRejectedValueOnce(COND_FAIL()); // round 2: create — still exists
+    // round 2: stuck-republish succeeds
+    send.mockResolvedValueOnce({ Attributes: { workVersion: 2 } });
+    const r = await ensureRepairMarker({ unitType: 'analytics', unitKey: 'v-1', targetOrgId: 'acme.com', operator: 'retro-truncation', createdAt: 'T4' });
+    expect(r).toEqual({ created: false, workVersion: 2 });
+    const u = send.mock.calls[4][0].input;
+    expect(u.ConditionExpression).toBe('#s = :stuck');
+    expect(u.UpdateExpression).toContain('GSI1PK = :pending');
+  });
+  it('publish livelock exhausts loudly instead of reporting false success', async () => {
+    for (let i = 0; i < 12; i++) send.mockRejectedValueOnce(COND_FAIL());
+    await expect(ensureRepairMarker({ unitType: 'analytics', unitKey: 'v-1', targetOrgId: 'acme.com', operator: 'retro-truncation', createdAt: 'T5' }))
+      .rejects.toThrow('could not publish');
+  });
+  it('deleted between attempts (ensure-vs-delete race): creates fresh', async () => {
+    send.mockRejectedValueOnce(COND_FAIL()); // create: existed then
+    send.mockRejectedValueOnce(COND_FAIL()); // republish: gone
+    send.mockRejectedValueOnce(COND_FAIL()); // bump: gone
+    const r = await ensureRepairMarker({ unitType: 'analytics', unitKey: 'v-1', targetOrgId: 'acme.com', operator: 'retro-truncation', createdAt: 'T2' });
+    expect(r).toEqual({ created: true, workVersion: 1 });
+    expect(send.mock.calls[3][0].input.Item.workVersion).toBe(1);
+  });
+});
+
+describe('version-fenced consumption', () => {
+  it('completion delete succeeds only on the version the drainer read', async () => {
+    const r = await deleteRepairMarkerIfUnchanged(analyticsMarker({ workVersion: 3 }));
+    expect(r).toEqual({ lost: false });
+    const d = send.mock.calls[0][0].input;
+    expect(d.ConditionExpression).toBe('workVersion = :wv');
+    expect(d.ExpressionAttributeValues[':wv']).toBe(3);
+  });
+  it('ensure-vs-delete: a version bump after the read fences the delete out (marker survives)', async () => {
+    send.mockRejectedValueOnce(COND_FAIL());
+    const r = await deleteRepairMarkerIfUnchanged(analyticsMarker({ workVersion: 3 }));
+    expect(r).toEqual({ lost: true });
+  });
+  it('legacy markers without workVersion are fenced on attribute absence', async () => {
+    await deleteRepairMarkerIfUnchanged(analyticsMarker());
+    expect(send.mock.calls[0][0].input.ConditionExpression).toBe('attribute_not_exists(workVersion)');
+  });
+  it('markStuck is fenced the same way: newer work keeps the marker pending', async () => {
+    send.mockRejectedValueOnce(COND_FAIL());
+    const r = await markStuck(analyticsMarker({ workVersion: 2 }), 'max_attempts', 'boom', 'T3');
+    expect(r).toEqual({ lost: true });
+  });
+  it('markStuck with a matching version proceeds', async () => {
+    const r = await markStuck(analyticsMarker({ workVersion: 2 }), 'max_attempts', 'boom', 'T3');
+    expect(r).toEqual({ lost: false });
+    const u = send.mock.calls[0][0].input;
+    expect(u.ConditionExpression).toBe('attribute_exists(PK) AND workVersion = :wv');
   });
 });

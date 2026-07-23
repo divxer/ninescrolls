@@ -1,5 +1,6 @@
 import { useState, type Dispatch, type SetStateAction } from 'react';
 import { getOrgOverride, setOrgOverride, undoOrgOverride, renameOrg, type OrgOverride } from '../../../../services/adminClassificationService';
+import { orgOverrideKey } from '../orgAggregation';
 import type { RfqSubmission } from '../../../../types/admin';
 import type { OrganizationRecord } from '../types';
 import type { OrgDetection } from './useOrgDetection';
@@ -32,7 +33,9 @@ export function OrgDetailHeader({
     setOverrideLoading(true);
     setOverrideMsg(null);
     try {
-      const result = await setOrgOverride(org.orgName, isTarget);
+      // ISP visitors: override keyed on the stable visitorId (org.key), never
+      // the synthesized city-level display name — see orgOverrideKey.
+      const result = await setOrgOverride(orgOverrideKey(org), isTarget);
       setOverride(result);
       setOverrideMsg({ type: 'success', text: `Marked as ${isTarget ? 'target' : 'non-target'} customer` });
     } catch {
@@ -46,9 +49,27 @@ export function OrgDetailHeader({
     setOverrideLoading(true);
     setOverrideMsg(null);
     try {
-      await undoOrgOverride(org.orgName);
+      // The override may live under the stable key (new writes), the legacy
+      // display name, or the legacy group key (same candidates as
+      // resolveOrgOverride) — undo every candidate. Only the backend's
+      // definitive "No manual override found" is ignorable; a 500/network
+      // failure must surface, otherwise the UI reports success while an
+      // override record still applies.
+      const overrideKey = orgOverrideKey(org);
+      const candidates = [...new Set([overrideKey, org.orgName, org.key])];
+      let undone = false;
+      for (const key of candidates) {
+        try {
+          await undoOrgOverride(key);
+          undone = true;
+        } catch (err) {
+          if (err instanceof Error && err.message === 'No manual override found') continue;
+          throw err;
+        }
+      }
+      if (!undone) throw new Error('No override found to undo');
       // Re-fetch to get restored state
-      const fresh = await getOrgOverride(org.orgName);
+      const fresh = await getOrgOverride(overrideKey);
       setOverride(fresh);
       setOverrideMsg({ type: 'success', text: 'Override removed' });
     } catch {
@@ -66,7 +87,19 @@ export function OrgDetailHeader({
     }
     setRenameLoading(true);
     try {
-      await renameOrg(org.orgName, trimmed);
+      // Same stable key as target overrides — a display name stored under the
+      // synthesized ISP label would drift with city/#N changes and split from
+      // the visitor's target override. For ISP visitors, pass the legacy
+      // display-name key so the backend can migrate that record LOSSLESSLY
+      // (verbatim copy — source/confidence/provider/previousClassification all
+      // preserved) instead of creating a default unknown/non-target record
+      // that would shadow it under stable-key-first reads.
+      const stableKey = orgOverrideKey(org);
+      if (stableKey !== org.orgName) {
+        await renameOrg(stableKey, trimmed, org.orgName);
+      } else {
+        await renameOrg(stableKey, trimmed);
+      }
       setOverride((prev) => prev ? { ...prev, displayName: trimmed } : { found: true, displayName: trimmed });
       setEditingName(false);
       setOverrideMsg({ type: 'success', text: `Renamed to "${trimmed}"` });

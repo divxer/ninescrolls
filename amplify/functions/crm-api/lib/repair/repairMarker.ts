@@ -13,6 +13,10 @@ export interface RepairMarkerItem {
   attemptCount: number; lastAttemptAt: string | null; lastError: string | null;
   sourceType?: string; sourceEntityId?: string; backfillPk?: string | null;
   affectedEventIds?: string[]; movedCount?: number; contactStatus?: string;
+  // Analytics work fence: bumped by ensureRepairMarker whenever NEW retro work
+  // is published onto an existing marker; consumption (delete/stuck) must be
+  // conditional on the version it read, so it can never discard newer work.
+  workVersion?: number;
 }
 
 export function repairMarkerKeys(unitType: RepairUnitType, unitKey: string) {
@@ -21,6 +25,11 @@ export function repairMarkerKeys(unitType: RepairUnitType, unitKey: string) {
 
 // Deterministic-PK Put — overwrites the same committed unit's metadata; never mints a duplicate.
 // Reached ONLY after a durable commit (moved>0 / bridge upsert written), so targetOrgId is committed.
+// ⚠️ DEPRECATED for publish paths: this unconditional, version-LESS Put enables an ABA — a drainer
+// that read a version-less marker can have its attribute_not_exists(workVersion) completion delete
+// succeed against a DIFFERENT version-less marker put here meanwhile, killing fresh work. Use
+// ensureRepairMarker (versioned publish, returns the written workVersion) instead. No production
+// callers remain; kept only for the v1-shape regression tests.
 export async function putRepairMarker(args: {
   unitType: RepairUnitType; unitKey: string; targetOrgId: string; operator: string; createdAt: string;
   sourceType?: string; sourceEntityId?: string; backfillPk?: string | null;
@@ -41,19 +50,155 @@ export async function putRepairMarker(args: {
   await docClient.send(new PutCommand({ TableName: TABLE_NAME(), Item: item }));
 }
 
+/**
+ * Publish (or re-publish) retro work as a CONSUMABLE pending marker. Used by
+ * the retro truncation path: a `hasMore` return persists a RETRO#STATE cursor,
+ * but nothing scans that state — this marker is what puts the remaining work
+ * on the CRM_REPAIR#pending partition the scheduled drainer
+ * (CrmRepairDrainRule → reconcileRepair) actually queries.
+ *
+ * "Exists" is NOT enough ("tracked" ≠ "consumable"):
+ *  - a STUCK marker is off the pending partition — new identity evidence must
+ *    republish it to pending with a fresh attempt budget;
+ *  - a PENDING marker may be mid-drain — bumping workVersion fences the
+ *    drainer's completion delete (deleteRepairMarkerIfUnchanged) so it can
+ *    never discard the newly-published work.
+ * Attempt state of a pending marker is never reset (aging/poison semantics
+ * stay intact); only the stuck→pending republish grants a fresh budget.
+ */
+export async function ensureRepairMarker(args: {
+  unitType: RepairUnitType; unitKey: string; targetOrgId: string; operator: string; createdAt: string;
+}): Promise<{ created: boolean; workVersion: number }> {
+  const keys = repairMarkerKeys(args.unitType, args.unitKey);
+  const freshItem: RepairMarkerItem = {
+    ...keys,
+    GSI1PK: 'CRM_REPAIR#pending', GSI1SK: `${args.createdAt}#${args.unitKey}`,
+    entityType: 'CRM_REPAIR',
+    unitType: args.unitType, unitKey: args.unitKey,
+    targetOrgId: args.targetOrgId, operator: args.operator, createdAt: args.createdAt,
+    status: 'pending', stuckReason: null, attemptCount: 0, lastAttemptAt: null, lastError: null,
+    workVersion: 1,
+  };
+  const isConditional = (err: unknown) => err instanceof Error && err.name === 'ConditionalCheckFailedException';
+  // The version the write actually produced — publishers (linkVisitor) hold it
+  // for their own version-fenced completion delete, so a concurrent publish
+  // (different version) can never be killed by their delete (no ABA).
+  const readWorkVersion = (attrs: Record<string, unknown> | undefined): number => {
+    const v = Number((attrs as { workVersion?: unknown } | undefined)?.workVersion);
+    return Number.isFinite(v) && v > 0 ? v : 1;
+  };
+
+  // State machine, retried until ONE transition lands atomically:
+  //   absent  → create pending (workVersion 1)
+  //   stuck   → republish pending with a fresh attempt budget
+  //   pending → bump workVersion (attempt state deliberately untouched)
+  // Every step is state-CONDITIONAL — step 3 requires status = pending, so a
+  // marker that turned stuck between steps can never take a silent version
+  // bump while sitting off the pending partition. A CCFE means the state
+  // moved under us; loop and re-dispatch. Bounded: each interleaving needs
+  // one extra round, so exhaustion means something is thrashing — fail loud
+  // (callers retry via their own durable loops).
+  const MAX_PUBLISH_ATTEMPTS = 4;
+  for (let attempt = 0; attempt < MAX_PUBLISH_ATTEMPTS; attempt++) {
+    // absent → create pending
+    try {
+      await docClient.send(new PutCommand({
+        TableName: TABLE_NAME(), Item: freshItem,
+        ConditionExpression: 'attribute_not_exists(PK)',
+      }));
+      return { created: true, workVersion: 1 };
+    } catch (err: unknown) {
+      if (!isConditional(err)) throw err;
+    }
+
+    // stuck → republish pending (new identity evidence earns a fresh budget)
+    try {
+      const res = await docClient.send(new UpdateCommand({
+        TableName: TABLE_NAME(), Key: keys,
+        UpdateExpression: 'SET GSI1PK = :pending, GSI1SK = :gsi1sk, #s = :st, stuckReason = :null, attemptCount = :zero, lastError = :null, workVersion = if_not_exists(workVersion, :zero) + :one',
+        ConditionExpression: '#s = :stuck',
+        ExpressionAttributeNames: { '#s': 'status' },
+        ExpressionAttributeValues: {
+          ':pending': 'CRM_REPAIR#pending', ':gsi1sk': `${args.createdAt}#${args.unitKey}`,
+          ':st': 'pending', ':stuck': 'stuck', ':null': null, ':zero': 0, ':one': 1,
+        },
+        ReturnValues: 'ALL_NEW',
+      }));
+      return { created: false, workVersion: readWorkVersion(res.Attributes) };
+    } catch (err: unknown) {
+      if (!isConditional(err)) throw err;
+    }
+
+    // pending → bump workVersion (fences an in-flight drain's completion delete)
+    try {
+      const res = await docClient.send(new UpdateCommand({
+        TableName: TABLE_NAME(), Key: keys,
+        UpdateExpression: 'SET workVersion = if_not_exists(workVersion, :zero) + :one',
+        ConditionExpression: '#s = :pending',
+        ExpressionAttributeNames: { '#s': 'status' },
+        ExpressionAttributeValues: { ':zero': 0, ':one': 1, ':pending': 'pending' },
+        ReturnValues: 'ALL_NEW',
+      }));
+      return { created: false, workVersion: readWorkVersion(res.Attributes) };
+    } catch (err: unknown) {
+      if (!isConditional(err)) throw err;
+    }
+  }
+  throw new Error(`ensureRepairMarker: could not publish ${args.unitType}#${args.unitKey} as pending after ${MAX_PUBLISH_ATTEMPTS} attempts`);
+}
+
+/**
+ * Version-fenced completion delete for markers consumed off the pending
+ * partition. Deletes ONLY if workVersion still matches what the drainer read
+ * — a concurrent ensureRepairMarker bump means new work was published, so the
+ * marker must survive ({ lost: true }; next sweep drains it).
+ */
+export async function deleteRepairMarkerIfUnchanged(
+  m: Pick<RepairMarkerItem, 'unitType' | 'unitKey' | 'workVersion'>,
+): Promise<{ lost: boolean }> {
+  try {
+    await docClient.send(new DeleteCommand({
+      TableName: TABLE_NAME(), Key: repairMarkerKeys(m.unitType, m.unitKey),
+      ConditionExpression: m.workVersion === undefined
+        ? 'attribute_not_exists(workVersion)'
+        : 'workVersion = :wv',
+      ...(m.workVersion === undefined ? {} : { ExpressionAttributeValues: { ':wv': m.workVersion } }),
+    }));
+    return { lost: false };
+  } catch (err: unknown) {
+    if (err instanceof Error && err.name === 'ConditionalCheckFailedException') return { lost: true };
+    throw err;
+  }
+}
+
 export async function deleteRepairMarker(unitType: RepairUnitType, unitKey: string): Promise<void> {
   await docClient.send(new DeleteCommand({ TableName: TABLE_NAME(), Key: repairMarkerKeys(unitType, unitKey) }));
 }
 
 // Terminal: move OFF the pending partition; never auto-retried (Health-read-only).
-export async function markStuck(m: RepairMarkerItem, reason: 'source_conflict' | 'max_attempts', lastError: string, nowIso: string): Promise<void> {
-  await docClient.send(new UpdateCommand({
-    TableName: TABLE_NAME(), Key: repairMarkerKeys(m.unitType, m.unitKey),
-    UpdateExpression: 'SET GSI1PK = :g, #s = :st, stuckReason = :sr, lastError = :e, lastAttemptAt = :now, attemptCount = :a',
-    ConditionExpression: 'attribute_exists(PK)',
-    ExpressionAttributeNames: { '#s': 'status' },
-    ExpressionAttributeValues: { ':g': 'CRM_REPAIR#stuck', ':st': 'stuck', ':sr': reason, ':e': lastError, ':now': nowIso, ':a': (m.attemptCount ?? 0) + 1 },
-  }));
+// Version-fenced: stucking is a consumption decision like deletion — if
+// ensureRepairMarker published new work after this drainer read the marker,
+// the transition must NOT take the fresh work off the pending partition
+// ({ lost: true }; the marker stays pending and drains next sweep).
+export async function markStuck(m: RepairMarkerItem, reason: 'source_conflict' | 'max_attempts', lastError: string, nowIso: string): Promise<{ lost: boolean }> {
+  try {
+    await docClient.send(new UpdateCommand({
+      TableName: TABLE_NAME(), Key: repairMarkerKeys(m.unitType, m.unitKey),
+      UpdateExpression: 'SET GSI1PK = :g, #s = :st, stuckReason = :sr, lastError = :e, lastAttemptAt = :now, attemptCount = :a',
+      ConditionExpression: m.workVersion === undefined
+        ? 'attribute_exists(PK) AND attribute_not_exists(workVersion)'
+        : 'attribute_exists(PK) AND workVersion = :wv',
+      ExpressionAttributeNames: { '#s': 'status' },
+      ExpressionAttributeValues: {
+        ':g': 'CRM_REPAIR#stuck', ':st': 'stuck', ':sr': reason, ':e': lastError, ':now': nowIso, ':a': (m.attemptCount ?? 0) + 1,
+        ...(m.workVersion === undefined ? {} : { ':wv': m.workVersion }),
+      },
+    }));
+    return { lost: false };
+  } catch (err: unknown) {
+    if (err instanceof Error && err.name === 'ConditionalCheckFailedException') return { lost: true };
+    throw err;
+  }
 }
 
 // Transient failure: stay pending, count the attempt.

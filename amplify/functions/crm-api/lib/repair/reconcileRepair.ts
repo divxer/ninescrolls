@@ -2,7 +2,7 @@ import { QueryCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient, TABLE_NAME } from '../dynamodb';
 import { acquireLease, releaseLeaseKeepCursor, readState, persistPage } from '../sweep/sweepState';
 import {
-  queryPendingMarkers, deleteRepairMarker, markStuck, bumpAttempt, touchInProgress,
+  queryPendingMarkers, deleteRepairMarkerIfUnchanged, markStuck, bumpAttempt, touchInProgress,
   queryBuildingOlderThan, promoteAbandonedBuilding, markStuckV2, bumpAttemptFenced,
   deleteRepairMarkerFenced, queryStuckByReason, republishStuckFenced,
   type RepairMarkerItem, type StructuredMarkerV2,
@@ -39,7 +39,9 @@ function asV2(m: DrainMarker): StructuredMarkerV2 | null {
 
 async function replayFor(m: DrainMarker): Promise<ReplayResult> {
   if (m.unitType === 'analytics') {
-    return replayAnalyticsSideEffects({ visitorId: m.unitKey, targetOrgId: m.targetOrgId, operator: m.operator, createdAt: m.createdAt });
+    // markerOwned: the drainer read this marker off the pending partition and
+    // does version-fenced bookkeeping on it — the retro must not self-bump.
+    return replayAnalyticsSideEffects({ visitorId: m.unitKey, targetOrgId: m.targetOrgId, operator: m.operator, createdAt: m.createdAt, markerOwned: true });
   }
   const v2 = m.generation !== undefined;
   return replayStructuredSideEffects({
@@ -174,7 +176,7 @@ export async function reconcileRepair(args: { limit?: number }): Promise<Record<
       if (r.ok) {
         // superseded/locked replay outcomes are OK-path: the unit's truth is committed elsewhere.
         if (v2) { (await deleteRepairMarkerFenced(v2)).lost ? counters.raced += 1 : counters.repaired += 1; }
-        else { await deleteRepairMarker(m.unitType, m.unitKey); counters.repaired += 1; }
+        else { (await deleteRepairMarkerIfUnchanged(m)).lost ? counters.raced += 1 : counters.repaired += 1; }
       } else if (r.errorType === 'target_unavailable' && v2) {
         // Spec R10 final: NOT ok, NOT transient — blocked/actionable, surfaces in CRM Health,
         // recovered by the recovery pass; never deleted, never burns a retry.
@@ -184,14 +186,14 @@ export async function reconcileRepair(args: { limit?: number }): Promise<Record<
         await touchInProgress(m, nowIso); counters.inProgress += 1;
       } else if (r.errorType === 'source_conflict') {
         if (v2) { (await markStuckV2(v2, 'source_conflict', 'other', nowIso)).lost ? counters.raced += 1 : counters.blocked += 1; }
-        else { await markStuck(m, 'source_conflict', 'source_conflict', nowIso); counters.blocked += 1; }
+        else { (await markStuck(m, 'source_conflict', 'source_conflict', nowIso)).lost ? counters.raced += 1 : counters.blocked += 1; }
       } else { // transient, OR a churning retro (in_progress re-failing the SAME sessions with no
                // progress): age it through the attempt budget so a persistently-poison marker reaches
                // `stuck` (surfaces in Health) instead of touchInProgress-ing forever.
         const err = r.error ?? (r.errorType === 'in_progress' ? 'retro_churning' : 'transient');
         if ((m.attemptCount ?? 0) + 1 >= MAX_ATTEMPTS) {
           if (v2) { (await markStuckV2(v2, 'max_attempts', 'other', nowIso)).lost ? counters.raced += 1 : counters.stuck += 1; }
-          else { await markStuck(m, 'max_attempts', err, nowIso); counters.stuck += 1; }
+          else { (await markStuck(m, 'max_attempts', err, nowIso)).lost ? counters.raced += 1 : counters.stuck += 1; }
         } else {
           if (v2) { (await bumpAttemptFenced(v2, err, nowIso)).lost ? counters.raced += 1 : counters.retrying += 1; }
           else { await bumpAttempt(m, err, nowIso); counters.retrying += 1; }

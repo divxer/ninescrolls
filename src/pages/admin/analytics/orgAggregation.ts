@@ -3,6 +3,35 @@ import type { AnalyticsEvent, OrganizationRecord } from './types';
 import { isPrivateIP, tierRank } from './format';
 import { computePerPageDuration } from './flush';
 
+/**
+ * Stable identity key for org-override reads/writes.
+ *
+ * ISP-split visitors get a synthesized DISPLAY name (`"Cloudflare, Inc. ·
+ * Needham, Massachusetts"`, possibly `#N`-suffixed) that is city-scoped and
+ * order-dependent — an override stored under it can miss its visitor or drift
+ * to a different one. Their group `key` however is the stable first-party
+ * visitorId (or IP fallback), so overrides for ISP visitors are keyed on that;
+ * real organizations keep the org name. The list matcher already checks both
+ * (`overrideMap.get(org.orgName) || overrideMap.get(org.key)`), which also
+ * keeps legacy display-name-keyed overrides working.
+ */
+export function orgOverrideKey(org: Pick<OrganizationRecord, 'key' | 'orgName' | 'isISPVisitor'>): string {
+  return org.isISPVisitor ? org.key : org.orgName;
+}
+
+/**
+ * Single override-lookup precedence for BOTH the list and the detail view —
+ * they must never disagree. Stable key first (visitorId for ISP visitors, org
+ * name otherwise), then the legacy fallbacks: the display name (pre-stable-key
+ * ISP writes) and the group key (pre-split org rows).
+ */
+export function resolveOrgOverride<T>(
+  overrides: Map<string, T>,
+  org: Pick<OrganizationRecord, 'key' | 'orgName' | 'isISPVisitor'>,
+): T | undefined {
+  return overrides.get(orgOverrideKey(org)) ?? overrides.get(org.orgName) ?? overrides.get(org.key);
+}
+
 export function computeOrgLifecycleStage(group: AnalyticsEvent[], productsViewed: Set<string>, pdfDownloads: number, returnVisits: number): LifecycleStage {
   const hasRFQSubmission = group.some(e => e.eventType === 'rfq_submission');
   if (hasRFQSubmission) return 'intent';
