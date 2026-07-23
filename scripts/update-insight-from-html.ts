@@ -73,8 +73,15 @@ async function main(slug: string, filePath: string) {
   );
 }
 
-const args = process.argv.slice(2).filter((a) => a !== '--regen-meta');
-const regenMeta = process.argv.includes('--regen-meta');
+const rawArgs = process.argv.slice(2);
+const unknownFlags = rawArgs.filter((a) => a.startsWith('--') && a !== '--regen-meta');
+if (unknownFlags.length > 0) {
+  console.error(`Unknown flag(s): ${unknownFlags.join(', ')}`);
+  console.error('Usage: npx tsx scripts/update-insight-from-html.ts <slug> <html-file> [--regen-meta]');
+  process.exit(1);
+}
+const args = rawArgs.filter((a) => !a.startsWith('--'));
+const regenMeta = rawArgs.includes('--regen-meta');
 const slug = args[0];
 const filePath = args[1];
 if (!slug || !filePath) {
