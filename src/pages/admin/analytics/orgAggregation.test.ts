@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { aggregateByOrg, computeOrgLifecycleStage } from './orgAggregation';
+import { aggregateByOrg, computeOrgLifecycleStage, orgOverrideKey } from './orgAggregation';
 import type { AnalyticsEvent } from './types';
 
 const ev = (p: Record<string, unknown>): AnalyticsEvent =>
@@ -76,5 +76,33 @@ describe('aggregateByOrg', () => {
     ]);
     expect(records).toHaveLength(1);
     expect(records[0].totalEvents).toBe(2);
+  });
+});
+
+describe('orgOverrideKey', () => {
+  it('keys ISP visitors by their stable group key (visitorId), not the display name', () => {
+    expect(orgOverrideKey({ key: 'v-abc123', orgName: 'Cloudflare, Inc. · Needham, Massachusetts', isISPVisitor: true }))
+      .toBe('v-abc123');
+  });
+
+  it('keys real organizations by org name', () => {
+    expect(orgOverrideKey({ key: 'MIT', orgName: 'MIT', isISPVisitor: false })).toBe('MIT');
+  });
+
+  it('is stable for ISP visitors even when the display name shifts (#N suffix / city change)', () => {
+    const before = orgOverrideKey({ key: 'v-abc123', orgName: 'Cloudflare, Inc. · Needham, Massachusetts', isISPVisitor: true });
+    const after = orgOverrideKey({ key: 'v-abc123', orgName: 'Cloudflare, Inc. · Needham, Massachusetts #2', isISPVisitor: true });
+    expect(before).toBe(after);
+  });
+
+  it('override written by key is found by the list matcher (orgName-then-key lookup)', () => {
+    const records = aggregateByOrg([
+      ev({ orgName: 'Comcast', aiOrganizationType: 'telecom_isp', aiConfidence: 0.9, visitorId: 'v1', ip: '1.2.3.4', city: 'Boston', region: 'MA', timestamp: '2026-01-01T00:00:01Z' }),
+    ]);
+    const rec = records[0];
+    const storedKey = orgOverrideKey(rec);
+    // AdminAnalyticsPage applies: overrideMap.get(org.orgName) || overrideMap.get(org.key)
+    const overrideMap = new Map([[storedKey, { orgName: storedKey }]]);
+    expect(overrideMap.get(rec.orgName) || overrideMap.get(rec.key)).toBeTruthy();
   });
 });

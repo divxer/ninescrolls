@@ -334,6 +334,8 @@ const schema = a.schema({
     // Stripe checkout orders (source === 'STRIPE') only
     stripeSessionId: a.string(),
     stripePaymentIntentId: a.string(),
+    // First-party analytics visitor id (deterministic visitor→order link)
+    visitorId: a.string(),
   }),
 
   OrderConnection: a.customType({

@@ -42,6 +42,8 @@ interface StripeOrderRecord {
   shippingAddress?: string | Record<string, string>;
   notes?: string;
   lineItems?: Array<{ description: string; quantity: number; unitAmount: number; currency: string }>;
+  visitorId?: string;
+  rawMetadata?: Record<string, string>;
 }
 
 async function findStripeOrdersTable(ddb: DynamoDBClient): Promise<string> {
@@ -173,6 +175,9 @@ async function main() {
         shippingAddress: formatShipping(rec.shippingAddress),
         notes: rec.notes,
         paidAt: rec.createdAt,
+        // Older rows predate visitorId capture; newer rows carry it either
+        // top-level or inside rawMetadata (resolver re-sanitizes anyway)
+        visitorId: rec.visitorId || rec.rawMetadata?.visitorId || undefined,
       },
     },
   };

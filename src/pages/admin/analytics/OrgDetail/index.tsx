@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getOrgOverride, classifyOrg, type OrgOverride } from '../../../../services/adminClassificationService';
+import { orgOverrideKey } from '../orgAggregation';
 import { matchLinkedLeadsByVisitor } from '../../linkedLeadsMatch';
 import * as orderAdminService from '../../../../services/orderAdminService';
 import type { RfqSubmission, LeadSubmission } from '../../../../types/admin';
@@ -26,8 +27,18 @@ export function OrgDetail({ org, onBack, allContactLeads, allDownloadGateLeads, 
   useEffect(() => {
     let cancelled = false;
     setOverrideLoading(true);
-    getOrgOverride(org.orgName).then(async (result) => {
+    // ISP visitors are keyed by their stable visitorId; display names are
+    // city-scoped and unstable. Fall back to the display name for overrides
+    // written before this keying change.
+    const overrideKey = orgOverrideKey(org);
+    getOrgOverride(overrideKey).then(async (initial) => {
       if (cancelled) return;
+      let result = initial;
+      if (!result.found && overrideKey !== org.orgName) {
+        const legacy = await getOrgOverride(org.orgName);
+        if (cancelled) return;
+        if (legacy.found) result = legacy;
+      }
       // Auto-classify if no cached classification exists.
       if (!result.found) {
         try {

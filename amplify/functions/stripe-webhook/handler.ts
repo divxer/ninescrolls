@@ -5,6 +5,7 @@ import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand } from '@aws-sdk/lib-dynamodb';
 import { env } from '$amplify/env/stripe-webhook';
 import { invokeCreateStripeOrder } from '../../lib/orders/invoke-order-api.js';
+import { sanitizeVisitorId } from '../../lib/analytics/visitor-id.js';
 
 const escapeHtml = (value: string): string =>
   value
@@ -130,6 +131,7 @@ const persistOrder = async (session: Stripe.Checkout.Session): Promise<'created'
         notes: session.metadata?.notes || '',
         lineItems,
         rawMetadata: session.metadata || {},
+        visitorId: sanitizeVisitorId(session.metadata?.visitorId),
       },
       ConditionExpression: 'attribute_not_exists(orderId)',
     }));
@@ -338,6 +340,7 @@ async function bridgeToAdminOrder(session: Stripe.Checkout.Session, eventCreated
     shippingAddress,
     notes: session.metadata?.notes || '',
     paidAt: new Date(eventCreatedEpoch * 1000).toISOString(),
+    visitorId: sanitizeVisitorId(session.metadata?.visitorId),
   });
   console.log('Bridged paid Stripe order into admin order system:', session.id);
 }

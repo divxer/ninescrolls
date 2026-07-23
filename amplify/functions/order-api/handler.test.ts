@@ -60,8 +60,17 @@ vi.mock('../../lib/organization/invoke-org-api', () => ({
 
 // CRM timeline emit (fire-and-forget; helper swallows its own dispatch failures)
 const mockEmitTimelineEventToCrm = vi.fn().mockResolvedValue(undefined);
+const mockInvokeCrmAction = vi.fn().mockResolvedValue(undefined);
 vi.mock('../../lib/crm/invoke-crm-api', () => ({
     emitTimelineEventToCrm: (...args: unknown[]) => mockEmitTimelineEventToCrm(...args),
+    invokeCrmAction: (...args: unknown[]) => mockInvokeCrmAction(...args),
+}));
+
+// VISITOR# identity bridge (createStripeOrder links paid orders to first-party visitors)
+const mockUpsertVisitorBridge = vi.fn().mockResolvedValue({ created: false, orgUpgraded: false });
+vi.mock('../../lib/crm/visitor-bridge', () => ({
+    toSend: (dc: unknown) => dc,
+    upsertVisitorBridge: (...args: unknown[]) => mockUpsertVisitorBridge(...args),
 }));
 
 const mockFetch = vi.fn().mockResolvedValue({ ok: true });
@@ -1210,6 +1219,8 @@ describe('order-api handler', () => {
             mockTransact.mockReset();
             mockPut.mockResolvedValue({});
             mockTransact.mockResolvedValue({});
+            mockUpsertVisitorBridge.mockReset();
+            mockUpsertVisitorBridge.mockResolvedValue({ created: false, orgUpgraded: false });
         });
 
         function transactItems(call: unknown[]): Record<string, unknown>[] {
@@ -1326,6 +1337,49 @@ describe('order-api handler', () => {
                 {} as any,
                 vi.fn(),
             )).rejects.toThrow(/missing order/);
+        });
+
+        it('stores visitorId on META and upserts the VISITOR# bridge (order source)', async () => {
+            mockUpsertVisitorBridge.mockResolvedValueOnce({ created: true, orgUpgraded: false });
+
+            await handler(
+                makeDirectInvokeEvent({ ...STRIPE_INPUT, visitorId: '550e8400-e29b-41d4-a716-446655440000' }) as any,
+                {} as any,
+                vi.fn(),
+            );
+
+            const items = transactItems(mockTransact.mock.calls[0]);
+            const meta = items.find((it) => it.SK === 'META' && String(it.PK).startsWith('ORDER#'))!;
+            expect(meta.visitorId).toBe('550e8400-e29b-41d4-a716-446655440000');
+
+            expect(mockUpsertVisitorBridge).toHaveBeenCalledTimes(1);
+            const bridgeInput = mockUpsertVisitorBridge.mock.calls[0][2] as Record<string, unknown>;
+            expect(bridgeInput.visitorId).toBe('550e8400-e29b-41d4-a716-446655440000');
+            expect(bridgeInput.sourceEntityType).toBe('order');
+            expect(bridgeInput.sourceEntityId).toBe(meta.orderId);
+            expect(bridgeInput.email).toBe('buyer@innatecontrol.com');
+            // New bridge → retro-resolve this visitor's sessions
+            expect(mockInvokeCrmAction).toHaveBeenCalledWith(
+                expect.objectContaining({ action: 'reResolveVisitorSessions', visitorId: '550e8400-e29b-41d4-a716-446655440000' }),
+            );
+        });
+
+        it('skips the bridge when no visitorId is provided (or it fails sanitation)', async () => {
+            await handler(makeDirectInvokeEvent(STRIPE_INPUT) as any, {} as any, vi.fn());
+            await handler(makeDirectInvokeEvent({ ...STRIPE_INPUT, visitorId: '<bad id>' }) as any, {} as any, vi.fn());
+            expect(mockUpsertVisitorBridge).not.toHaveBeenCalled();
+        });
+
+        it('bridge failure is non-fatal — the order is still returned', async () => {
+            mockUpsertVisitorBridge.mockRejectedValueOnce(new Error('bridge down'));
+
+            const result = await handler(
+                makeDirectInvokeEvent({ ...STRIPE_INPUT, visitorId: '550e8400-e29b-41d4-a716-446655440000' }) as any,
+                {} as any,
+                vi.fn(),
+            ) as Record<string, unknown>;
+
+            expect(result.orderId).toBeDefined();
         });
 
         it('throws when required fields are missing', async () => {

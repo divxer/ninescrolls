@@ -65,6 +65,7 @@ function makeSession(overrides: Record<string, unknown> = {}) {
             contactFirstName: 'Test',
             contactLastName: 'Buyer',
             contactPhone: '5551234567',
+            visitorId: '550e8400-e29b-41d4-a716-446655440000',
             shippingLine1: '1 Main St',
             shippingCity: 'Boston',
             shippingState: 'MA',
@@ -147,6 +148,13 @@ describe('stripe-webhook handler', () => {
         expect(payload.amountTotalCents).toBe(799900);
         // paidAt comes from the Stripe event's created epoch, not processing time
         expect(payload.paidAt).toBe(new Date(EVENT_CREATED_EPOCH * 1000).toISOString());
+        // First-party visitor identity flows from Stripe metadata into the bridge
+        expect(payload.visitorId).toBe('550e8400-e29b-41d4-a716-446655440000');
+        // …and onto the StripeOrders archive row
+        const archivePut = mockPut.mock.calls.find((c: unknown[]) =>
+            (c[0] as { Item?: Record<string, unknown> }).Item?.orderId === 'cs_live_test123');
+        expect((archivePut![0] as { Item: Record<string, unknown> }).Item.visitorId)
+            .toBe('550e8400-e29b-41d4-a716-446655440000');
     });
 
     it('handles checkout.session.async_payment_succeeded like a paid completion', async () => {

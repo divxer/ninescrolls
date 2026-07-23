@@ -1,5 +1,6 @@
 import { useState, type Dispatch, type SetStateAction } from 'react';
 import { getOrgOverride, setOrgOverride, undoOrgOverride, renameOrg, type OrgOverride } from '../../../../services/adminClassificationService';
+import { orgOverrideKey } from '../orgAggregation';
 import type { RfqSubmission } from '../../../../types/admin';
 import type { OrganizationRecord } from '../types';
 import type { OrgDetection } from './useOrgDetection';
@@ -32,7 +33,9 @@ export function OrgDetailHeader({
     setOverrideLoading(true);
     setOverrideMsg(null);
     try {
-      const result = await setOrgOverride(org.orgName, isTarget);
+      // ISP visitors: override keyed on the stable visitorId (org.key), never
+      // the synthesized city-level display name — see orgOverrideKey.
+      const result = await setOrgOverride(orgOverrideKey(org), isTarget);
       setOverride(result);
       setOverrideMsg({ type: 'success', text: `Marked as ${isTarget ? 'target' : 'non-target'} customer` });
     } catch {
@@ -46,9 +49,14 @@ export function OrgDetailHeader({
     setOverrideLoading(true);
     setOverrideMsg(null);
     try {
-      await undoOrgOverride(org.orgName);
+      const overrideKey = orgOverrideKey(org);
+      await undoOrgOverride(overrideKey);
+      // Also clear a legacy display-name-keyed override (pre-stable-key writes)
+      if (overrideKey !== org.orgName) {
+        try { await undoOrgOverride(org.orgName); } catch { /* no legacy override */ }
+      }
       // Re-fetch to get restored state
-      const fresh = await getOrgOverride(org.orgName);
+      const fresh = await getOrgOverride(overrideKey);
       setOverride(fresh);
       setOverrideMsg({ type: 'success', text: 'Override removed' });
     } catch {

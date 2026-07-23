@@ -100,6 +100,7 @@ export function buildOrderResponse(order: OrderItem, contacts: ContactItem[]): R
         declineReason: order.declineReason || null,
         stripeSessionId: order.stripeSessionId || null,
         stripePaymentIntentId: order.stripePaymentIntentId || null,
+        visitorId: order.visitorId || null,
     };
 }
 

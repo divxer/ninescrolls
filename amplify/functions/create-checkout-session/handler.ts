@@ -4,6 +4,7 @@ import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { env } from '$amplify/env/create-checkout-session';
 import { checkoutProductCatalog } from './productCatalog';
+import { sanitizeVisitorId } from '../../lib/analytics/visitor-id.js';
 
 type CheckoutItemInput = {
   id?: string;
@@ -36,6 +37,7 @@ type CheckoutRequestBody = {
   notes?: string;
   successUrl?: string;
   cancelUrl?: string;
+  visitorId?: string;
 };
 
 type LegacyHttpEvent = { httpMethod?: string };
@@ -201,6 +203,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
 
     const body = event.body ? (JSON.parse(event.body) as Partial<CheckoutRequestBody>) : {};
     const { items, customerEmail, customerName, contactInformation, shippingAddress, notes } = body;
+    const visitorId = sanitizeVisitorId(body.visitorId);
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return {
@@ -380,6 +383,9 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
         items: JSON.stringify(normalizedItems.map((i) => ({ id: i.id, name: i.catalogItem.name }))),
         notes: notes || '',
         customerName: customerName || '', // Store customer name in metadata
+        // First-party visitor identity — the webhook links the paid order back
+        // to this visitor's analytics sessions (deterministic, not IP-based)
+        ...(visitorId ? { visitorId } : {}),
       },
     };
 

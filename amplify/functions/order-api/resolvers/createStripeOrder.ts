@@ -5,8 +5,10 @@ import { buildOrderResponse, sendSlackNotification } from '../lib/orderHelper.js
 import type { AppSyncEvent, OrderItem, ContactItem } from '../lib/types.js';
 import { invokeOrganizationApi } from '../../../lib/organization/invoke-org-api.js';
 import { computeOrderScore } from '../../../lib/organization/lead-score.js';
-import { emitTimelineEventToCrm } from '../../../lib/crm/invoke-crm-api.js';
+import { emitTimelineEventToCrm, invokeCrmAction } from '../../../lib/crm/invoke-crm-api.js';
 import { buildOrderCreatedEmitArgs } from '../../../lib/crm/emit-builders.js';
+import { toSend, upsertVisitorBridge } from '../../../lib/crm/visitor-bridge.js';
+import { sanitizeVisitorId } from '../../../lib/analytics/visitor-id.js';
 
 /**
  * Internal-only resolver: create an admin order from a PAID Stripe checkout
@@ -41,6 +43,7 @@ interface CreateStripeOrderInput {
     shippingAddress?: string;
     notes?: string;
     paidAt?: string;
+    visitorId?: string;
 }
 
 /** Derive a product model from the checkout line description, e.g. "HY-4L - RF …" → "HY-4L" */
@@ -70,6 +73,7 @@ export async function createStripeOrder(event: AppSyncEvent) {
     const contactName = [input.contactFirstName, input.contactLastName].filter(Boolean).join(' ')
         || input.customerName
         || normalizedEmail;
+    const visitorId = sanitizeVisitorId(input.visitorId);
 
     const notes = [
         `Stripe checkout order — paid in full: $${amountUsd.toFixed(2)} ${currency} on ${paidDate}.`,
@@ -107,6 +111,7 @@ export async function createStripeOrder(event: AppSyncEvent) {
         source: 'STRIPE',
         stripeSessionId: input.stripeSessionId,
         stripePaymentIntentId: input.paymentIntentId || '',
+        ...(visitorId ? { visitorId } : {}),
         inquiryDate: paidDate,
         quoteSentDate: paidDate,
         poDate: paidDate,
@@ -270,6 +275,32 @@ export async function createStripeOrder(event: AppSyncEvent) {
             orderId,
             error: err instanceof Error ? err.message : String(err),
         }));
+    }
+
+    // 7. VISITOR# identity bridge + retro-resolve (non-fatal; upgrade-only) —
+    // same pattern as submit-rfq/submit-lead. This is the deterministic link
+    // from the anonymous analytics visitor to the paying customer; IP-org
+    // attribution (e.g. a Cloudflare relay egress) can never provide it.
+    if (visitorId) {
+        try {
+            const bridge = await upsertVisitorBridge(
+                toSend(docClient), TABLE_NAME(),
+                {
+                    visitorId, matchedOrgId: matchedOrgId ?? null, email: normalizedEmail,
+                    sourceEntityType: 'order', sourceEntityId: orderId, now,
+                },
+            );
+            if (bridge.created || bridge.orgUpgraded) {
+                await invokeCrmAction({ action: 'reResolveVisitorSessions', visitorId });
+            }
+        } catch (err) {
+            console.error(JSON.stringify({
+                event: 'crm.visitor_bridge.write_failed',
+                visitorId,
+                orderId,
+                error: err instanceof Error ? err.message : String(err),
+            }));
+        }
     }
 
     await emitTimelineEventToCrm(buildOrderCreatedEmitArgs(

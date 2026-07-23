@@ -63,6 +63,8 @@ export interface Order {
   // Stripe checkout orders (source === 'STRIPE') only
   stripeSessionId?: string | null;
   stripePaymentIntentId?: string | null;
+  // First-party analytics visitor id (deterministic visitor→order link)
+  visitorId?: string | null;
 }
 
 export interface OrderContact {

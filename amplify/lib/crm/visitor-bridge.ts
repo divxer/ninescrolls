@@ -6,10 +6,10 @@ import { GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
 export interface VisitorBridge {
   PK: string; SK: 'STATE';
   matchedOrgId: string | null;
-  orgSource: 'rfq_match' | 'lead_match' | 'manual' | null;
+  orgSource: 'rfq_match' | 'lead_match' | 'order_match' | 'manual' | null;
   email: string | null;
   // Record the source of the last MATERIAL change — the no-op short-circuit intentionally skips last-touch updates.
-  sourceEntityType: 'rfq' | 'lead';
+  sourceEntityType: 'rfq' | 'lead' | 'order';
   sourceEntityId: string;
   firstSeenAt: string; updatedAt: string;
 }
@@ -29,7 +29,7 @@ export async function readVisitorBridge(send: Send, tableName: string, visitorId
 
 export interface UpsertBridgeInput {
   visitorId: string; matchedOrgId: string | null; email: string | null;
-  sourceEntityType: 'rfq' | 'lead'; sourceEntityId: string; now: string;
+  sourceEntityType: 'rfq' | 'lead' | 'order'; sourceEntityId: string; now: string;
 }
 
 // Upgrade-only: a real matchedOrgId is never downgraded (latest-real-wins); email fills when null.
@@ -39,7 +39,11 @@ export async function upsertVisitorBridge(send: Send, tableName: string, input: 
   if (!input.visitorId) return { created: false, orgUpgraded: false };
   const incomingOrg = input.matchedOrgId || null;   // '' → null (unmatched-order convention)
   const incomingEmail = input.email || null;        // '' → null (same normalization as org)
-  const orgSource = input.sourceEntityType === 'rfq' ? 'rfq_match' as const : 'lead_match' as const;
+  const orgSource = input.sourceEntityType === 'rfq'
+    ? 'rfq_match' as const
+    : input.sourceEntityType === 'lead'
+      ? 'lead_match' as const
+      : 'order_match' as const;
   const existing = await readVisitorBridge(send, tableName, input.visitorId);
 
   if (!existing) {
