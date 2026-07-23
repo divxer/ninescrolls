@@ -23,13 +23,9 @@ describe('linkVisitor', () => {
     upsertManualMock.mockResolvedValueOnce({ written: true, existingOrgId: 'acme.com' });
     const out = await linkVisitor({ visitorId: 'v1', targetOrgId: 'acme.com', operator: 'op' });
     expect(ensureRepairMarker).toHaveBeenCalledWith(expect.objectContaining({ unitType: 'analytics', unitKey: 'v1', targetOrgId: 'acme.com' }));
-    // Fenced completion delete: linkVisitor created a version-LESS marker, so
-    // the fence is attribute_not_exists(workVersion) — concurrent published
-    // work (version present) survives the delete
     // ABA closed: the publish is VERSIONED (ensureRepairMarker) and the
     // completion delete carries the exact version we published — a concurrent
     // publish (different version) can never be killed by our delete
-    expect(ensureRepairMarker).toHaveBeenCalledWith(expect.objectContaining({ unitType: 'analytics', unitKey: 'v1' }));
     expect(deleteRepairMarkerIfUnchanged).toHaveBeenCalledWith({ unitType: 'analytics', unitKey: 'v1', workVersion: 3 });
     // NOT markerOwned: a truncated retro must publish its own marker (the
     // initial Put above is best-effort and may have failed)
