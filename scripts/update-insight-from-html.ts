@@ -82,10 +82,10 @@ if (unknownFlags.length > 0) {
 }
 const args = rawArgs.filter((a) => !a.startsWith('--'));
 const regenMeta = rawArgs.includes('--regen-meta');
-const slug = args[0];
-const filePath = args[1];
-if (!slug || !filePath) {
+if (args.length !== 2) {
+  console.error(`Expected exactly 2 arguments (<slug> <html-file>), got ${args.length}: ${args.join(' ')}`);
   console.error('Usage: npx tsx scripts/update-insight-from-html.ts <slug> <html-file> [--regen-meta]');
   process.exit(1);
 }
+const [slug, filePath] = args;
 main(slug, filePath).catch((e) => { console.error(e); process.exit(1); });
