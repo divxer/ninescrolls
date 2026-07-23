@@ -16,14 +16,20 @@ export type ProjectOutcome =
 // (grep: ConditionalCheckFailedException/TransactionCanceledException/ThrottlingException/
 // AccessDeniedException/AbortError/NotFound/UnknownError in amplify/**) and our own fence/guard
 // error classes (FenceLostError, MergeFenceLostError, OrgInactiveError).
-export const KNOWN_ERROR_NAMES: ReadonlySet<string> = Object.freeze(new Set([
+//
+// DELIBERATELY MODULE-PRIVATE and backed by a frozen array of primitives: a frozen array IS
+// immutable (push/index-assignment throw in strict-mode ESM), whereas Object.freeze(new Set())
+// leaves .add() working; and not exporting it means no importer can widen the diagnostic
+// boundary. Closure is verified behaviorally through sanitizeDiagnostic's public API only.
+const KNOWN_ERROR_NAME_LIST: readonly string[] = Object.freeze([
   'Error', 'TypeError', 'RangeError', 'SyntaxError',
   'ConditionalCheckFailedException', 'TransactionCanceledException', 'ResourceNotFoundException',
   'ThrottlingException', 'ProvisionedThroughputExceededException', 'ValidationException',
   'AccessDeniedException', 'ServiceException', 'TimeoutError',
   'AbortError', 'NotFound', 'UnknownError',
   'FenceLostError', 'MergeFenceLostError', 'OrgInactiveError',
-]));
+]);
+const KNOWN_ERROR_NAMES: ReadonlySet<string> = new Set(KNOWN_ERROR_NAME_LIST);   // private O(1) view of the frozen source
 
 const DIAGNOSTIC_MAX = 200;                       // belt-and-braces cap on the assembled diagnostic
 

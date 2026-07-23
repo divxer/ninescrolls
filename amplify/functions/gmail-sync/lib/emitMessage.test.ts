@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const invokeCrmApi = vi.fn();
 vi.mock('../../../lib/crm/invoke-crm-api', () => ({ invokeCrmApi: (...a: unknown[]) => invokeCrmApi(...a) }));
 
-import { projectMessage, sanitizeDiagnostic, KNOWN_ERROR_NAMES } from './emitMessage';
+import { projectMessage, sanitizeDiagnostic } from './emitMessage';
 import { GmailApiError } from './gmailClient';
 import type { GmailEmit } from './mapMessage';
 
@@ -109,29 +109,16 @@ describe('sanitizeDiagnostic (allowlist — structured metadata only, never exce
     expect(sanitizeDiagnostic(sdk)).toEqual({ errorClass: 'invoke_error', diagnostic: '' });
   });
 
-  it('KNOWN_ERROR_NAMES is the exported, frozen, closed mapping', () => {
-    expect(Object.isFrozen(KNOWN_ERROR_NAMES)).toBe(true);
-    expect(Array.from(KNOWN_ERROR_NAMES).sort()).toEqual([
-      'AbortError',
-      'AccessDeniedException',
-      'ConditionalCheckFailedException',
-      'Error',
-      'FenceLostError',
-      'MergeFenceLostError',
-      'NotFound',
-      'OrgInactiveError',
-      'ProvisionedThroughputExceededException',
-      'RangeError',
-      'ResourceNotFoundException',
-      'ServiceException',
-      'SyntaxError',
-      'ThrottlingException',
-      'TimeoutError',
-      'TransactionCanceledException',
-      'TypeError',
-      'UnknownError',
-      'ValidationException',
-    ]);
+  // Behavioral closure probe through the PUBLIC API only (the allowlist itself is deliberately
+  // module-private — a frozen-Set contents/isFrozen certification was proven meaningless, since
+  // Object.freeze does not freeze Set entries and an export lets importers widen the boundary).
+  it('a plausibly error-shaped name that would pass the old regex (CustomerRecordError) → bare class', () => {
+    const crm = new Error('crm-api error: x'); crm.name = 'CustomerRecordError';
+    expect(sanitizeDiagnostic(crm)).toEqual({ errorClass: 'crm_api_error', diagnostic: '' });
+    const sdk = Object.assign(new Error('x'), { name: 'CustomerRecordError', $metadata: {} });
+    expect(sanitizeDiagnostic(sdk)).toEqual({ errorClass: 'invoke_error', diagnostic: '' });
+    class CustomerRecordError extends Error {}
+    expect(sanitizeDiagnostic(new CustomerRecordError('x'))).toEqual({ errorClass: 'unknown', diagnostic: '' });
   });
 
   it('PII-laden plain Error → unknown + constructor name only; NO message fragment survives', () => {
