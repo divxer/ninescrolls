@@ -41,6 +41,39 @@ export async function putRepairMarker(args: {
   await docClient.send(new PutCommand({ TableName: TABLE_NAME(), Item: item }));
 }
 
+/**
+ * Conditional create — ensures a pending marker EXISTS without clobbering one
+ * already mid-drain (an unconditional Put would reset attemptCount/lastError).
+ * Used by the retro truncation path: a `hasMore` return persists a RETRO#STATE
+ * cursor, but nothing scans that state — this marker is what puts the
+ * remaining work on the CRM_REPAIR#pending partition the scheduled drainer
+ * (CrmRepairDrainRule → reconcileRepair) actually queries.
+ */
+export async function ensureRepairMarker(args: {
+  unitType: RepairUnitType; unitKey: string; targetOrgId: string; operator: string; createdAt: string;
+}): Promise<{ created: boolean }> {
+  const item: RepairMarkerItem = {
+    ...repairMarkerKeys(args.unitType, args.unitKey),
+    GSI1PK: 'CRM_REPAIR#pending', GSI1SK: `${args.createdAt}#${args.unitKey}`,
+    entityType: 'CRM_REPAIR',
+    unitType: args.unitType, unitKey: args.unitKey,
+    targetOrgId: args.targetOrgId, operator: args.operator, createdAt: args.createdAt,
+    status: 'pending', stuckReason: null, attemptCount: 0, lastAttemptAt: null, lastError: null,
+  };
+  try {
+    await docClient.send(new PutCommand({
+      TableName: TABLE_NAME(), Item: item,
+      ConditionExpression: 'attribute_not_exists(PK)',
+    }));
+    return { created: true };
+  } catch (err: unknown) {
+    if (err instanceof Error && err.name === 'ConditionalCheckFailedException') {
+      return { created: false }; // already tracked (possibly mid-drain) — never reset its state
+    }
+    throw err;
+  }
+}
+
 export async function deleteRepairMarker(unitType: RepairUnitType, unitKey: string): Promise<void> {
   await docClient.send(new DeleteCommand({ TableName: TABLE_NAME(), Key: repairMarkerKeys(unitType, unitKey) }));
 }
