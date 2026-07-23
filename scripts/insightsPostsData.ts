@@ -2165,6 +2165,10 @@ export const insightsPosts: InsightsPost[] = [
       {
         question: 'How do you manage stress in HDP-CVD multilayer films?',
         answer: 'Alternate low and medium bias steps, tune gas ratio and substrate temperature, and apply post-deposition anneal or plasma post-treatment. Stress engineering is typically done at the recipe level by trading sputter component vs deposition component within each cycle.'
+      },
+      {
+        question: 'How does HDP-CVD differ from remote (downstream) plasma CVD?',
+        answer: 'In HDP-CVD the wafer sits inside a dense plasma and receives both radicals and a bias-controlled ion flux — enabling bottom-up gap-fill and dense films, at the cost of plasma-damage risk. In remote/downstream systems the plasma is generated away from the wafer and mostly neutral radicals arrive, giving damage-free but slower, non-gap-filling deposition. Pseudo-remote designs sit in between, with a reduced, tunable ion flux. Choose by whether the film needs ion bombardment (gap-fill, densification) or must avoid it (damage-sensitive devices).'
       }
     ]
   },
@@ -2865,6 +2869,32 @@ export const insightsPosts: InsightsPost[] = [
     readTime: 22,
     imageUrl: 'https://cdn.ninescrolls.com/insights/future-of-plasma-etching-cover-lg.webp',
     slug: 'understanding-differences-pe-rie-icp-rie-plasma-etching',
+    faqs: [
+      {
+        question: 'What is the main difference between RIE and ICP-RIE?',
+        answer: 'The fundamental difference is parameter coupling. In RIE (a capacitively coupled plasma system), plasma density and ion energy are controlled by a single RF source — increasing power raises both simultaneously. ICP-RIE uses two separate RF sources: an ICP coil for plasma generation and an independent RF bias for ion energy. This decoupled architecture allows you to achieve high etch rates (from high plasma density) with low damage (from low bias power) — a combination that is impossible in conventional RIE.'
+      },
+      {
+        question: 'When should I use the Bosch process instead of continuous etching?',
+        answer: 'The Bosch (time-multiplexed) process is preferred when you need deep, high-aspect-ratio features in silicon (typically &gt; 10 µm depth and &gt; 10:1 aspect ratio). Continuous etching with simultaneous etch/passivation gases (e.g., SF₆/C₄F₈ mixed) produces smoother sidewalls but is limited to lower aspect ratios. If sidewall scalloping is unacceptable (e.g., for optical applications), consider cryogenic etching as an alternative.'
+      },
+      {
+        question: 'What gases are most commonly used in plasma etching?',
+        answer: 'The choice depends on the target material: SF₆ and CF₄ for silicon; CHF₃ and C₄F₈ for SiO₂ and Si₃N₄; Cl₂/BCl₃ for metals (Al) and III-V semiconductors; O₂ for photoresist stripping and organic materials. Additives like Ar improve bombardment, while O₂ or H₂ tune selectivity by modifying the fluorocarbon polymer chemistry.'
+      },
+      {
+        question: 'How do I reduce etch damage to sensitive devices?',
+        answer: 'Use ICP-RIE with low RF bias power (or zero bias for purely chemical etching at high density). Pulsed plasma techniques — where RF power is modulated at 1–10 kHz — can further reduce ion energy spread and charge-induced damage. For the most damage-sensitive applications (quantum devices, photonic crystals), downstream PE may be appropriate. See our article on Atomic Layer Etching for the ultimate in damage-free processing.'
+      },
+      {
+        question: 'Can I etch multiple materials in one chamber?',
+        answer: 'Yes, with proper gas and process switching. ICP-RIE systems with multiple mass flow controllers (typically 4–8 gas lines) and automated recipe management can handle silicon, dielectrics, metals, and III-V materials. Cross-contamination can be managed with chamber conditioning steps between processes. NineScrolls systems support multiple process design kits for this purpose.'
+      },
+      {
+        question: 'How does ICP source power affect ion density and etch rate?',
+        answer: 'Source power heats plasma electrons through inductive coupling, so ion density scales roughly linearly with source power over most of the operating range &mdash; while ion energy stays nearly constant, since it is set independently by the bias supply. Two non-idealities matter in practice: at low power the discharge sits in capacitive E-mode and jumps abruptly in density when it transitions to inductive H-mode, and at high power density growth saturates as wall losses and neutral gas depletion take over. Etch rate follows the same pattern &mdash; near-linear, then plateau &mdash; so characterize an etch-rate-vs-power curve and operate on the linear portion, using bias power (not source power) to tune anisotropy and damage.'
+      }
+    ],
     tags: ['Plasma Etching', 'PE', 'RIE', 'ICP-RIE', 'Semiconductor Manufacturing', 'Etching Technology', 'Bosch Process', 'DRIE', 'ICP Etching'],
     relatedProducts: [
       { href: '/products/rie-etcher', label: 'RIE Etcher Series', subtitle: 'CCP-RIE for dielectric and polymer etching' },
@@ -11733,7 +11763,7 @@ result = differential_evolution(
     // The previous inline blob here was a stale copy of the live DDB article — do NOT restore it.
     // The empty string ensures seed/update scripts never overwrite the live DDB content.
     // Metadata below is still consumed (seed-insights.ts RELATED_PRODUCTS_MAP / HERO_IMAGES_MAP).
-    content: ,
+    content: '',
     author: 'NineScrolls Engineering',
     publishDate: '2026-03-27',
     category: 'Materials Science',

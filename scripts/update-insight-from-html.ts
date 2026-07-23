@@ -47,15 +47,17 @@ async function main(slug: string, filePath: string) {
   console.log(`Found: id=${record.id}  title="${record.title}"`);
   console.log(`  current content: ${(record.content || '').length} chars`);
 
+  // Excerpt and readTime are curated metadata — preserve the live values by default.
+  // Pass --regen-meta to explicitly regenerate them from the new content.
   const plain = stripHtml(content);
-  const readTime = estimateReadTime(plain);
-  const excerpt = plain.replace(/^\s+/, '').slice(0, 200);
+  const meta = regenMeta
+    ? { excerpt: plain.replace(/^\s+/, '').slice(0, 200), readTime: estimateReadTime(plain) }
+    : {};
 
   const { errors } = await client.models.InsightsPost.update({
     id: record.id,
     content,
-    excerpt,
-    readTime,
+    ...meta,
   });
 
   if (errors) {
@@ -63,13 +65,20 @@ async function main(slug: string, filePath: string) {
     process.exit(1);
   }
 
-  console.log(`Updated!  new content: ${content.length} chars  readTime: ${readTime} min`);
+  console.log(
+    `Updated!  new content: ${content.length} chars` +
+    (regenMeta
+      ? `  readTime: ${meta.readTime} min (regenerated)`
+      : `  (excerpt/readTime preserved — use --regen-meta to regenerate)`),
+  );
 }
 
-const slug = process.argv[2];
-const filePath = process.argv[3];
+const args = process.argv.slice(2).filter((a) => a !== '--regen-meta');
+const regenMeta = process.argv.includes('--regen-meta');
+const slug = args[0];
+const filePath = args[1];
 if (!slug || !filePath) {
-  console.error('Usage: npx tsx scripts/update-insight-from-html.ts <slug> <html-file>');
+  console.error('Usage: npx tsx scripts/update-insight-from-html.ts <slug> <html-file> [--regen-meta]');
   process.exit(1);
 }
 main(slug, filePath).catch((e) => { console.error(e); process.exit(1); });
