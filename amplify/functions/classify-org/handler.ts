@@ -422,9 +422,28 @@ async function handleOverride(body: ClassifyRequest, corsHeaders: Record<string,
         // No TTL — manual entries never expire
     };
 
-    await ddbClient.send(new PutCommand({
+    // Field-level update, NEVER a full-record Put: a Put would drop
+    // displayName (a saved rename) and clobber any field committed
+    // concurrently. Only the classification/manual fields are touched;
+    // ttl is removed (manual entries never expire) along with the stale
+    // AI provider.
+    await ddbClient.send(new UpdateCommand({
         TableName: TABLE_NAME,
-        Item: newItem,
+        Key: { orgName: body.orgName },
+        UpdateExpression:
+            'SET organizationType = :ot, isTargetCustomer = :it, confidence = :c, reason = :r, classifiedAt = :at, #src = :src'
+            + (previousClassification ? ', previousClassification = :prev' : '')
+            + ' REMOVE #ttl, provider',
+        ExpressionAttributeNames: { '#src': 'source', '#ttl': 'ttl' },
+        ExpressionAttributeValues: {
+            ':ot': newItem.organizationType,
+            ':it': newItem.isTargetCustomer,
+            ':c': newItem.confidence,
+            ':r': newItem.reason,
+            ':at': newItem.classifiedAt,
+            ':src': 'manual',
+            ...(previousClassification ? { ':prev': previousClassification } : {}),
+        },
     }));
 
     // Invalidate few-shot corrections cache
@@ -473,9 +492,26 @@ async function handleUndo(body: ClassifyRequest, corsHeaders: Record<string, str
             ttl,
         };
 
-        await ddbClient.send(new PutCommand({
+        // Field-level update (same rationale as handleOverride): a full Put
+        // would drop a saved rename's displayName.
+        await ddbClient.send(new UpdateCommand({
             TableName: TABLE_NAME,
-            Item: restored,
+            Key: { orgName: body.orgName },
+            UpdateExpression:
+                'SET organizationType = :ot, isTargetCustomer = :it, confidence = :c, reason = :r, classifiedAt = :at, #src = :src, #ttl = :ttl'
+                + (restored.provider ? ', provider = :p' : '')
+                + ' REMOVE previousClassification' + (restored.provider ? '' : ', provider'),
+            ExpressionAttributeNames: { '#src': 'source', '#ttl': 'ttl' },
+            ExpressionAttributeValues: {
+                ':ot': restored.organizationType,
+                ':it': restored.isTargetCustomer,
+                ':c': restored.confidence,
+                ':r': restored.reason,
+                ':at': restored.classifiedAt,
+                ':src': restored.source,
+                ':ttl': ttl,
+                ...(restored.provider ? { ':p': restored.provider } : {}),
+            },
         }));
 
         invalidateCorrectionsCache();
@@ -484,6 +520,29 @@ async function handleUndo(body: ClassifyRequest, corsHeaders: Record<string, str
             statusCode: 200,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             body: JSON.stringify({ ...restored, cached: false, undone: true }),
+        };
+    } else if (existing.displayName) {
+        // No previous classification, but the record carries a saved rename —
+        // deleting would lose it. Neutralize to the same default shape a
+        // rename-of-missing creates, keeping displayName.
+        await ddbClient.send(new UpdateCommand({
+            TableName: TABLE_NAME,
+            Key: { orgName: body.orgName },
+            UpdateExpression:
+                'SET organizationType = :ot, isTargetCustomer = :it, confidence = :c, reason = :r, classifiedAt = :at, #src = :src'
+                + ' REMOVE previousClassification, provider, #ttl',
+            ExpressionAttributeNames: { '#src': 'source', '#ttl': 'ttl' },
+            ExpressionAttributeValues: {
+                ':ot': 'unknown', ':it': false, ':c': 0, ':r': '', ':at': new Date().toISOString(), ':src': 'manual',
+            },
+        }));
+
+        invalidateCorrectionsCache();
+
+        return {
+            statusCode: 200,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ undone: true, deleted: false, displayName: existing.displayName }),
         };
     } else {
         // No previous — delete the entry entirely

@@ -190,3 +190,85 @@ describe('classify-org rename — atomic update + lossless legacy migration', ()
         expect(res.body).toContain('appeared and vanished');
     });
 });
+
+describe('classify-org override/undo — displayName (rename) preservation', () => {
+    const RENAMED_AI_RECORD = {
+        orgName: 'v-abc123',
+        displayName: 'InnateControl visitor',
+        organizationType: 'telecom_isp',
+        isTargetCustomer: false,
+        confidence: 0.9,
+        reason: 'AI classified',
+        source: 'ai',
+        provider: 'bedrock',
+        ttl: 1753000000,
+    };
+
+    it('override on a renamed record: field-level Update only — displayName untouched, ttl/provider removed', async () => {
+        mockGet.mockResolvedValueOnce({ Item: RENAMED_AI_RECORD });
+
+        const res = await handler(makeEvent({
+            action: 'override', orgName: 'v-abc123', isTargetCustomer: true, organizationType: 'enterprise',
+        }), {} as never, vi.fn());
+
+        expect(res.statusCode).toBe(200);
+        // NEVER a full-record Put (which would drop displayName)
+        expect(mockPut).not.toHaveBeenCalled();
+        expect(mockUpdate).toHaveBeenCalledTimes(1);
+        const u = mockUpdate.mock.calls[0][0] as Record<string, any>;
+        expect(u.UpdateExpression).not.toContain('displayName');
+        expect(u.UpdateExpression).toContain('REMOVE #ttl, provider');
+        expect(u.ExpressionAttributeValues[':src']).toBe('manual');
+        expect(u.ExpressionAttributeValues[':it']).toBe(true);
+        // previousClassification captured from the existing record
+        expect(u.ExpressionAttributeValues[':prev']).toMatchObject({ organizationType: 'telecom_isp', source: 'ai' });
+    });
+
+    it('undo restore: field-level Update — displayName untouched, previousClassification removed', async () => {
+        mockGet.mockResolvedValueOnce({
+            Item: {
+                ...RENAMED_AI_RECORD,
+                source: 'manual',
+                previousClassification: { organizationType: 'telecom_isp', isTargetCustomer: false, confidence: 0.9, reason: 'AI', source: 'ai', provider: 'bedrock' },
+            },
+        });
+
+        const res = await handler(makeEvent({ action: 'undo', orgName: 'v-abc123' }), {} as never, vi.fn());
+
+        expect(res.statusCode).toBe(200);
+        expect(mockPut).not.toHaveBeenCalled();
+        const u = mockUpdate.mock.calls[0][0] as Record<string, any>;
+        expect(u.UpdateExpression).not.toContain('displayName');
+        expect(u.UpdateExpression).toContain('REMOVE previousClassification');
+        expect(u.ExpressionAttributeValues[':src']).toBe('ai');
+        expect(u.ExpressionAttributeValues[':p']).toBe('bedrock');
+    });
+
+    it('undo with no previousClassification but a saved rename: neutralizes instead of deleting the rename', async () => {
+        mockGet.mockResolvedValueOnce({
+            Item: { orgName: 'v-abc123', displayName: 'InnateControl visitor', organizationType: 'enterprise', isTargetCustomer: true, confidence: 1, reason: 'Manual', source: 'manual' },
+        });
+
+        const res = await handler(makeEvent({ action: 'undo', orgName: 'v-abc123' }), {} as never, vi.fn());
+
+        expect(res.statusCode).toBe(200);
+        // No DeleteCommand — the record (and its displayName) survives
+        expect(mockUpdate).toHaveBeenCalledTimes(1);
+        const u = mockUpdate.mock.calls[0][0] as Record<string, any>;
+        expect(u.UpdateExpression).not.toContain('displayName');
+        expect(u.ExpressionAttributeValues[':ot']).toBe('unknown');
+        expect(JSON.parse(res.body)).toMatchObject({ undone: true, deleted: false, displayName: 'InnateControl visitor' });
+    });
+
+    it('undo with no previousClassification and no rename still deletes the record entirely', async () => {
+        mockGet.mockResolvedValueOnce({
+            Item: { orgName: 'v-abc123', organizationType: 'enterprise', isTargetCustomer: true, confidence: 1, reason: 'Manual', source: 'manual' },
+        });
+
+        const res = await handler(makeEvent({ action: 'undo', orgName: 'v-abc123' }), {} as never, vi.fn());
+
+        expect(res.statusCode).toBe(200);
+        expect(mockUpdate).not.toHaveBeenCalled();
+        expect(JSON.parse(res.body)).toMatchObject({ undone: true, deleted: true });
+    });
+});
