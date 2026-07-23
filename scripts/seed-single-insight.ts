@@ -13,7 +13,7 @@ import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../amplify/data/resource';
 import { insightsPosts } from './insightsPostsData';
 import { authenticate } from './lib/auth';
-import { resolveArticleBody } from './lib/articleBody';
+import { buildInsightRecord } from './lib/insightRecord';
 
 import amplifyOutputs from '../amplify_outputs.json';
 Amplify.configure(amplifyOutputs as any);
@@ -47,32 +47,20 @@ async function seedSingleInsight(slug: string) {
   console.log(`  relatedProducts: ${post.relatedProducts?.length || 0}`);
   console.log(`  content length: ${(post.content || '').length} chars\n`);
 
-  // HTML-backed articles keep content:'' in insightsPostsData.ts and store their
-  // body in scripts/articles/<slug>.html — load it so the seeded record is complete.
-  const body = resolveArticleBody(slug, post.content);
-  if (body.source === 'html-file') {
-    console.log(`  Body loaded from scripts/articles/${slug}.html (${body.content!.length} chars)`);
-  } else if (body.source === 'none') {
-    console.warn(
-      `  WARNING: "${slug}" has no inline content and no scripts/articles/${slug}.html — seeding metadata only.\n`
-    );
+  // Shared record construction (same as the bulk seeder): resolves the body from
+  // inline content or scripts/articles/<slug>.html, and carries full metadata
+  // (relatedProducts, heroImages, isStandaloneComponent, articleType, faqs).
+  // Fails closed: throws when no body can be resolved — never seed a stub.
+  let record: ReturnType<typeof buildInsightRecord>;
+  try {
+    record = buildInsightRecord(post);
+  } catch (err) {
+    console.error(`ABORT: ${err instanceof Error ? err.message : err}`);
+    process.exit(1);
   }
+  console.log(`  Body resolved (${record.content.length} chars)\n`);
 
-  const { data, errors } = await client.models.InsightsPost.create({
-    slug: post.slug,
-    title: post.title,
-    content: body.content,
-    excerpt: post.excerpt || null,
-    author: post.author,
-    publishDate: post.publishDate,
-    category: post.category,
-    readTime: post.readTime,
-    imageUrl: post.imageUrl,
-    tags: post.tags,
-    relatedProducts: post.relatedProducts ? JSON.stringify(post.relatedProducts) : null,
-    heroImages: null,
-    isStandaloneComponent: false,
-  });
+  const { data, errors } = await client.models.InsightsPost.create(record);
 
   if (errors) {
     console.error('Create failed:', errors);

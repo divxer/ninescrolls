@@ -12,6 +12,20 @@
  */
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
+import { fileURLToPath } from 'url';
+
+// Resolve scripts/articles/ relative to THIS file, not process.cwd(), so seeds
+// behave identically no matter which directory the script is launched from.
+// (Vitest's transform serves modules from a non-file URL — fall back to cwd
+// there; test runs always start at the repo root.)
+function defaultArticlesDir(): string {
+  try {
+    return fileURLToPath(new URL('../articles', import.meta.url));
+  } catch {
+    return join(process.cwd(), 'scripts', 'articles');
+  }
+}
+const DEFAULT_ARTICLES_DIR = defaultArticlesDir();
 
 export function cleanArticleHtml(html: string): string {
   const bodyMatch = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
@@ -30,7 +44,7 @@ export function cleanArticleHtml(html: string): string {
 export function resolveArticleBody(
   slug: string,
   inlineContent: string | undefined | null,
-  articlesDir: string = join(process.cwd(), 'scripts', 'articles'),
+  articlesDir: string = DEFAULT_ARTICLES_DIR,
 ): { content: string | null; source: 'inline' | 'html-file' | 'none' } {
   if (inlineContent && inlineContent.trim()) {
     return { content: inlineContent, source: 'inline' };
