@@ -1350,7 +1350,8 @@ describe('order-api handler', () => {
                     },
                 });
             mockQuery.mockResolvedValueOnce({ Items: [SAMPLE_CONTACT] });
-            mockUpsertVisitorBridge.mockResolvedValueOnce({ created: true, orgUpgraded: false, orgChanged: false });
+            // Bridge unchanged (all flags false) — the bridge-ok-but-reResolve-
+            // failed crash window looks exactly like this on retry
 
             const result = await handler(
                 makeDirectInvokeEvent(STRIPE_INPUT) as any,
@@ -1366,11 +1367,32 @@ describe('order-api handler', () => {
             expect(bridgeInput.matchedOrgId).toBe('org-innate');
             expect(bridgeInput.sourceEntityType).toBe('order');
             expect(bridgeInput.sourceEntityId).toBe('ord-20260722-d169');
+            // Email restored from the stored primary contact, not the retry request
+            expect(bridgeInput.email).toBe('jane@stanford.edu');
+            // reResolve fires UNCONDITIONALLY on the heal path — an unchanged
+            // bridge must still cover the reResolve-failed crash window
             expect(mockInvokeCrmAction).toHaveBeenCalledWith(
                 expect.objectContaining({ action: 'reResolveVisitorSessions' }),
             );
             // The NON-idempotent org score upsert must NOT run again
             expect(mockInvokeOrgApi).not.toHaveBeenCalled();
+        });
+
+        it('duplicate-path bridge failure rethrows so Stripe keeps retrying', async () => {
+            mockTransact.mockRejectedValueOnce(makeCancel(MARKER_EXISTS_REASONS));
+            mockGet
+                .mockResolvedValueOnce({ Item: { PK: 'STRIPE_SESSION#cs_live_test123', orderId: 'ord-20260722-d169' } })
+                .mockResolvedValueOnce({
+                    Item: { ...SAMPLE_ORDER, orderId: 'ord-20260722-d169', visitorId: '550e8400-e29b-41d4-a716-446655440000' },
+                });
+            mockQuery.mockResolvedValueOnce({ Items: [SAMPLE_CONTACT] });
+            mockUpsertVisitorBridge.mockRejectedValueOnce(new Error('bridge down'));
+
+            await expect(handler(
+                makeDirectInvokeEvent(STRIPE_INPUT) as any,
+                {} as any,
+                vi.fn(),
+            )).rejects.toThrow('bridge down');
         });
 
         it('duplicate path without a stored visitorId skips the bridge quietly', async () => {
@@ -1421,16 +1443,18 @@ describe('order-api handler', () => {
             expect(mockUpsertVisitorBridge).not.toHaveBeenCalled();
         });
 
-        it('bridge failure is non-fatal — the order is still returned', async () => {
+        it('create-path bridge failure rethrows (webhook 500 → Stripe retry → duplicate self-heal)', async () => {
             mockUpsertVisitorBridge.mockRejectedValueOnce(new Error('bridge down'));
 
-            const result = await handler(
+            await expect(handler(
                 makeDirectInvokeEvent({ ...STRIPE_INPUT, visitorId: '550e8400-e29b-41d4-a716-446655440000' }) as any,
                 {} as any,
                 vi.fn(),
-            ) as Record<string, unknown>;
+            )).rejects.toThrow('bridge down');
 
-            expect(result.orderId).toBeDefined();
+            // The idempotent CRM timeline emit ran BEFORE the throwing link —
+            // a bridge outage must not starve the order_created event
+            expect(mockEmitTimelineEventToCrm).toHaveBeenCalledTimes(1);
         });
 
         it('throws when required fields are missing', async () => {

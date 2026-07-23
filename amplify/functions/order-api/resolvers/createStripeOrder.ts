@@ -52,35 +52,37 @@ function deriveModel(productName: string): string {
 }
 
 /**
- * VISITOR# identity bridge + retro-resolve (non-fatal) — the deterministic
- * link from the anonymous analytics visitor to the paying customer; IP-org
- * attribution (e.g. a Cloudflare relay egress) can never provide it.
- * Idempotent (bridge upsert no-ops when nothing changes), so it runs on BOTH
- * the create path and the duplicate path: a crash after the order transaction
- * but before this link must self-heal on the webhook retry. It deliberately
- * does NOT touch the org score upsert — that is non-idempotent and create-only.
+ * VISITOR# identity bridge + retro-resolve — the deterministic link from the
+ * anonymous analytics visitor to the paying customer; IP-org attribution
+ * (e.g. a Cloudflare relay egress) can never provide it.
+ *
+ * THROWS on failure (unlike the rfq/lead callers, which must return 200 to a
+ * user-facing form): the webhook's 500-→-Stripe-retry loop is this link's
+ * persistent retry mechanism, and the duplicate path self-heals on each
+ * retry. Idempotent — the bridge upsert no-ops when nothing changes.
+ *
+ * `alwaysReResolve` (duplicate path): fire reResolveVisitorSessions even when
+ * the bridge is unchanged. Covers the bridge-written-but-reResolve-failed
+ * crash window, where a retry sees no bridge delta yet the sessions were
+ * never resolved. reResolve is an idempotent recompute, and duplicates only
+ * occur on Stripe retries/replays, so the extra call is bounded.
+ *
+ * Deliberately does NOT touch the org score upsert — that is non-idempotent
+ * and create-only.
  */
 async function linkVisitorToOrder(args: {
     visitorId: string; orderId: string; matchedOrgId: string | null; email: string; now: string;
+    alwaysReResolve?: boolean;
 }): Promise<void> {
-    try {
-        const bridge = await upsertVisitorBridge(
-            toSend(docClient), TABLE_NAME(),
-            {
-                visitorId: args.visitorId, matchedOrgId: args.matchedOrgId, email: args.email,
-                sourceEntityType: 'order', sourceEntityId: args.orderId, now: args.now,
-            },
-        );
-        if (bridge.created || bridge.orgUpgraded || bridge.orgChanged) {
-            await invokeCrmAction({ action: 'reResolveVisitorSessions', visitorId: args.visitorId });
-        }
-    } catch (err) {
-        console.error(JSON.stringify({
-            event: 'crm.visitor_bridge.write_failed',
-            visitorId: args.visitorId,
-            orderId: args.orderId,
-            error: err instanceof Error ? err.message : String(err),
-        }));
+    const bridge = await upsertVisitorBridge(
+        toSend(docClient), TABLE_NAME(),
+        {
+            visitorId: args.visitorId, matchedOrgId: args.matchedOrgId, email: args.email,
+            sourceEntityType: 'order', sourceEntityId: args.orderId, now: args.now,
+        },
+    );
+    if (args.alwaysReResolve || bridge.created || bridge.orgUpgraded || bridge.orgChanged) {
+        await invokeCrmAction({ action: 'reResolveVisitorSessions', visitorId: args.visitorId });
     }
 }
 
@@ -270,20 +272,29 @@ export async function createStripeOrder(event: AppSyncEvent) {
         }));
         // Self-heal the visitor link from the STORED order's identity: if the
         // original invocation died between its transaction commit and the
-        // bridge write, this retry is the only chance to repair it. Never
-        // re-runs the non-idempotent org score upsert.
+        // bridge write (or between bridge and reResolve), this retry repairs
+        // it — throwing on failure so Stripe keeps retrying. Never re-runs
+        // the non-idempotent org score upsert.
         const storedMeta = metaRes.Item as OrderItem;
+        const storedContacts = (contactsRes.Items ?? []) as ContactItem[];
+        // Identity comes from the stored order, not the retry request. The
+        // input visitorId is a fallback ONLY for legacy rows created before
+        // META captured visitorId (same Stripe session, so same visitor).
         const healVisitorId = sanitizeVisitorId(storedMeta.visitorId) ?? visitorId;
+        const storedEmail = storedContacts.find((c) => c.isPrimary)?.contactEmail
+            || storedContacts[0]?.contactEmail
+            || normalizedEmail;
         if (healVisitorId) {
             await linkVisitorToOrder({
                 visitorId: healVisitorId,
                 orderId: existingOrderId,
                 matchedOrgId: storedMeta.matchedOrgId || null,
-                email: normalizedEmail,
+                email: storedEmail,
                 now,
+                alwaysReResolve: true,
             });
         }
-        return buildOrderResponse(storedMeta, (contactsRes.Items ?? []) as ContactItem[]);
+        return buildOrderResponse(storedMeta, storedContacts);
     }
 
     // 5. Slack notification — a paid order deserves a loud ping.
@@ -325,16 +336,19 @@ export async function createStripeOrder(event: AppSyncEvent) {
         }));
     }
 
-    // 7. Deterministic visitor→order link (shared with the duplicate path's
-    // self-heal — see linkVisitorToOrder).
-    if (visitorId) {
-        await linkVisitorToOrder({ visitorId, orderId, matchedOrgId: matchedOrgId ?? null, email: normalizedEmail, now });
-    }
-
+    // 7. CRM timeline emit BEFORE the visitor link: the link below may throw
+    // (that's its retry mechanism), and the emit — idempotent via its idInput —
+    // must not be starved by it. The helper swallows its own dispatch failures.
     await emitTimelineEventToCrm(buildOrderCreatedEmitArgs(
         { orderId, createdAt: now, productModel: deriveModel(input.productName) },
         { matchedOrgId, email: normalizedEmail },
     ));
+
+    // 8. Deterministic visitor→order link. THROWS on failure → webhook 500 →
+    // Stripe retry → duplicate path self-heal (see linkVisitorToOrder).
+    if (visitorId) {
+        await linkVisitorToOrder({ visitorId, orderId, matchedOrgId: matchedOrgId ?? null, email: normalizedEmail, now });
+    }
 
     // Build the response from the items just written — no re-read, so an
     // eventually consistent GET can never hide our own transaction.

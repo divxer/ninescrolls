@@ -49,14 +49,23 @@ export function OrgDetailHeader({
     setOverrideLoading(true);
     setOverrideMsg(null);
     try {
+      // The override may live under the stable key (new writes), the legacy
+      // display name, or the legacy group key (same candidates as
+      // resolveOrgOverride) — undo every candidate. Only the backend's
+      // definitive "No manual override found" is ignorable; a 500/network
+      // failure must surface, otherwise the UI reports success while an
+      // override record still applies.
       const overrideKey = orgOverrideKey(org);
-      // The override may live under the stable key (new writes) OR the legacy
-      // display name — undo each independently: a 404 on one must not stop
-      // the other from being cleared.
+      const candidates = [...new Set([overrideKey, org.orgName, org.key])];
       let undone = false;
-      try { await undoOrgOverride(overrideKey); undone = true; } catch { /* none under stable key */ }
-      if (overrideKey !== org.orgName) {
-        try { await undoOrgOverride(org.orgName); undone = true; } catch { /* none under legacy name */ }
+      for (const key of candidates) {
+        try {
+          await undoOrgOverride(key);
+          undone = true;
+        } catch (err) {
+          if (err instanceof Error && err.message === 'No manual override found') continue;
+          throw err;
+        }
       }
       if (!undone) throw new Error('No override found to undo');
       // Re-fetch to get restored state
@@ -81,7 +90,25 @@ export function OrgDetailHeader({
       // Same stable key as target overrides — a display name stored under the
       // synthesized ISP label would drift with city/#N changes and split from
       // the visitor's target override.
-      await renameOrg(orgOverrideKey(org), trimmed);
+      const stableKey = orgOverrideKey(org);
+      // Legacy-only ISP records: renaming a stable key with NO record makes the
+      // backend create a default unknown/non-target one, which would SHADOW the
+      // legacy record's classification (stable key wins on read). Migrate the
+      // resolved classification onto the stable key first.
+      if (stableKey !== org.orgName && override?.found && override.organizationType) {
+        const stable = await getOrgOverride(stableKey);
+        if (!stable.found) {
+          await setOrgOverride(
+            stableKey,
+            override.isTargetCustomer ?? false,
+            override.organizationType,
+            override.reason
+              ? `${override.reason} (migrated from legacy display-name record)`
+              : 'Migrated from legacy display-name record',
+          );
+        }
+      }
+      await renameOrg(stableKey, trimmed);
       setOverride((prev) => prev ? { ...prev, displayName: trimmed } : { found: true, displayName: trimmed });
       setEditingName(false);
       setOverrideMsg({ type: 'success', text: `Renamed to "${trimmed}"` });
