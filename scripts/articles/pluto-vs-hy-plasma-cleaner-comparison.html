@@ -1,0 +1,701 @@
+
+      <p><strong>Target Readers:</strong> Lab managers, PIs, procurement engineers, and process engineers evaluating benchtop plasma cleaners for research, teaching, or light production. If you already know the basics of plasma cleaning, skip ahead to Section 3 (Architecture Deep-Dive) or Section 7 (Decision Flowchart).</p>
+
+      <div class="tldr-section">
+        <h3>TL;DR</h3>
+        <ul>
+          <li><strong>HY series</strong> (HY-4L, HY-20L, HY-20LRF) — stainless-steel chambers, RF 150 W or MF 300 W options, price range $6,499--$14,499. Best for: teaching labs, surface activation, routine cleaning, and budget-conscious core facilities.</li>
+          <li><strong>PLUTO series</strong> (PLUTO-T, PLUTO-M, PLUTO-F) — higher RF power (200--500 W), gas-shower electrode on PLUTO-M, aluminum-alloy chamber on PLUTO-F, recipe storage, price range $9,999--$15,999. Best for: research groups, shared facilities, advanced surface engineering, and process-critical applications.</li>
+          <li><strong>Key differentiator:</strong> HY offers a mid-frequency (40 kHz) option for gentler, large-area treatment; PLUTO delivers higher RF power density, better uniformity via gas-shower distribution, and recipe management for reproducibility.</li>
+          <li><strong>Decision shortcut:</strong> Teaching/demo lab on a budget → HY-4L. High-throughput batch cleaning → HY-20L or HY-20LRF. Research with recipe control → PLUTO-M. Flagship performance → PLUTO-F.</li>
+        </ul>
+      </div>
+
+      <h2>1) Why This Comparison Matters</h2>
+      <p>Choosing a plasma cleaner is one of the most consequential equipment decisions a lab makes. The system you select determines not just cleaning efficacy, but also process repeatability, sample throughput, and long-term cost of ownership. NineScrolls offers two distinct product families — the <strong>HY series</strong> and the <strong>PLUTO series</strong> — each engineered for different use cases and budget envelopes.</p>
+      <p>This guide provides a rigorous, specification-level comparison so you can match the right system to your application. For background on how plasma cleaning works, see our primer <a href="/insights/what-is-plasma-cleaner-principles-types">What Is a Plasma Cleaner? Principles, Types, and How It Works</a>.</p>
+
+      <h2>2) Product Line Overview</h2>
+
+      <h3>HY Series at a Glance</h3>
+      <p>The HY family is designed for labs that need reliable plasma treatment at an accessible price point. All models feature stainless-steel chambers and are available with either RF (13.56 MHz) or mid-frequency (40 kHz) generators.</p>
+      <table class="insights-table">
+        <thead>
+          <tr>
+            <th>Model</th>
+            <th>Chamber Volume</th>
+            <th>Power Source</th>
+            <th>Max Power</th>
+            <th>Chamber Material</th>
+            <th>Price</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong><a href="/products/hy-4l">HY-4L</a></strong></td>
+            <td>~4 L</td>
+            <td>RF 13.56 MHz <em>or</em> MF 40 kHz</td>
+            <td>RF 150 W / MF 300 W</td>
+            <td>Stainless steel</td>
+            <td>$6,499–$7,999</td>
+          </tr>
+          <tr>
+            <td><strong><a href="/products/hy-20l">HY-20L</a></strong></td>
+            <td>20 L</td>
+            <td>RF 13.56 MHz <em>or</em> MF 40 kHz</td>
+            <td>RF 150 W / MF 300 W</td>
+            <td>Stainless steel</td>
+            <td>$11,999–$14,999</td>
+          </tr>
+          <tr>
+            <td><strong><a href="/products/hy-20lrf">HY-20LRF</a></strong></td>
+            <td>20 L</td>
+            <td>RF 13.56 MHz</td>
+            <td>RF 300 W</td>
+            <td>Stainless steel</td>
+            <td>$14,499</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>PLUTO Series at a Glance</h3>
+      <p>The PLUTO family targets research labs and core facilities that demand higher power density, better uniformity, and reproducible process control.</p>
+      <table class="insights-table">
+        <thead>
+          <tr>
+            <th>Model</th>
+            <th>Chamber Volume</th>
+            <th>Power Source</th>
+            <th>Max Power</th>
+            <th>Chamber Material</th>
+            <th>Price</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong><a href="/products/pluto-t">PLUTO-T</a></strong></td>
+            <td>~4.3 L</td>
+            <td>RF 13.56 MHz</td>
+            <td>200 W</td>
+            <td>Stainless steel</td>
+            <td>$9,999</td>
+          </tr>
+          <tr>
+            <td><strong><a href="/products/pluto-m">PLUTO-M</a></strong></td>
+            <td>~8 L</td>
+            <td>RF 13.56 MHz</td>
+            <td>200 W</td>
+            <td>Stainless steel</td>
+            <td>$12,999</td>
+          </tr>
+          <tr>
+            <td><strong><a href="/products/pluto-f">PLUTO-F</a></strong></td>
+            <td>~14.5 L</td>
+            <td>RF 13.56 MHz</td>
+            <td>500 W</td>
+            <td>Aluminum alloy (6061-T6)</td>
+            <td>$15,999</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="product-callout">
+        <h3>Compare All Models Side by Side</h3>
+        <p>Use our interactive comparison tool to filter by chamber size, power, frequency, and budget.</p>
+        <div class="product-callout-buttons">
+          <a href="/products/plasma-cleaner/compare" style="background: #2563eb; color: white; padding: 10px 24px; border-radius: 6px; text-decoration: none; font-weight: 500;">Open Comparison Tool</a>
+          <a href="/contact" style="background: transparent; color: #2563eb; padding: 10px 24px; border-radius: 6px; text-decoration: none; font-weight: 500; border: 1px solid #2563eb;">Request a Quote</a>
+        </div>
+      </div>
+
+      <h2>3) Architecture Deep-Dive</h2>
+
+      <h3>3.1 Chamber Design & Materials</h3>
+      <p>Both series use vacuum-sealed chambers with mechanical roughing pumps, but the construction materials differ in important ways:</p>
+      <ul>
+        <li><strong>Stainless steel (HY series, PLUTO-T, PLUTO-M):</strong> Excellent chemical resistance to reactive gases (O₂, Ar, N₂, H₂, CF₄). Easy to clean. However, stainless steel is a relatively poor thermal conductor (~16 W/m·K), which means longer cooling times between runs in high-duty-cycle applications.</li>
+        <li><strong>Aluminum alloy 6061-T6 (PLUTO-F):</strong> Thermal conductivity of ~167 W/m·K — roughly 10× higher than stainless steel. This enables faster thermal equilibration, more uniform wall temperature, and shorter cycle times. The hard-anodized surface provides adequate corrosion resistance for standard process gases. Aluminum chambers are also lighter, simplifying installation.</li>
+      </ul>
+      <p><strong>Practical impact:</strong> For labs running 20+ cleaning cycles per day, the PLUTO-F’s aluminum chamber reduces thermal drift between runs, improving batch-to-batch reproducibility. For labs running fewer cycles, stainless steel is perfectly adequate and offers broader chemical compatibility (particularly with chlorine-containing gases).</p>
+
+      <h3>3.2 Electrode Configuration</h3>
+      <p>Electrode geometry is a critical — and often overlooked — differentiator between plasma cleaner models.</p>
+      <ul>
+        <li><strong>HY series:</strong> Parallel-plate electrodes with a standard gas inlet. Gas enters the chamber from one side and distributes naturally via pressure equalization. This is a proven design that works well for general cleaning and surface activation.</li>
+        <li><strong>PLUTO-T:</strong> Similar parallel-plate configuration, but with a more optimized electrode gap for 200 W operation, providing higher power density than the HY-4L in a comparable chamber volume.</li>
+        <li><strong>PLUTO-M:</strong> Features a <strong>gas-shower electrode</strong> — a perforated upper electrode through which process gas is uniformly distributed across the sample area. This is the same concept used in semiconductor-grade RIE and PECVD systems. The result is significantly better treatment uniformity, particularly for larger substrates or batch processing of multiple small samples.</li>
+        <li><strong>PLUTO-F:</strong> Combines the gas-shower electrode design with a larger chamber and 500 W RF capability, enabling the highest radical flux and most uniform treatment area in the product line.</li>
+      </ul>
+
+      <h3>3.3 RF vs Mid-Frequency Excitation</h3>
+      <p>This is one of the most important distinctions between the two series. For a deeper discussion, see our <a href="/insights/what-is-plasma-cleaner-principles-types">plasma cleaner principles guide</a>.</p>
+      <table class="insights-table">
+        <thead>
+          <tr>
+            <th>Parameter</th>
+            <th>RF (13.56 MHz)</th>
+            <th>Mid-Frequency (40 kHz)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Available on</strong></td>
+            <td>All HY models, all PLUTO models</td>
+            <td>HY-4L, HY-20L only</td>
+          </tr>
+          <tr>
+            <td><strong>Plasma density</strong></td>
+            <td>Higher (10⁹–10¹° cm⁻³)</td>
+            <td>Moderate (10⁸–10⁹ cm⁻³)</td>
+          </tr>
+          <tr>
+            <td><strong>Ion energy</strong></td>
+            <td>Lower, more controllable</td>
+            <td>Higher (ions follow the oscillating field)</td>
+          </tr>
+          <tr>
+            <td><strong>Treatment uniformity</strong></td>
+            <td>Excellent</td>
+            <td>Good</td>
+          </tr>
+          <tr>
+            <td><strong>Insulator treatment</strong></td>
+            <td>Excellent (no charge buildup)</td>
+            <td>Good for most materials</td>
+          </tr>
+          <tr>
+            <td><strong>Gentle processing</strong></td>
+            <td>Better for sensitive surfaces</td>
+            <td>Can be gentler at low power (large area, diffuse plasma)</td>
+          </tr>
+          <tr>
+            <td><strong>System cost</strong></td>
+            <td>Higher (RF generator + match network)</td>
+            <td>Lower</td>
+          </tr>
+          <tr>
+            <td><strong>Best for</strong></td>
+            <td>Precision cleaning, polymers, MEMS, bonding prep</td>
+            <td>General cleaning, large-area activation, teaching demos</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p><strong>When to choose MF:</strong> If your primary application is surface activation of polymers or glass before bonding/coating, and you need to treat large or irregularly shaped parts at the lowest possible cost, the mid-frequency option on the HY-4L or HY-20L is an excellent choice. The 40 kHz frequency creates a more diffuse plasma that wraps around 3D geometries effectively.</p>
+
+      <p><strong>When RF is essential:</strong> If you are cleaning delicate MEMS devices, preparing samples for electron microscopy (SEM/TEM), doing photoresist descum, or need precise control over treatment intensity, RF is the better choice. The higher plasma density at 13.56 MHz delivers more reactive species per unit volume, and the lower ion energy reduces the risk of substrate damage.</p>
+
+      <h2>4) Power Density Analysis</h2>
+      <p>Raw wattage is misleading. What matters for cleaning performance is <strong>power density</strong> — the RF (or MF) power delivered per unit of chamber volume. Higher power density means more reactive species generated per unit volume, which translates to faster cleaning rates and more thorough contaminant removal.</p>
+      <div class="post-figure">
+        <picture>
+          <source srcSet="/assets/images/insights/pluto-vs-hy-power-comparison-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/pluto-vs-hy-power-comparison-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/pluto-vs-hy-power-comparison-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/pluto-vs-hy-power-comparison-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="/assets/images/insights/pluto-vs-hy-power-comparison.png" alt="PLUTO vs HY plasma cleaner specification comparison" loading="lazy" decoding="async" />
+        </picture>
+        <p class="post-figure-caption">Figure 2: Head-to-head specification comparison — key differences in frequency, power range, chamber materials, electrode design, chamber volume, and starting price between the PLUTO and HY series</p>
+      </div>
+      <div class="post-figure">
+        <picture>
+          <source srcSet="/assets/images/insights/pluto-vs-hy-chamber-architecture-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/pluto-vs-hy-chamber-architecture-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/pluto-vs-hy-chamber-architecture-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/pluto-vs-hy-chamber-architecture-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="/assets/images/insights/pluto-vs-hy-chamber-architecture.png" alt="PLUTO vs HY plasma cleaner chamber architecture comparison" loading="lazy" decoding="async" />
+        </picture>
+        <p class="post-figure-caption">Figure 1: Chamber architecture comparison — PLUTO uses a quartz chamber with RF gas-shower electrode at 13.56 MHz, while HY uses a stainless steel chamber with internal parallel plates driven at 40 kHz mid-frequency</p>
+      </div>
+
+      <table class="insights-table">
+        <thead>
+          <tr>
+            <th>Model</th>
+            <th>Max Power (W)</th>
+            <th>Chamber Volume (L)</th>
+            <th>Power Density (W/L)</th>
+            <th>Relative Performance</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>HY-4L (RF)</strong></td>
+            <td>150</td>
+            <td>4.0</td>
+            <td>37.5</td>
+            <td>Baseline</td>
+          </tr>
+          <tr>
+            <td><strong>HY-4L (MF)</strong></td>
+            <td>300</td>
+            <td>4.0</td>
+            <td>75.0</td>
+            <td>2.0× (but MF, not directly comparable)</td>
+          </tr>
+          <tr>
+            <td><strong>HY-20L (RF)</strong></td>
+            <td>150</td>
+            <td>20.0</td>
+            <td>7.5</td>
+            <td>0.2×</td>
+          </tr>
+          <tr>
+            <td><strong>HY-20L (MF)</strong></td>
+            <td>300</td>
+            <td>20.0</td>
+            <td>15.0</td>
+            <td>0.4× (MF)</td>
+          </tr>
+          <tr>
+            <td><strong>HY-20LRF</strong></td>
+            <td>300</td>
+            <td>20.0</td>
+            <td>15.0</td>
+            <td>0.4×</td>
+          </tr>
+          <tr>
+            <td><strong>PLUTO-T</strong></td>
+            <td>200</td>
+            <td>4.3</td>
+            <td>46.5</td>
+            <td>1.24×</td>
+          </tr>
+          <tr>
+            <td><strong>PLUTO-M</strong></td>
+            <td>200</td>
+            <td>8.0</td>
+            <td>25.0</td>
+            <td>0.67×</td>
+          </tr>
+          <tr>
+            <td><strong>PLUTO-F</strong></td>
+            <td>500</td>
+            <td>14.5</td>
+            <td>34.5</td>
+            <td>0.92×</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p><strong>Key takeaways:</strong></p>
+      <ul>
+        <li>The <strong>PLUTO-T</strong> has the highest RF power density in the lineup (46.5 W/L), making it the most aggressive cleaner for small batches or individual samples that need intensive treatment.</li>
+        <li>The <strong>PLUTO-F</strong> maintains near-baseline power density (34.5 W/L) despite having a 14.5 L chamber — this is where the 500 W generator pays off. It delivers serious cleaning capability at scale.</li>
+        <li>The <strong>HY-20L (RF)</strong> at 7.5 W/L is designed for gentler, large-batch processing where aggressive treatment is undesirable. This is ideal for polymer surface activation or cleaning geometrically complex parts.</li>
+        <li>Mid-frequency power density numbers are not directly comparable to RF because the plasma generation mechanism differs. MF creates a lower-density plasma but with higher ion energies, so the cleaning action per watt is different in character, not simply "more" or "less."</li>
+      </ul>
+
+      <h2>5) Feature Comparison Matrix</h2>
+      <p>Beyond power and chamber size, the two series differ in software, control, and practical features that affect day-to-day usability.</p>
+
+      <table class="insights-table">
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>HY-4L</th>
+            <th>HY-20L</th>
+            <th>HY-20LRF</th>
+            <th>PLUTO-T</th>
+            <th>PLUTO-M</th>
+            <th>PLUTO-F</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>RF option</strong></td>
+            <td>✓</td>
+            <td>✓</td>
+            <td>✓</td>
+            <td>✓</td>
+            <td>✓</td>
+            <td>✓</td>
+          </tr>
+          <tr>
+            <td><strong>MF option</strong></td>
+            <td>✓</td>
+            <td>✓</td>
+            <td>—</td>
+            <td>—</td>
+            <td>—</td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td><strong>Max RF power</strong></td>
+            <td>150 W</td>
+            <td>150 W</td>
+            <td>300 W</td>
+            <td>200 W</td>
+            <td>200 W</td>
+            <td>500 W</td>
+          </tr>
+          <tr>
+            <td><strong>Gas-shower electrode</strong></td>
+            <td>—</td>
+            <td>—</td>
+            <td>—</td>
+            <td>—</td>
+            <td>✓</td>
+            <td>✓</td>
+          </tr>
+          <tr>
+            <td><strong>Recipe storage</strong></td>
+            <td>—</td>
+            <td>—</td>
+            <td>—</td>
+            <td>—</td>
+            <td>✓</td>
+            <td>✓</td>
+          </tr>
+          <tr>
+            <td><strong>Aluminum chamber</strong></td>
+            <td>—</td>
+            <td>—</td>
+            <td>—</td>
+            <td>—</td>
+            <td>—</td>
+            <td>✓</td>
+          </tr>
+          <tr>
+            <td><strong>Multi-gas MFC</strong></td>
+            <td>Optional</td>
+            <td>Optional</td>
+            <td>Optional</td>
+            <td>Optional</td>
+            <td>✓</td>
+            <td>✓</td>
+          </tr>
+          <tr>
+            <td><strong>Digital pressure display</strong></td>
+            <td>✓</td>
+            <td>✓</td>
+            <td>✓</td>
+            <td>✓</td>
+            <td>✓</td>
+            <td>✓</td>
+          </tr>
+          <tr>
+            <td><strong>Auto-tuning match network</strong></td>
+            <td>✓ (RF models)</td>
+            <td>✓ (RF models)</td>
+            <td>✓</td>
+            <td>✓</td>
+            <td>✓</td>
+            <td>✓</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>6) Application Matching Guide</h2>
+      <p>The "best" plasma cleaner depends entirely on what you are cleaning, why you are cleaning it, and how often. Here is how the two series map to common applications.</p>
+
+      <h3>6.1 Surface Activation for Bonding</h3>
+      <p>If your primary goal is activating polymer, glass, or ceramic surfaces before adhesive bonding, printing, or coating:</p>
+      <ul>
+        <li><strong>Best pick:</strong> <a href="/products/hy-4l">HY-4L (MF)</a> for small parts, <a href="/products/hy-20l">HY-20L (MF or RF)</a> for larger batches</li>
+        <li><strong>Why:</strong> Surface activation does not require high power density. The MF option provides gentle, uniform treatment at the lowest cost. The 20 L chamber can handle multiple trays of parts in a single run.</li>
+        <li><strong>Alternative:</strong> If you also need to do precision cleaning in the same system, choose the RF variant for more versatility.</li>
+      </ul>
+
+      <h3>6.2 SEM/TEM Sample Preparation</h3>
+      <p>Removing hydrocarbon contamination from samples and holders before electron microscopy:</p>
+      <ul>
+        <li><strong>Best pick:</strong> <a href="/products/pluto-t">PLUTO-T</a></li>
+        <li><strong>Why:</strong> The compact 4.3 L chamber with 200 W RF delivers high power density for aggressive organic removal. Typical O₂ or O₂/Ar plasma at 50–100 W for 2–5 minutes is sufficient. Recipe storage (on PLUTO-M) is overkill for this application.</li>
+      </ul>
+
+      <h3>6.3 MEMS & Semiconductor Process Integration</h3>
+      <p>Pre-bonding surface prep, photoresist descum, or post-etch residue removal in a MEMS or semiconductor R&D workflow:</p>
+      <ul>
+        <li><strong>Best pick:</strong> <a href="/products/pluto-m">PLUTO-M</a> or <a href="/products/pluto-f">PLUTO-F</a></li>
+        <li><strong>Why:</strong> Gas-shower electrode ensures uniform radical distribution across the substrate. Recipe storage enables process-to-process consistency and makes the system usable by multiple researchers without retraining. The PLUTO-F adds the capacity for larger substrates (up to 6" wafers) and the power headroom to handle demanding processes like thick photoresist descum.</li>
+      </ul>
+
+      <h3>6.4 Teaching & Demonstration Labs</h3>
+      <p>Undergraduate or graduate lab courses where students learn plasma processing fundamentals:</p>
+      <ul>
+        <li><strong>Best pick:</strong> <a href="/products/hy-4l">HY-4L</a></li>
+        <li><strong>Why:</strong> Lowest entry cost ($6,499 for MF, $7,999 for RF). Straightforward operation with minimal training. Robust stainless-steel construction tolerates student handling. The MF option is particularly good for teaching because the visible plasma glow is more dramatic at 40 kHz, making demonstrations more engaging.</li>
+      </ul>
+
+      <h3>6.5 High-Throughput Core Facility</h3>
+      <p>A shared-use facility serving 10+ research groups with diverse cleaning needs:</p>
+      <ul>
+        <li><strong>Best pick:</strong> <a href="/products/pluto-f">PLUTO-F</a></li>
+        <li><strong>Why:</strong> The 14.5 L aluminum chamber handles large batches and cools quickly between users. 500 W RF provides headroom for demanding applications. Recipe storage lets each research group save and recall their optimized process parameters, reducing setup time and user errors. The higher upfront cost is amortized across many users.</li>
+      </ul>
+
+      <h3>6.6 Biomedical Device & Polymer Surface Engineering</h3>
+      <p>Modifying wettability of PDMS, PMMA, or other biocompatible polymers for microfluidics or cell culture:</p>
+      <ul>
+        <li><strong>Best pick:</strong> <a href="/products/hy-20l">HY-20L</a> (RF or MF) or <a href="/products/pluto-m">PLUTO-M</a></li>
+        <li><strong>Why:</strong> Polymer treatment often benefits from lower power density to avoid surface damage. The HY-20L’s large chamber and moderate power density are well-suited. The PLUTO-M is the upgrade path when you need gas-shower uniformity for batch consistency across multiple PDMS chips.</li>
+      </ul>
+
+      <p>For a comprehensive discussion of plasma cleaner applications across industries, see our <a href="/insights/plasma-cleaner-applications-guide">Plasma Cleaner Applications Guide</a>.</p>
+
+      <h2>7) Decision Flowchart</h2>
+      <p>Use this structured approach to narrow your selection:</p>
+      <div class="post-figure">
+        <picture>
+          <source srcSet="/assets/images/insights/pluto-vs-hy-decision-flowchart-xl.webp" media="(min-width: 1280px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/pluto-vs-hy-decision-flowchart-lg.webp" media="(min-width: 1024px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/pluto-vs-hy-decision-flowchart-md.webp" media="(min-width: 768px)" type="image/webp" />
+          <source srcSet="/assets/images/insights/pluto-vs-hy-decision-flowchart-sm.webp" media="(max-width: 767px)" type="image/webp" />
+          <img src="/assets/images/insights/pluto-vs-hy-decision-flowchart.png" alt="PLUTO vs HY plasma cleaner selection decision flowchart" loading="lazy" decoding="async" />
+        </picture>
+        <p class="post-figure-caption">Figure 3: Selection decision tree — choose between PLUTO (blue) and HY (green) models based on your primary application, sample requirements, and budget constraints</p>
+      </div>
+
+      <div style="background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 12px; padding: 24px; margin: 24px 0;">
+        <p style="font-weight: 600; font-size: 1.1em; color: #1e3a5f; margin-top: 0;">Step 1: Do you need mid-frequency (40 kHz) excitation?</p>
+        <ul>
+          <li><strong>Yes</strong> → HY series only (HY-4L MF or HY-20L MF)</li>
+          <li><strong>No / Not sure</strong> → Continue to Step 2</li>
+        </ul>
+
+        <p style="font-weight: 600; font-size: 1.1em; color: #1e3a5f;">Step 2: What is your budget?</p>
+        <ul>
+          <li><strong>Under $8,000</strong> → <a href="/products/hy-4l">HY-4L</a> ($6,499–$7,999)</li>
+          <li><strong>$8,000–$13,000</strong> → <a href="/products/pluto-t">PLUTO-T</a> ($9,999) or <a href="/products/pluto-m">PLUTO-M</a> ($12,999) or <a href="/products/hy-20l">HY-20L</a> ($11,999–$14,999)</li>
+          <li><strong>$13,000–$16,000</strong> → <a href="/products/pluto-m">PLUTO-M</a>, <a href="/products/hy-20lrf">HY-20LRF</a> ($14,499), or <a href="/products/pluto-f">PLUTO-F</a> ($15,999)</li>
+        </ul>
+
+        <p style="font-weight: 600; font-size: 1.1em; color: #1e3a5f;">Step 3: What chamber volume do you need?</p>
+        <ul>
+          <li><strong>≤4 L</strong> (single samples, SEM stubs, small wafers) → <a href="/products/hy-4l">HY-4L</a> or <a href="/products/pluto-t">PLUTO-T</a></li>
+          <li><strong>5–10 L</strong> (multiple samples, small batches) → <a href="/products/pluto-m">PLUTO-M</a> (~8 L)</li>
+          <li><strong>>10 L</strong> (large batches, big parts, 6" wafers) → <a href="/products/hy-20l">HY-20L</a> / <a href="/products/hy-20lrf">HY-20LRF</a> (20 L) or <a href="/products/pluto-f">PLUTO-F</a> (14.5 L)</li>
+        </ul>
+
+        <p style="font-weight: 600; font-size: 1.1em; color: #1e3a5f;">Step 4: Do you need recipe management?</p>
+        <ul>
+          <li><strong>Yes</strong> (multi-user facility, SOP compliance, audit trail) → <a href="/products/pluto-m">PLUTO-M</a> or <a href="/products/pluto-f">PLUTO-F</a></li>
+          <li><strong>No</strong> (single-user, simple process) → Any model fits</li>
+        </ul>
+
+        <p style="font-weight: 600; font-size: 1.1em; color: #1e3a5f;">Step 5: Do you need maximum RF power or power density?</p>
+        <ul>
+          <li><strong>Max absolute power (500 W)</strong> → <a href="/products/pluto-f">PLUTO-F</a></li>
+          <li><strong>Max power density in small chamber</strong> → <a href="/products/pluto-t">PLUTO-T</a> (46.5 W/L)</li>
+          <li><strong>Standard cleaning is sufficient</strong> → HY series at 150 W is adequate</li>
+        </ul>
+      </div>
+
+      <h2>8) Cost of Ownership</h2>
+      <p>The purchase price is only part of the equation. Here is a realistic breakdown of total cost of ownership over a 5-year period, assuming moderate use (5 runs/day, 250 days/year).</p>
+
+      <table class="insights-table">
+        <thead>
+          <tr>
+            <th>Cost Component</th>
+            <th>HY-4L (RF)</th>
+            <th>PLUTO-T</th>
+            <th>PLUTO-M</th>
+            <th>PLUTO-F</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Purchase price</strong></td>
+            <td>$7,999</td>
+            <td>$9,999</td>
+            <td>$12,999</td>
+            <td>$15,999</td>
+          </tr>
+          <tr>
+            <td><strong>Annual gas costs (O₂/Ar)</strong></td>
+            <td>~$200–$400</td>
+            <td>~$200–$400</td>
+            <td>~$300–$500</td>
+            <td>~$400–$600</td>
+          </tr>
+          <tr>
+            <td><strong>Annual pump maintenance</strong></td>
+            <td>~$150–$300</td>
+            <td>~$150–$300</td>
+            <td>~$150–$300</td>
+            <td>~$200–$400</td>
+          </tr>
+          <tr>
+            <td><strong>Electrode/chamber cleaning (annual)</strong></td>
+            <td>~$50–$100</td>
+            <td>~$50–$100</td>
+            <td>~$100–$200</td>
+            <td>~$100–$200</td>
+          </tr>
+          <tr>
+            <td><strong>Estimated 5-year TCO</strong></td>
+            <td>$9,999–$11,999</td>
+            <td>$11,999–$13,999</td>
+            <td>$15,749–$17,999</td>
+            <td>$19,499–$21,999</td>
+          </tr>
+          <tr>
+            <td><strong>Cost per cleaning cycle (5-yr)</strong></td>
+            <td>$1.60–$1.92</td>
+            <td>$1.92–$2.24</td>
+            <td>$2.52–$2.88</td>
+            <td>$3.12–$3.52</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p><strong>Key observations:</strong></p>
+      <ul>
+        <li>Running costs (gas, pump oil, consumables) are broadly similar across all models. The purchase price is the dominant factor in total cost of ownership.</li>
+        <li>The per-cycle cost difference between the cheapest (HY-4L) and most capable (PLUTO-F) model is only ~$1.50. For a research lab generating publishable results, the incremental cost of a more capable system is negligible compared to labor and materials costs.</li>
+        <li>Recipe storage (PLUTO-M/F) reduces setup time by 2–5 minutes per run. At 5 runs/day, that saves 40–100 hours/year of researcher time — worth $2,000–$5,000 in labor, which alone can justify the PLUTO-M upgrade over the PLUTO-T.</li>
+      </ul>
+
+      <p>For detailed maintenance procedures that help minimize ongoing costs, see our <a href="/insights/plasma-cleaner-maintenance-guide">Plasma Cleaner Maintenance Guide</a>.</p>
+
+      <h2>9) Chamber Material: Stainless Steel vs Aluminum Alloy</h2>
+      <p>The PLUTO-F’s aluminum-alloy (6061-T6) chamber is a distinctive design choice. Here is when it matters and when it does not.</p>
+
+      <table class="insights-table">
+        <thead>
+          <tr>
+            <th>Property</th>
+            <th>Stainless Steel (304/316)</th>
+            <th>Aluminum 6061-T6</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Thermal conductivity</strong></td>
+            <td>~16 W/m·K</td>
+            <td>~167 W/m·K</td>
+          </tr>
+          <tr>
+            <td><strong>Density</strong></td>
+            <td>8.0 g/cm³</td>
+            <td>2.7 g/cm³</td>
+          </tr>
+          <tr>
+            <td><strong>Corrosion resistance (O₂/Ar)</strong></td>
+            <td>Excellent</td>
+            <td>Good (anodized surface)</td>
+          </tr>
+          <tr>
+            <td><strong>Corrosion resistance (CF₄/Cl₂)</strong></td>
+            <td>Good</td>
+            <td>Fair (fluorine can attack Al at elevated temperatures)</td>
+          </tr>
+          <tr>
+            <td><strong>Outgassing</strong></td>
+            <td>Low after bakeout</td>
+            <td>Very low (shorter pump-down times)</td>
+          </tr>
+          <tr>
+            <td><strong>Weight (typical chamber)</strong></td>
+            <td>Heavier</td>
+            <td>~3× lighter</td>
+          </tr>
+          <tr>
+            <td><strong>Thermal cycling stability</strong></td>
+            <td>Excellent</td>
+            <td>Good (watch for seal compression at temperature)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p><strong>Bottom line:</strong> If your process gases are limited to O₂, Ar, N₂, and H₂ (which covers 90%+ of plasma cleaning applications), the aluminum chamber is an advantage. If you regularly use fluorine-containing gases (CF₄, SF₆) at elevated power levels, stainless steel is the safer choice for long-term chamber integrity.</p>
+
+      <h2>10) Migration Paths & Upgrade Scenarios</h2>
+      <p>Labs’ needs evolve. Here are common upgrade paths we see:</p>
+
+      <ul>
+        <li><strong>HY-4L → PLUTO-T:</strong> When you need more RF power for aggressive cleaning (photoresist strip, heavy organic contamination) in a similar chamber footprint. The 33% power increase (150 → 200 W) and better power density make a noticeable difference.</li>
+        <li><strong>PLUTO-T → PLUTO-M:</strong> When a second or third researcher starts using the system and you need recipe storage to prevent process drift. The gas-shower electrode is a meaningful uniformity upgrade.</li>
+        <li><strong>HY-20L → HY-20LRF:</strong> When you started with MF for surface activation but now need RF capability for more demanding applications. The HY-20LRF doubles the RF power (150 → 300 W) at the same chamber volume.</li>
+        <li><strong>HY-20LRF → PLUTO-F:</strong> When you need recipe management, gas-shower uniformity, and the performance benefits of the aluminum chamber. This is the most common "core facility upgrade" path.</li>
+      </ul>
+
+      <h2>Further Reading</h2>
+      <div style="background: #f8fafc; border-left: 4px solid #3b82f6; padding: 16px 20px; margin: 24px 0; border-radius: 0 8px 8px 0;">
+        <ul style="margin: 0; padding-left: 20px;">
+          <li><a href="/insights/what-is-plasma-cleaner-principles-types">What Is a Plasma Cleaner? Principles, Types & How It Works</a> — foundational guide to plasma cleaning technology</li>
+          <li><a href="/insights/plasma-cleaner-buying-guide">Plasma Cleaner Buying Guide</a> — step-by-step framework for evaluating and purchasing a plasma cleaner</li>
+          <li><a href="/insights/plasma-cleaner-applications-guide">Plasma Cleaner Applications Guide</a> — industry-by-industry overview of plasma cleaning use cases</li>
+          <li><a href="/insights/plasma-cleaner-maintenance-guide">Plasma Cleaner Maintenance Guide</a> — preventive maintenance, electrode refurbishment, and troubleshooting</li>
+          <li><a href="/insights/plasma-cleaner-comparison-research-labs">Plasma Cleaner Comparison for Research Laboratories</a> — broader market comparison including quartz-chamber systems</li>
+        </ul>
+      </div>
+
+      <h2>Frequently Asked Questions</h2>
+
+      <div itemscope itemtype="https://schema.org/FAQPage">
+        <div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question" style="margin-bottom: 24px; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px;">
+          <h3 itemprop="name" style="margin-top: 0; color: #1e3a5f;">What is the main difference between the HY and PLUTO plasma cleaner series?</h3>
+          <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <div itemprop="text">
+              <p>The HY series is designed for budget-conscious labs and teaching environments, offering both RF (13.56 MHz, up to 300 W) and mid-frequency (40 kHz, 300 W) options in stainless-steel chambers from 4 to 20 liters, priced from $6,499 to $14,499. The PLUTO series targets research labs and core facilities with higher RF power (200–500 W), gas-shower electrode technology for superior uniformity (PLUTO-M/F), recipe storage for multi-user reproducibility, and an aluminum-alloy chamber option (PLUTO-F) for faster thermal cycling, priced from $9,999 to $15,999. In short: HY prioritizes value and versatility (MF option), while PLUTO prioritizes performance and process control.</p>
+            </div>
+          </div>
+        </div>
+
+        <div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question" style="margin-bottom: 24px; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px;">
+          <h3 itemprop="name" style="margin-top: 0; color: #1e3a5f;">Should I choose RF (13.56 MHz) or mid-frequency (40 kHz) plasma cleaning?</h3>
+          <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <div itemprop="text">
+              <p>Choose RF if you need higher plasma density, better treatment uniformity, compatibility with insulating substrates, or precise control over ion energy — typical for MEMS fabrication, SEM sample prep, photoresist descum, and bonding preparation of sensitive devices. Choose mid-frequency if your primary application is general surface activation of polymers, glass, or ceramics before bonding or coating, and you want to minimize equipment cost. MF systems produce a more diffuse plasma that wraps around 3D geometries well, making them effective for irregularly shaped parts. Note that the MF option is only available on the HY-4L and HY-20L.</p>
+            </div>
+          </div>
+        </div>
+
+        <div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question" style="margin-bottom: 24px; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px;">
+          <h3 itemprop="name" style="margin-top: 0; color: #1e3a5f;">What is a gas-shower electrode and why does it matter?</h3>
+          <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <div itemprop="text">
+              <p>A gas-shower electrode (available on PLUTO-M and PLUTO-F) is a perforated upper electrode through which process gas is uniformly distributed across the entire treatment area — similar to a showerhead in semiconductor-grade plasma systems. This design ensures that reactive species (radicals, ions) are generated evenly across the substrate surface, resulting in more uniform cleaning and surface modification. In contrast, standard gas inlets (used in HY series and PLUTO-T) introduce gas from one side or edge of the chamber, relying on pressure equalization for distribution. For single small samples, the difference is minor. For batch processing of multiple samples or treating larger substrates (4" to 6" wafers), the gas-shower electrode provides measurably better uniformity.</p>
+            </div>
+          </div>
+        </div>
+
+        <div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question" style="margin-bottom: 24px; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px;">
+          <h3 itemprop="name" style="margin-top: 0; color: #1e3a5f;">Is the PLUTO-F’s aluminum chamber safe for all process gases?</h3>
+          <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <div itemprop="text">
+              <p>The PLUTO-F’s 6061-T6 aluminum alloy chamber with hard-anodized surface is fully compatible with the most common plasma cleaning gases: O₂, Ar, N₂, H₂, and air. These cover the vast majority of plasma cleaning applications. However, if your process regularly requires fluorine-containing gases (CF₄, SF₆) at sustained high power, stainless-steel chambers (available on all other models) offer better long-term corrosion resistance. For occasional low-power fluorine-gas use, the anodized aluminum surface provides adequate protection. Consult with NineScrolls engineering if your application involves halogen-containing chemistries.</p>
+            </div>
+          </div>
+        </div>
+
+        <div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question" style="margin-bottom: 24px; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px;">
+          <h3 itemprop="name" style="margin-top: 0; color: #1e3a5f;">Which plasma cleaner is best for a university teaching lab?</h3>
+          <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <div itemprop="text">
+              <p>The HY-4L is the best choice for teaching labs. At $6,499 (MF) to $7,999 (RF), it offers the lowest entry cost while providing full plasma cleaning capability. The stainless-steel chamber is durable enough for student handling, and the straightforward controls require minimal training. The mid-frequency option is particularly appealing for teaching because it produces a more visually dramatic plasma glow, which enhances demonstration effectiveness. For programs that want students to experience both MF and RF plasma, consider pairing an HY-4L (MF) with an HY-4L (RF) — the combined cost is still below a single PLUTO-F.</p>
+            </div>
+          </div>
+        </div>
+
+        <div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question" style="margin-bottom: 24px; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px;">
+          <h3 itemprop="name" style="margin-top: 0; color: #1e3a5f;">How does recipe storage on the PLUTO-M/F improve workflow?</h3>
+          <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <div itemprop="text">
+              <p>Recipe storage allows users to save complete process parameters — gas type, flow rate, RF power, pressure setpoint, and treatment time — as named presets. In a shared facility, each research group can store their optimized recipes and recall them with one button press, eliminating manual parameter entry and reducing setup time by 2–5 minutes per run. This feature also prevents human error (e.g., accidentally running at 200 W instead of 100 W), which is the most common cause of sample damage in multi-user plasma cleaners. For labs with SOP or ISO compliance requirements, recipe storage provides a documented, reproducible record of process conditions.</p>
+            </div>
+          </div>
+        </div>
+
+        <div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question" style="margin-bottom: 24px; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px;">
+          <h3 itemprop="name" style="margin-top: 0; color: #1e3a5f;">Can I upgrade from an HY system to a PLUTO system later?</h3>
+          <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <div itemprop="text">
+              <p>Yes, and this is a common upgrade path. The most frequent transitions are HY-4L to PLUTO-T (more RF power in a similar footprint), HY-20L to HY-20LRF (adding higher RF power), and HY-20LRF to PLUTO-F (adding recipe management, gas-shower electrode, and aluminum chamber). All NineScrolls plasma cleaners use the same gas fittings and similar vacuum connections, so your existing gas lines and vacuum pump can typically be reused. Contact NineScrolls for trade-in options when upgrading.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="product-callout">
+        <h3>Find the Right Plasma Cleaner for Your Lab</h3>
+        <p>Not sure which model fits your application? Use our interactive comparison tool or talk to our engineering team.</p>
+        <div class="product-callout-buttons">
+          <a href="/products/plasma-cleaner/compare" style="background: #2563eb; color: white; padding: 10px 24px; border-radius: 6px; text-decoration: none; font-weight: 500;">Compare All Models</a>
+          <a href="/contact" style="background: transparent; color: #2563eb; padding: 10px 24px; border-radius: 6px; text-decoration: none; font-weight: 500; border: 1px solid #2563eb;">Talk to an Engineer</a>
+        </div>
+      </div>
+  

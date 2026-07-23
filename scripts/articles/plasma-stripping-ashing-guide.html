@@ -1,0 +1,602 @@
+
+      <p><strong>Target Readers:</strong> Process engineers, equipment engineers, PIs/lab managers, R&D procurement teams, and technical decision-makers evaluating photoresist stripping and plasma ashing solutions. Newcomers will find the fundamentals and comparison tables helpful; experienced engineers can skip to the gas chemistry selection and process optimization sections.</p>
+
+      <h2>TL;DR Summary</h2>
+      <p>Plasma stripping (ashing) uses oxygen-based plasmas to convert organic films — photoresist, PMMA, polymer residues — into volatile CO₂ and H₂O, providing a dry, damage-controllable alternative to wet chemical stripping. By selecting the right gas chemistry (O₂, O₂/N₂, O₂/CF₄, or H₂/N₂), tuning RF power, pressure, temperature, and gas flow, engineers can strip photoresist at rates exceeding 1 µm/min while preserving sensitive substrates and metal interconnects. Beyond traditional PR removal, modern plasma strippers handle post-etch residue cleaning, descum, surface activation for bonding, organic contamination removal, and even selective etching of 2D materials (MoS₂, BN, graphene). This guide covers the underlying plasma chemistry, compares dry vs. wet stripping, provides gas-selection decision guidance, discusses special 2D material applications, and offers a full FAQ — everything needed to select, optimize, and run a plasma stripping process.</p>
+
+      <h2>1) What Is Plasma Stripping / Ashing?</h2>
+      <p>Plasma stripping — also called plasma ashing — is a dry-process technique that uses a low-pressure, RF-generated plasma to remove organic materials from a substrate surface. The most common application is photoresist removal after lithographic patterning and etching, but the technique extends to any scenario requiring controlled removal of organic films.</p>
+
+      <h3>1.1 The O₂ Plasma Chemistry</h3>
+      <p>In a typical oxygen plasma, the 13.56 MHz RF field dissociates O₂ molecules into a mixture of reactive species:</p>
+      <ul>
+        <li><strong>Atomic oxygen radicals (O*):</strong> The primary etchant — these neutral, highly reactive species attack C–C and C–H bonds in organic materials</li>
+        <li><strong>Ozone (O₃):</strong> A secondary oxidant that contributes to organic decomposition</li>
+        <li><strong>O₂⁺ ions:</strong> Provide directional bombardment energy when accelerated across the plasma sheath</li>
+        <li><strong>UV photons:</strong> Break polymer chains through photo-dissociation, increasing surface reactivity</li>
+        <li><strong>Metastable O₂*:</strong> Excited-state molecules that transfer energy to surface species on contact</li>
+      </ul>
+      <p>The fundamental stripping reactions for a generic hydrocarbon photoresist (CₓHᵧOᵤ) are:</p>
+      <ul>
+        <li>C + 2O* → CO₂↑ (primary carbon removal pathway)</li>
+        <li>C + O* → CO↑ (secondary pathway, favored at low O* concentration)</li>
+        <li>2H + O* → H₂O↑ (hydrogen removal)</li>
+        <li>CₓHᵧ + (2x + y/2) O* → xCO₂↑ + (y/2) H₂O↑ (net reaction)</li>
+      </ul>
+      <p>All reaction products (CO₂, CO, H₂O) are gases at process conditions and are continuously pumped away, leaving a clean, residue-free surface. This self-cleaning characteristic is a major advantage over wet stripping, where dissolved resist can re-deposit.</p>
+
+      <figure style="text-align:center; margin:2rem 0;">
+        <img src="/assets/images/insights/striper-o2-plasma-chemistry.png" alt="O2 plasma ashing chemical reaction process: gas input, plasma dissociation, radical transport, and surface reaction" style="width:100%; max-width:1000px; border-radius:8px;" loading="lazy" />
+      </figure>
+
+      <h3>1.2 Downstream vs. Direct Plasma Configurations</h3>
+      <p>Plasma strippers operate in two main configurations:</p>
+      <ul>
+        <li><strong>Direct plasma (in-situ):</strong> The wafer sits within or directly adjacent to the plasma discharge zone. Both radicals and ions reach the substrate, providing high strip rates (1–5 µm/min) but with more ion bombardment. Suitable for robust substrates and when speed is paramount.</li>
+        <li><strong>Downstream (remote) plasma:</strong> The plasma is generated upstream and only neutral radicals flow to the wafer. Ion bombardment is minimal, making this configuration ideal for damage-sensitive substrates (III-V compounds, MEMS devices, thin gate oxides). Strip rates are lower (0.3–2 µm/min) but controllability and gentleness are superior.</li>
+      </ul>
+      <p>NineScrolls Striper systems use an adjustable plasma discharge gap that allows operators to tune the balance between direct and downstream exposure — effectively providing both configurations in a single platform.</p>
+
+      <figure style="text-align:center; margin:2rem 0;">
+        <img src="/assets/images/insights/striper-downstream-plasma-chamber.png" alt="Downstream plasma stripping chamber showing remote plasma source, transport tube, O radicals, and wafer with PR being stripped" style="width:100%; max-width:1000px; border-radius:8px;" loading="lazy" />
+      </figure>
+
+      <h3>1.3 Why "Ashing"?</h3>
+      <p>The term "ashing" comes from the analogy to combustion: organic material is oxidized to gaseous products, leaving behind only inorganic residue (the "ash"). In semiconductor processing, this ash consists of metal oxides, ion-implant residues, or inorganic filler particles from the photoresist formulation. A complete strip process often includes an ashing step followed by a residue removal step to handle this inorganic remnant.</p>
+
+      <h2>2) Plasma Stripping vs. Wet Chemical Stripping</h2>
+      <p>Both plasma (dry) and wet chemical methods can remove photoresist, but they differ significantly in mechanism, performance, and environmental impact. The following table provides a detailed comparison:</p>
+
+      <figure style="text-align:center; margin:2rem 0;">
+        <img src="/assets/images/insights/striper-dry-vs-wet.png" alt="Dry plasma strip vs wet chemical strip comparison showing mechanism, selectivity, damage risk, and best use cases" style="width:100%; max-width:1000px; border-radius:8px;" loading="lazy" />
+      </figure>
+
+      <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+        <thead>
+          <tr style="background-color: #f5f5f5;">
+            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Parameter</th>
+            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Plasma Stripping (Dry)</th>
+            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Wet Chemical Stripping</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Mechanism</strong></td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Radical oxidation + ion-assisted desorption</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Chemical dissolution (solvents, acids, or oxidizers)</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Common Chemistries</strong></td>
+            <td style="border: 1px solid #ddd; padding: 12px;">O₂, O₂/N₂, O₂/CF₄, H₂/N₂</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Piranha (H₂SO₄/H₂O₂), NMP, DMSO, EKC series</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Strip Rate</strong></td>
+            <td style="border: 1px solid #ddd; padding: 12px;">0.5–5 µm/min (tunable via power/pressure)</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">0.1–2 µm/min (temperature-dependent)</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Hardened / Ion-Implanted Resist</strong></td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Effective — UV-hardened crust broken by ion bombardment + O* penetration</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Difficult — crust blocks solvent penetration; requires multi-step processes</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Uniformity</strong></td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Excellent with center pump-down and tuned gas distribution (&lt;5% non-uniformity)</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Good with agitation; edge effects in batch tanks</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Metal Compatibility</strong></td>
+            <td style="border: 1px solid #ddd; padding: 12px;">O₂ plasma can oxidize Cu, Ti, TiN — use H₂/N₂ for metal-sensitive layers</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Solvent-based strippers generally metal-safe; Piranha attacks Cu</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Substrate Damage</strong></td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Controllable via power, pressure, and discharge gap; downstream mode minimizes damage</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Minimal physical damage; chemical attack on sensitive films possible</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Environmental / Safety</strong></td>
+            <td style="border: 1px solid #ddd; padding: 12px;">No liquid waste; exhaust scrubbed; small footprint</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Large volumes of hazardous waste (acids, solvents); fume hoods required</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Throughput</strong></td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Single-wafer: 20–40 wph; multi-wafer batch: 50–100+ wph</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Batch immersion: 50–200 wph (but long soak times)</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Cost of Ownership</strong></td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Higher equipment cost; low consumable cost (gases only)</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Lower equipment cost; high consumable and waste disposal costs</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Best Use Cases</strong></td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Post-etch strip, hardened resist, controlled surface activation, 2D materials</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Thick resist removal (&gt;20 µm), lift-off processes, low-volume labs</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p><strong>When to choose plasma stripping:</strong> Post-etch residue removal, ion-implanted resist, surface activation, descum, or any process requiring precise uniformity control and minimal chemical waste. Plasma stripping is also the only viable option for many 2D material processing applications where wet chemistries would destroy the monolayer films.</p>
+
+      <p><strong>When to choose wet stripping:</strong> Very thick resist layers (&gt;20 µm), lift-off processes where partial resist dissolution is needed, or when the substrate cannot tolerate any ion bombardment or UV exposure.</p>
+
+      <h2>3) Key Process Types</h2>
+
+      <h3>3.1 Standard Photoresist Stripping</h3>
+      <p>The most common application of plasma ashing is removal of positive-tone photoresist (e.g., DNQ/novolac i-line resists, chemically amplified DUV resists) after pattern transfer. A typical process flow:</p>
+      <ol>
+        <li><strong>Pre-heat:</strong> Ramp wafer stage to target temperature (80–150 °C for standard PR; lower for temperature-sensitive substrates)</li>
+        <li><strong>Pump-down:</strong> Evacuate chamber to base pressure (&lt;50 mTorr)</li>
+        <li><strong>Gas stabilization:</strong> Introduce O₂ at target flow rate (50–200 sccm); stabilize pressure (200–800 mTorr)</li>
+        <li><strong>Plasma ignition:</strong> Apply RF power (300–600 W); confirm stable plasma via reflected power reading</li>
+        <li><strong>Strip:</strong> Continue until endpoint detection signals resist clearance (typically 30–120 s for 1–2 µm thick resist)</li>
+        <li><strong>Over-ash:</strong> Continue for 10–30% additional time to ensure complete removal, especially in via and trench features</li>
+        <li><strong>Pump/purge:</strong> Evacuate reaction products; optional N₂ purge to remove residual O*</li>
+      </ol>
+      <p><strong>Process window for 1.5 µm i-line resist on Si:</strong> O₂ 100 sccm, 500 mTorr, 400 W, 120 °C stage temperature, strip rate ~2.5 µm/min, total process time ~60 s.</p>
+
+      <h3>3.2 Post-Etch Residue Removal</h3>
+      <p>After RIE or ICP-RIE etching, sidewall polymer deposits and redeposited etch by-products form residues that are not pure organic. These residues contain metal halides (from etched metal layers), silicon-containing polymers (from fluorocarbon passivation), and cross-linked photoresist (hardened by ion bombardment and UV exposure during etching).</p>
+      <p>Removing these residues requires more aggressive chemistry than standard PR stripping:</p>
+      <ul>
+        <li><strong>O₂/CF₄ (95:5 to 90:10):</strong> The CF₄ additive generates fluorine radicals that attack Si-containing residues while O₂ handles the organic component. Etch selectivity to underlying SiO₂ must be monitored.</li>
+        <li><strong>O₂/N₂ (80:20):</strong> N₂ addition increases ion bombardment energy (heavier N₂⁺ ions) without introducing halogen species. Effective for moderate post-etch residues.</li>
+        <li><strong>Two-step process:</strong> (1) High-power O₂ to remove bulk organic, then (2) O₂/CF₄ at lower power to gently remove inorganic residue without attacking the underlying film stack.</li>
+      </ul>
+
+      <h3>3.3 Descum</h3>
+      <p>Descum is a brief, low-power O₂ plasma treatment applied after photoresist development to remove thin organic residues (scum) from nominally cleared areas. These residues — typically 5–50 nm thick — result from incomplete development and can cause pattern transfer defects during subsequent etching.</p>
+      <p>Descum parameters are deliberately gentle:</p>
+      <ul>
+        <li><strong>Power:</strong> 100–300 W (low to avoid resist erosion)</li>
+        <li><strong>Pressure:</strong> 200–500 mTorr</li>
+        <li><strong>Time:</strong> 10–30 seconds</li>
+        <li><strong>Temperature:</strong> Room temperature to 50 °C</li>
+      </ul>
+      <p>The critical requirement is that descum removes scum without measurably thinning the patterned resist or altering its sidewall profile. For a 1 µm thick resist, a well-tuned descum process removes &lt;20 nm of resist thickness while clearing scum completely.</p>
+
+      <h3>3.4 Surface Activation</h3>
+      <p>O₂ plasma exposure converts hydrophobic surfaces to hydrophilic by replacing surface C–H groups with polar C=O, C–OH, and COOH functionalities. This dramatically increases surface energy and is used for:</p>
+      <ul>
+        <li><strong>Wafer bonding:</strong> Plasma-activated SiO₂ surfaces achieve bond energies &gt;2 J/m² at room temperature, enabling direct bonding without adhesives</li>
+        <li><strong>Adhesion promotion:</strong> Improving metal or dielectric film adhesion to polymer substrates (e.g., PDMS, PI, PET)</li>
+        <li><strong>Wettability control:</strong> Ensuring uniform photoresist coating on hydrophobic surfaces</li>
+        <li><strong>Bio-functionalization:</strong> Creating reactive surface groups for biomolecule attachment in MEMS/microfluidics</li>
+      </ul>
+      <p>Surface activation parameters are typically low power (100–300 W), low pressure (200–500 mTorr), and short duration (10–60 s). The activated surface has a limited lifetime — hydrophobic recovery begins within minutes to hours depending on the material — so subsequent processing should follow promptly.</p>
+
+      <h3>3.5 2D Materials Processing</h3>
+      <p>Plasma stripping finds a growing role in 2D materials research, where controlled removal of mask layers and selective etching of atomically thin films requires exceptional process control. This application is discussed in detail in Section 7.</p>
+
+      <h2>4) Gas Chemistry Selection</h2>
+      <p>The choice of process gas is the most impactful decision in plasma stripping. Each chemistry offers distinct advantages and limitations:</p>
+
+      <h3>4.1 Pure O₂</h3>
+      <p>The workhorse chemistry for standard photoresist stripping. O₂ plasma generates abundant atomic oxygen radicals that efficiently oxidize organic materials to volatile CO₂ and H₂O.</p>
+      <ul>
+        <li><strong>Advantages:</strong> High strip rate, clean by-products, no halogen contamination, simple single-gas process</li>
+        <li><strong>Limitations:</strong> Oxidizes metal surfaces (Cu, Ti, TiN, W); cannot remove inorganic residues; may cause substrate oxidation damage</li>
+        <li><strong>Typical conditions:</strong> 100–200 sccm, 300–800 mTorr, 300–600 W</li>
+      </ul>
+
+      <h3>4.2 O₂/N₂ Mixtures</h3>
+      <p>Adding 10–30% N₂ to O₂ increases the mean ion mass, enhancing physical sputtering of stubborn residues without introducing halogen contamination. N₂ also dilutes the O* radical density, providing a way to reduce strip rate for better endpoint control on thin resists.</p>
+      <ul>
+        <li><strong>Advantages:</strong> Better post-etch residue removal than pure O₂; no fluorine contamination; improved uniformity at lower pressures</li>
+        <li><strong>Limitations:</strong> Still oxidizes metals; strip rate lower than pure O₂</li>
+        <li><strong>Typical conditions:</strong> O₂ 80 sccm + N₂ 20 sccm, 300–600 mTorr, 400–600 W</li>
+      </ul>
+
+      <h3>4.3 O₂/CF₄ Mixtures</h3>
+      <p>The addition of 3–10% CF₄ to O₂ generates fluorine radicals that attack silicon-containing and metal-containing residues that pure O₂ cannot volatilize. This is the standard chemistry for post-etch residue removal after fluorocarbon-based RIE processes.</p>
+      <ul>
+        <li><strong>Advantages:</strong> Removes both organic and inorganic (Si-containing) residues; higher strip rate than pure O₂ (fluorine catalyzes carbon oxidation)</li>
+        <li><strong>Limitations:</strong> Fluorine attacks SiO₂ (~1–5 nm/min depending on conditions); potential fluorine contamination of sensitive surfaces; CF₄ is a potent greenhouse gas</li>
+        <li><strong>Typical conditions:</strong> O₂ 95 sccm + CF₄ 5 sccm, 300–600 mTorr, 400–600 W</li>
+        <li><strong>Caution:</strong> Keep CF₄ fraction below 10% to avoid excessive SiO₂ etching. Monitor oxide loss with ellipsometry if process runs near sensitive gate or tunnel oxides.</li>
+      </ul>
+
+      <h3>4.4 H₂/N₂ (Forming Gas) for Metal-Sensitive Substrates</h3>
+      <p>When the substrate contains exposed copper, titanium, or other easily oxidized metals, O₂-based chemistries are prohibited. H₂/N₂ plasmas provide an alternative stripping mechanism:</p>
+      <ul>
+        <li>H* radicals abstract hydrogen from the polymer chain, weakening C–C bonds</li>
+        <li>N* radicals and NH* species attack the destabilized carbon backbone</li>
+        <li>Volatile by-products: HCN, NH₃, small hydrocarbon fragments (CH₄, C₂H₂)</li>
+      </ul>
+      <p><strong>Key advantages:</strong> No oxidation of metals — H₂ plasma actually reduces metal oxides (CuO → Cu + H₂O); compatible with Cu BEOL processing; no halogen contamination.</p>
+      <p><strong>Limitations:</strong> Strip rate is 3–5× lower than O₂ plasma (typically 0.3–1 µm/min); higher power and temperature needed to compensate; some concern about hydrogen embrittlement of certain metals at high doses.</p>
+      <ul>
+        <li><strong>Typical conditions:</strong> H₂ 50 sccm + N₂ 150 sccm, 500–1000 mTorr, 500–800 W, 150–200 °C stage temperature</li>
+      </ul>
+
+      <h3>Gas Chemistry Selection Guide</h3>
+      <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+        <thead>
+          <tr style="background-color: #f5f5f5;">
+            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Application</th>
+            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Recommended Chemistry</th>
+            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Key Consideration</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 12px;">Standard PR strip (no metals exposed)</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Pure O₂</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Highest rate; simplest process</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 12px;">Post-etch residue (fluorocarbon-based etch)</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">O₂/CF₄ (95:5)</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Monitor SiO₂ loss; keep CF₄ &lt;10%</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 12px;">Post-etch residue (chlorine-based etch)</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">O₂/N₂ (80:20)</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Avoid fluorine; N₂⁺ bombardment aids removal</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 12px;">Strip with exposed Cu interconnects</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">H₂/N₂ (25:75)</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">No oxidation; reduces CuOₓ; lower rate</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 12px;">Strip with exposed Ti/TiN barriers</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">H₂/N₂ (25:75) or low-power O₂</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">TiN tolerates brief O₂ exposure; Ti does not</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 12px;">Descum</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Pure O₂ (low power)</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Minimize resist loss; &lt;30 s exposure</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 12px;">Surface activation (bonding)</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Pure O₂ or O₂/Ar</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Low power; process next step within minutes</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 12px;">Organic contamination removal</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">O₂ or O₂/CF₄</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">CF₄ addition for stubborn organometallics</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 12px;">PMMA removal (e-beam resist)</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Pure O₂ (moderate power)</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">PMMA strips faster than novolac; reduce power to avoid substrate damage</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 12px;">PS nanosphere removal</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Pure O₂</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Low pressure for isotropic shrinkage (colloidal lithography); higher pressure for complete removal</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 12px;">2D material etching (MoS₂, BN, graphene)</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">O₂ (very low power) or O₂/Ar</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Precise layer-by-layer control critical; see Section 7</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 12px;">Failure analysis (deprocessing)</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">O₂/CF₄ (90:10)</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Aggressive removal of all organics; endpoint less critical</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>5) Process Parameters & Optimization</h2>
+      <p>Plasma stripping involves five primary process parameters, each with distinct effects on strip rate, uniformity, substrate damage, and residue removal completeness.</p>
+
+      <h3>5.1 RF Power</h3>
+      <p>RF power controls both plasma density (radical and ion generation) and DC self-bias (ion energy). In plasma stripping:</p>
+      <ul>
+        <li><strong>Higher power (500–1000 W):</strong> Increases strip rate linearly up to a saturation point where radical recombination and gas depletion limit further improvement. Use for thick resists, hardened post-implant resists, and high-throughput requirements.</li>
+        <li><strong>Lower power (100–300 W):</strong> Reduces ion bombardment damage, minimizes substrate sputtering, and provides better rate control for thin films. Essential for descum, surface activation, and 2D materials work.</li>
+        <li><strong>Power density consideration:</strong> For a 200 mm (8") wafer, 400 W corresponds to ~1.3 W/cm². Scale proportionally for other wafer sizes.</li>
+      </ul>
+
+      <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+        <thead>
+          <tr style="background-color: #f5f5f5;">
+            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Parameter</th>
+            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Effect of Increase</th>
+            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Typical Range</th>
+            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Trade-off</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 12px;"><strong>RF Power</strong></td>
+            <td style="border: 1px solid #ddd; padding: 12px;">↑ Strip rate, ↑ ion energy, ↑ plasma density</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">300–1000 W</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Higher damage, more substrate heating, possible metal sputtering</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Chamber Pressure</strong></td>
+            <td style="border: 1px solid #ddd; padding: 12px;">↑ Radical density, ↓ ion energy (more collisions), ↑ isotropy</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">200–1000 mTorr</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Higher pressure increases rate but reduces directionality and may cause microloading</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Stage Temperature</strong></td>
+            <td style="border: 1px solid #ddd; padding: 12px;">↑ Reaction kinetics, ↑ by-product volatility, ↑ strip rate</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">5–200 °C</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Elevated temp required for hardened resist; too high may reflow partially stripped resist</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Gas Flow Rate</strong></td>
+            <td style="border: 1px solid #ddd; padding: 12px;">↑ Fresh radical supply, ↓ residence time, ↑ by-product removal</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">50–300 sccm</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Excess flow wastes gas and may reduce radical density (insufficient dissociation time)</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Plasma Discharge Gap</strong></td>
+            <td style="border: 1px solid #ddd; padding: 12px;">↑ Gap = more downstream-like (radical-dominated); ↓ gap = more direct (ion-assisted)</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">System-dependent</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Smaller gap increases ion flux and rate but also substrate damage</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>5.2 Pressure Effects</h3>
+      <p>Pressure is the second most influential parameter after RF power. In plasma stripping, higher pressures (500–1000 mTorr) are common — unlike RIE where low pressure is preferred for anisotropy. The rationale:</p>
+      <ul>
+        <li>Stripping is primarily a chemical (radical-driven) process — directionality is not needed for blanket resist removal</li>
+        <li>Higher pressure increases O₂ dissociation rate and radical density</li>
+        <li>More gas-phase collisions thermalize ions, reducing bombardment damage</li>
+        <li>Higher pressure improves uniformity for large-area substrates</li>
+      </ul>
+      <p>Exception: For descum and fine-feature residue removal, moderate pressures (200–500 mTorr) provide better penetration into high-aspect-ratio features.</p>
+
+      <h3>5.3 Temperature Control</h3>
+      <p>The NineScrolls Striper provides a water-cooled stage with temperature range of 5–200 °C, enabling precise thermal control:</p>
+      <ul>
+        <li><strong>Low temperature (5–50 °C):</strong> Used for temperature-sensitive substrates (flexible polymers, biological samples, some III-V devices). Cooling also prevents thermal reflow of partially stripped resist.</li>
+        <li><strong>Moderate temperature (80–120 °C):</strong> Standard range for most PR stripping. Provides good balance of strip rate and process control.</li>
+        <li><strong>High temperature (150–200 °C):</strong> Required for hardened, cross-linked, or ion-implanted resists where increased thermal energy aids bond breaking and by-product desorption. Also beneficial for H₂/N₂ stripping where the lower radical reactivity must be compensated.</li>
+      </ul>
+
+      <h3>5.4 Endpoint Detection</h3>
+      <p>Endpoint detection is critical for preventing over-ashing (which can damage underlying films) and under-ashing (which leaves residues). The NineScrolls Striper incorporates automated endpoint detection using:</p>
+      <ul>
+        <li><strong>Optical emission spectroscopy (OES):</strong> Monitors the intensity of CO* emission at 483.5 nm and/or OH* emission at 309 nm. When photoresist is being stripped, these lines are strong. When the resist is cleared, CO* and OH* intensities drop sharply — the endpoint signal.</li>
+        <li><strong>Endpoint algorithm:</strong> First-derivative detection of the CO* signal drop, with configurable threshold and over-etch timer. The system automatically transitions from strip to over-etch mode upon endpoint detection.</li>
+        <li><strong>Benefits of endpoint detection:</strong>
+          <ul>
+            <li>Wafer-to-wafer consistency even with resist thickness variation</li>
+            <li>Minimizes over-ashing to protect underlying films</li>
+            <li>Compensates for chamber condition drift (aging, coating buildup)</li>
+            <li>Enables automated, unattended processing</li>
+          </ul>
+        </li>
+      </ul>
+
+      <h3>5.5 Optimization Strategy</h3>
+      <p>A systematic approach to plasma strip process development:</p>
+      <ol>
+        <li><strong>Define requirements:</strong> Target strip rate, acceptable substrate loss, uniformity specification, throughput goal</li>
+        <li><strong>Select gas chemistry:</strong> Based on substrate and exposed materials (see Section 4)</li>
+        <li><strong>Start with baseline:</strong> O₂ 100 sccm, 500 mTorr, 400 W, 100 °C — adjust from this starting point</li>
+        <li><strong>Optimize power:</strong> Increase for faster stripping; decrease if substrate damage is observed (measure with contact angle, XPS, or electrical testing)</li>
+        <li><strong>Tune pressure:</strong> Increase for higher rate and lower damage; decrease for better feature penetration</li>
+        <li><strong>Adjust temperature:</strong> Increase if hardened resist is incompletely removed; decrease for sensitive substrates</li>
+        <li><strong>Set endpoint:</strong> Calibrate OES endpoint on test wafers; set over-etch time to 10–30% of main strip time</li>
+        <li><strong>Verify uniformity:</strong> Measure strip rate at center, mid-radius, and edge; adjust gas flow or pressure if non-uniformity &gt;5%</li>
+      </ol>
+
+      <h2>6) Uniformity Considerations</h2>
+      <p>Achieving uniform stripping across the entire wafer is essential — non-uniform stripping leads to either over-ashed regions (substrate damage) or under-ashed regions (resist residue). Key factors affecting uniformity:</p>
+      <ul>
+        <li><strong>Gas distribution:</strong> The NineScrolls Striper uses a center pump-down design that creates symmetric radial gas flow across the wafer surface, ensuring uniform radical delivery from edge to center.</li>
+        <li><strong>Plasma uniformity:</strong> Electrode design, gap spacing, and chamber geometry determine plasma density distribution. The adjustable discharge gap allows fine-tuning of the plasma profile.</li>
+        <li><strong>Temperature uniformity:</strong> Non-uniform wafer heating causes local strip rate variation. The water-cooled stage maintains temperature uniformity across the wafer within ±2 °C.</li>
+        <li><strong>Loading effects:</strong> Dense resist patterns strip slower than isolated features due to local radical depletion. Higher gas flow and pressure help mitigate microloading.</li>
+      </ul>
+      <p>The NineScrolls Striper achieves &lt;5% non-uniformity (with standard edge exclusion) across wafer sizes from 4" to 12", verified by multi-point ellipsometry measurements on blanket oxide witness wafers.</p>
+
+      <h2>7) Special Applications: 2D Materials Processing</h2>
+      <p>The emergence of two-dimensional (2D) materials — molybdenum disulfide (MoS₂), hexagonal boron nitride (BN), and graphene — has created new demands for plasma stripping equipment. These atomically thin materials require process control at a fundamentally different scale than traditional semiconductor processing.</p>
+
+      <h3>7.1 MoS₂ Processing</h3>
+      <p>Monolayer MoS₂ (~0.65 nm thick) is a promising channel material for next-generation transistors. Plasma stripping is used in two contexts:</p>
+      <ul>
+        <li><strong>Resist removal after patterning:</strong> PMMA or photoresist must be stripped from MoS₂ without damaging the underlying monolayer. Standard O₂ plasma at full power would etch the MoS₂ itself. The solution is ultra-low-power O₂ plasma (50–150 W) at elevated pressure (&gt;500 mTorr) and reduced exposure time — conditions that maximize chemical (radical) stripping while minimizing ion bombardment.</li>
+        <li><strong>Selective etching:</strong> Controlled O₂ plasma exposure can selectively thin multi-layer MoS₂ to monolayer thickness. MoO₃ (the oxidation product) is volatile above ~700 °C but can also be removed by a subsequent water rinse at room temperature. Layer-by-layer thinning requires careful endpoint monitoring — typically via in-situ photoluminescence or Raman spectroscopy.</li>
+      </ul>
+
+      <h3>7.2 Hexagonal Boron Nitride (hBN) Processing</h3>
+      <p>hBN serves as an ideal dielectric and encapsulation layer for 2D heterostructures. Plasma stripping applications include:</p>
+      <ul>
+        <li><strong>Surface cleaning:</strong> Low-power O₂ plasma removes organic contaminants from hBN surfaces before device fabrication. hBN is more resistant to O₂ plasma than graphene or MoS₂, allowing slightly more aggressive conditions.</li>
+        <li><strong>Patterned etching:</strong> O₂/CF₄ plasma can etch hBN when selective patterning is required. The etch rate depends strongly on the number of layers and crystallographic orientation.</li>
+      </ul>
+
+      <h3>7.3 Graphene Processing</h3>
+      <p>Graphene is extremely sensitive to O₂ plasma — even brief exposure can introduce defects (sp³ sites, vacancies) or completely remove monolayer graphene. This sensitivity is both a challenge and an opportunity:</p>
+      <ul>
+        <li><strong>Challenge — resist removal:</strong> Stripping photoresist or PMMA from graphene without damaging it requires H₂/N₂ or Ar/H₂ plasma at very low power, or alternatively, thermal annealing (which avoids plasma damage entirely but is slower).</li>
+        <li><strong>Opportunity — patterned etching:</strong> O₂ plasma selectively etches graphene with high contrast against SiO₂ substrates, enabling device isolation and ribbon patterning. For this application, moderate power (200–400 W) and short, timed exposures provide clean, well-defined graphene edges.</li>
+        <li><strong>Controlled functionalization:</strong> Extremely brief O₂ plasma exposure (1–5 s at low power) introduces oxygen-containing groups that tune graphene's work function and wettability without complete removal. This is used for sensor and biosensor surface preparation.</li>
+      </ul>
+
+      <h3>7.4 Process Control Requirements for 2D Materials</h3>
+      <p>Processing 2D materials with plasma stripping demands:</p>
+      <ul>
+        <li><strong>Precise power control:</strong> Ability to operate stably at low RF power (100–300 W) without plasma flickering or mode instability</li>
+        <li><strong>Temperature control:</strong> Water-cooled stage (5–200 °C) to prevent thermal damage to 2D material/substrate interfaces</li>
+        <li><strong>Adjustable plasma exposure:</strong> Tunable discharge gap to control the ratio of radical vs. ion flux reaching the substrate</li>
+        <li><strong>Reliable endpoint:</strong> OES endpoint detection to prevent over-processing of atomically thin films</li>
+        <li><strong>Low base pressure:</strong> Clean vacuum environment to avoid contaminating pristine 2D surfaces</li>
+      </ul>
+
+      <h2>8) Equipment Selection Guide</h2>
+      <p>When evaluating plasma stripping / ashing equipment, the following specifications and features should be prioritized:</p>
+
+      <h3>8.1 Critical Specifications</h3>
+      <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+        <thead>
+          <tr style="background-color: #f5f5f5;">
+            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">Specification</th>
+            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">What to Look For</th>
+            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">NineScrolls Striper</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Wafer Size Range</strong></td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Should cover current and planned substrate sizes</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">4", 6", 8", 12", and multi-wafer configurations</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 12px;"><strong>RF Power Range</strong></td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Wide range for both gentle descum and aggressive strip</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">300–1000 W with stable operation across the full range</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Stage Temperature</strong></td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Water-cooled with wide range for process flexibility</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">5–200 °C, water-cooled</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Gas Lines</strong></td>
+            <td style="border: 1px solid #ddd; padding: 12px;">At least 2 for O₂ + additive; more for multi-chemistry processes</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">2 standard + additional lines customizable</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Uniformity</strong></td>
+            <td style="border: 1px solid #ddd; padding: 12px;">&lt;5% non-uniformity with standard edge exclusion</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">&lt;5% verified by multi-point ellipsometry</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Endpoint Detection</strong></td>
+            <td style="border: 1px solid #ddd; padding: 12px;">OES-based with automated algorithm</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Automated OES endpoint with configurable threshold</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Footprint</strong></td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Compact for cleanroom space efficiency</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">0.8 × 0.8 m — among the smallest in its class</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Pump-down Design</strong></td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Symmetric flow for uniform gas distribution</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Center pump-down for uniform radial flow</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #ddd; padding: 12px;"><strong>Plasma Gap Control</strong></td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Adjustable to tune radical/ion ratio</td>
+            <td style="border: 1px solid #ddd; padding: 12px;">Adjustable discharge gap for process flexibility</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>8.2 Application-Specific Considerations</h3>
+      <ul>
+        <li><strong>High-volume manufacturing:</strong> Prioritize throughput (multi-wafer batch capability), automated endpoint, recipe storage, and SECS/GEM interface. Consider multi-wafer Striper configurations.</li>
+        <li><strong>R&D / University labs:</strong> Prioritize process flexibility (wide power/temperature/pressure ranges), multiple gas lines, manual override capability, and small footprint. The NineScrolls Striper's 0.8 × 0.8 m footprint fits even in space-constrained cleanrooms.</li>
+        <li><strong>2D materials research:</strong> Prioritize low-power stability, precise temperature control (water-cooled stage), adjustable discharge gap, and clean vacuum base pressure.</li>
+        <li><strong>Failure analysis:</strong> Prioritize aggressive strip capability (high power, O₂/CF₄), large process window, and ease of use. Endpoint detection is less critical for deprocessing applications.</li>
+      </ul>
+
+      <h2>9) Frequently Asked Questions</h2>
+      <div itemscope itemtype="https://schema.org/FAQPage">
+        <div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question" style="margin-bottom: 24px; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px;">
+          <h3 itemprop="name" style="margin-top: 0; color: #1e3a5f;">What is the difference between plasma stripping and plasma ashing?</h3>
+          <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <div itemprop="text">
+              <p>The terms are used interchangeably in practice. Historically, "ashing" emphasized the combustion-like oxidation of organic material to gaseous CO₂ and H₂O, while "stripping" emphasized the removal of a specific film (photoresist). In modern usage, both refer to the same O₂-plasma-based organic removal process. Some engineers reserve "ashing" for blanket resist removal and "stripping" for post-etch resist removal, but this distinction is not universal.</p>
+            </div>
+          </div>
+        </div>
+
+        <div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question" style="margin-bottom: 24px; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px;">
+          <h3 itemprop="name" style="margin-top: 0; color: #1e3a5f;">Can plasma stripping remove ion-implanted photoresist?</h3>
+          <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <div itemprop="text">
+              <p><strong>Yes</strong>, but it requires modified process conditions. High-dose ion implantation (&gt;10¹⁵ ions/cm²) creates a carbonized, cross-linked "crust" on the resist surface that is resistant to standard O₂ stripping. Effective removal strategies include: (1) elevated stage temperature (150–200 °C) to thermally decompose the crust, (2) higher RF power (600–1000 W) for increased ion bombardment, (3) O₂/CF₄ chemistry to chemically attack inorganic implant species, or (4) a two-step process — low-power strip to remove bulk resist below the crust, followed by high-power O₂/CF₄ to remove the hardened layer. The NineScrolls Striper's 5–200 °C temperature range and 300–1000 W power range provide the process window needed for implanted resist.</p>
+            </div>
+          </div>
+        </div>
+
+        <div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question" style="margin-bottom: 24px; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px;">
+          <h3 itemprop="name" style="margin-top: 0; color: #1e3a5f;">How do I strip photoresist without oxidizing exposed copper?</h3>
+          <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <div itemprop="text">
+              <p>Use H₂/N₂ (forming gas) plasma instead of O₂. Hydrogen radicals strip organic material through reduction rather than oxidation, and actually <em>reduce</em> any existing copper oxide back to metallic copper (CuO + H₂ → Cu + H₂O). Typical conditions: H₂/N₂ ratio of 1:3 to 1:4, 500–800 W, 500–1000 mTorr, 150–200 °C stage temperature. Strip rates are 3–5× lower than O₂ plasma, so process times are longer, but the metal surface is preserved. Verify copper surface condition post-strip using XPS or electrical resistance measurements.</p>
+            </div>
+          </div>
+        </div>
+
+        <div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question" style="margin-bottom: 24px; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px;">
+          <h3 itemprop="name" style="margin-top: 0; color: #1e3a5f;">What causes resist residue after plasma stripping, and how do I fix it?</h3>
+          <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <div itemprop="text">
+              <p>Common causes of post-strip residue: (1) <strong>Insufficient over-etch time</strong> — the endpoint was detected but residue remains in dense patterns or high-aspect-ratio features. Increase over-etch to 20–30% of main strip time. (2) <strong>Inorganic residue</strong> — metal-containing or Si-containing post-etch polymers that O₂ alone cannot volatilize. Switch to O₂/CF₄ (95:5). (3) <strong>Hardened resist crust</strong> — ion bombardment during prior etching cross-linked the resist surface. Increase temperature and/or power, or use a two-step process. (4) <strong>Chamber contamination</strong> — buildup on chamber walls releases particles or contaminants. Clean the chamber (O₂ plasma conditioning or manual wipe). Diagnose by examining the residue location: center-concentrated suggests gas distribution issues; edge-concentrated suggests temperature non-uniformity; random spots suggest particle contamination.</p>
+            </div>
+          </div>
+        </div>
+
+        <div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question" style="margin-bottom: 24px; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px;">
+          <h3 itemprop="name" style="margin-top: 0; color: #1e3a5f;">How does stage temperature affect plasma strip rate?</h3>
+          <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <div itemprop="text">
+              <p>Strip rate follows Arrhenius-type temperature dependence: for every ~30 °C increase in stage temperature, strip rate approximately doubles (activation energy ~0.3–0.5 eV for typical novolac resists). At 50 °C, a typical O₂ strip rate might be 1 µm/min; at 120 °C, the same recipe can achieve 3–4 µm/min. However, temperatures above 150 °C can cause partially stripped resist to reflow into cracks and crevices, making complete removal more difficult. For most applications, 80–120 °C provides the best balance of speed and process control.</p>
+            </div>
+          </div>
+        </div>
+
+        <div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question" style="margin-bottom: 24px; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px;">
+          <h3 itemprop="name" style="margin-top: 0; color: #1e3a5f;">Can I use a plasma stripper for PMMA and e-beam resist removal?</h3>
+          <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <div itemprop="text">
+              <p><strong>Yes.</strong> PMMA (poly(methyl methacrylate)) is an acrylic polymer that strips readily in O₂ plasma — often faster than novolac-based photoresists because PMMA's ester groups decompose easily under radical attack. Typical O₂ plasma conditions for PMMA: 200–400 W, 500 mTorr, 80 °C, with strip rates of 2–5 µm/min. E-beam resists such as ZEP-520A and HSQ require different approaches: ZEP strips in O₂ plasma similarly to PMMA, while HSQ (hydrogen silsesquioxane) is a silicone-based resist that converts to SiO₂ upon e-beam exposure and cannot be stripped by O₂ plasma — it must be removed with HF-based wet chemistry.</p>
+            </div>
+          </div>
+        </div>
+
+        <div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question" style="margin-bottom: 24px; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px;">
+          <h3 itemprop="name" style="margin-top: 0; color: #1e3a5f;">What is descum and when is it needed?</h3>
+          <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <div itemprop="text">
+              <p>Descum is a brief, gentle O₂ plasma treatment (10–30 s at 100–300 W) applied after photoresist development to remove thin organic residue ("scum") from nominally cleared areas. It is needed when: (1) the develop process leaves a thin film of undissolved resist in open areas (common with chemically amplified resists or when developer concentration is not optimal), (2) pattern transfer fidelity is critical (the 5–50 nm scum layer can act as a micro-mask during etching), or (3) metal deposition requires a pristine surface for good adhesion and contact resistance. Descum removes &lt;20 nm of resist thickness from patterned features while clearing scum completely, so it does not significantly impact the resist budget.</p>
+            </div>
+          </div>
+        </div>
+
+        <div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question" style="margin-bottom: 24px; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px;">
+          <h3 itemprop="name" style="margin-top: 0; color: #1e3a5f;">How do I process graphene or MoS₂ without destroying the monolayer?</h3>
+          <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <div itemprop="text">
+              <p>The key is minimizing ion bombardment while providing sufficient radical flux for resist removal. Use: (1) <strong>Low RF power</strong> (100–200 W) — reduces self-bias and ion energy below the damage threshold for the 2D material, (2) <strong>High pressure</strong> (&gt;500 mTorr) — thermalizes ions through collisions, further reducing bombardment energy, (3) <strong>Large discharge gap</strong> — increases the distance radicals travel before reaching the substrate, allowing ions to recombine while radicals survive, (4) <strong>Low temperature</strong> (20–50 °C) — prevents thermal damage to the 2D material/substrate interface, (5) <strong>Short, timed exposures with endpoint monitoring</strong> — use OES to detect when resist is cleared and stop immediately to prevent over-exposure of the 2D material. For graphene specifically, consider H₂/N₂ plasma instead of O₂, since graphene is rapidly etched by oxygen radicals. Validate with Raman spectroscopy (D/G peak ratio indicates defect density) after each process development iteration.</p>
+            </div>
+          </div>
+        </div>
+
+        <div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question" style="margin-bottom: 24px; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px;">
+          <h3 itemprop="name" style="margin-top: 0; color: #1e3a5f;">How often should I condition the chamber, and what recipe should I use?</h3>
+          <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <div itemprop="text">
+              <p>Run an O₂ plasma chamber conditioning step (O₂ 100–200 sccm, 500 mTorr, 500–600 W, 2–5 min, no wafer) before each lot or every 10–25 wafers, depending on resist volume. This burns off accumulated organic deposits on chamber walls and electrodes, maintaining consistent strip rates. If you process high-dose implanted resist or high-volume resist removal, condition more frequently. Monitor strip rate trending on witness wafers — a gradual decline (&gt;5%) indicates the conditioning interval should be shortened. For thorough periodic cleaning, refer to the NineScrolls <a href="/insights/plasma-cleaner-maintenance-guide">Plasma Equipment Maintenance Guide</a>.</p>
+            </div>
+          </div>
+        </div>
+
+        <div itemscope itemprop="mainEntity" itemtype="https://schema.org/Question" style="margin-bottom: 24px; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px;">
+          <h3 itemprop="name" style="margin-top: 0; color: #1e3a5f;">What wafer sizes does the NineScrolls Striper support?</h3>
+          <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+            <div itemprop="text">
+              <p>The NineScrolls Striper is available in configurations supporting 4" (100 mm), 6" (150 mm), 8" (200 mm), and 12" (300 mm) wafers, as well as multi-wafer batch configurations for smaller substrates. All configurations share the same core platform — compact 0.8 × 0.8 m footprint, center pump-down design, adjustable discharge gap, and water-cooled stage (5–200 °C). Wafer-size-specific tooling (susceptors, lift pins, gas distribution plates) can be swapped to accommodate different substrate sizes on the same system, providing maximum flexibility for multi-project facilities.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="product-callout">
+        <h3>NineScrolls Striper — Plasma Stripping & Ashing Systems</h3>
+        <p>Engineered for precise organic removal, the NineScrolls Striper delivers &lt;5% non-uniformity, 300–1000 W RF power, water-cooled stage (5–200 °C), automated endpoint detection, and a compact 0.8 × 0.8 m footprint. From standard PR stripping to advanced 2D materials processing — one platform, full flexibility.</p>
+        <div class="product-callout-buttons">
+          <a href="/products/striper" style="background: #2563eb; color: white; padding: 10px 24px; border-radius: 6px; text-decoration: none; font-weight: 500;">View Striper Systems</a>
+          <a href="/contact" style="background: transparent; color: #2563eb; padding: 10px 24px; border-radius: 6px; text-decoration: none; font-weight: 500; border: 1px solid #2563eb;">Request a Quote</a>
+        </div>
+      </div>
+    
