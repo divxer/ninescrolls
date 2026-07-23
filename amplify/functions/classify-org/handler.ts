@@ -516,26 +516,40 @@ async function handleUndo(body: ClassifyRequest, corsHeaders: Record<string, str
         };
 
         // Field-level update (same rationale as handleOverride): a full Put
-        // would drop a saved rename's displayName.
-        await ddbClient.send(new UpdateCommand({
-            TableName: TABLE_NAME,
-            Key: { orgName: body.orgName },
-            UpdateExpression:
-                'SET organizationType = :ot, isTargetCustomer = :it, confidence = :c, reason = :r, classifiedAt = :at, #src = :src, #ttl = :ttl'
-                + (restored.provider ? ', provider = :p' : '')
-                + ' REMOVE previousClassification' + (restored.provider ? '' : ', provider'),
-            ExpressionAttributeNames: { '#src': 'source', '#ttl': 'ttl' },
-            ExpressionAttributeValues: {
-                ':ot': restored.organizationType,
-                ':it': restored.isTargetCustomer,
-                ':c': restored.confidence,
-                ':r': restored.reason,
-                ':at': restored.classifiedAt,
-                ':src': restored.source,
-                ':ttl': ttl,
-                ...(restored.provider ? { ':p': restored.provider } : {}),
-            },
-        }));
+        // would drop a saved rename's displayName. CAS on the snapshot this
+        // decision was based on (source + classifiedAt revision token) — a
+        // NEWER override committed between our read and this restore must not
+        // be overwritten with stale previous-classification data.
+        try {
+            await ddbClient.send(new UpdateCommand({
+                TableName: TABLE_NAME,
+                Key: { orgName: body.orgName },
+                UpdateExpression:
+                    'SET organizationType = :ot, isTargetCustomer = :it, confidence = :c, reason = :r, classifiedAt = :at, #src = :src, #ttl = :ttl'
+                    + (restored.provider ? ', provider = :p' : '')
+                    + ' REMOVE previousClassification' + (restored.provider ? '' : ', provider'),
+                ConditionExpression: '#src = :manual AND '
+                    + (existing.classifiedAt ? 'classifiedAt = :readAt' : 'attribute_not_exists(classifiedAt)'),
+                ExpressionAttributeNames: { '#src': 'source', '#ttl': 'ttl' },
+                ExpressionAttributeValues: {
+                    ':ot': restored.organizationType,
+                    ':it': restored.isTargetCustomer,
+                    ':c': restored.confidence,
+                    ':r': restored.reason,
+                    ':at': restored.classifiedAt,
+                    ':src': restored.source,
+                    ':ttl': ttl,
+                    ':manual': 'manual',
+                    ...(existing.classifiedAt ? { ':readAt': existing.classifiedAt } : {}),
+                    ...(restored.provider ? { ':p': restored.provider } : {}),
+                },
+            }));
+        } catch (err: unknown) {
+            if (err instanceof Error && err.name === 'ConditionalCheckFailedException') {
+                continue; // record changed under us — re-read and re-dispatch
+            }
+            throw err;
+        }
 
         invalidateCorrectionsCache();
 
@@ -547,18 +561,31 @@ async function handleUndo(body: ClassifyRequest, corsHeaders: Record<string, str
     } else if (existing.displayName) {
         // No previous classification, but the record carries a saved rename —
         // deleting would lose it. Neutralize to the same default shape a
-        // rename-of-missing creates, keeping displayName.
-        await ddbClient.send(new UpdateCommand({
-            TableName: TABLE_NAME,
-            Key: { orgName: body.orgName },
-            UpdateExpression:
-                'SET organizationType = :ot, isTargetCustomer = :it, confidence = :c, reason = :r, classifiedAt = :at, #src = :src'
-                + ' REMOVE previousClassification, provider, #ttl',
-            ExpressionAttributeNames: { '#src': 'source', '#ttl': 'ttl' },
-            ExpressionAttributeValues: {
-                ':ot': 'unknown', ':it': false, ':c': 0, ':r': '', ':at': new Date().toISOString(), ':src': 'manual',
-            },
-        }));
+        // rename-of-missing creates, keeping displayName. CAS on the snapshot
+        // (source + revision token + the displayName we intend to preserve):
+        // a newer override/rename between read and write re-dispatches.
+        try {
+            await ddbClient.send(new UpdateCommand({
+                TableName: TABLE_NAME,
+                Key: { orgName: body.orgName },
+                UpdateExpression:
+                    'SET organizationType = :ot, isTargetCustomer = :it, confidence = :c, reason = :r, classifiedAt = :at, #src = :src'
+                    + ' REMOVE previousClassification, provider, #ttl',
+                ConditionExpression: '#src = :manual AND displayName = :dn AND '
+                    + (existing.classifiedAt ? 'classifiedAt = :readAt' : 'attribute_not_exists(classifiedAt)'),
+                ExpressionAttributeNames: { '#src': 'source', '#ttl': 'ttl' },
+                ExpressionAttributeValues: {
+                    ':ot': 'unknown', ':it': false, ':c': 0, ':r': '', ':at': new Date().toISOString(), ':src': 'manual',
+                    ':manual': 'manual', ':dn': existing.displayName,
+                    ...(existing.classifiedAt ? { ':readAt': existing.classifiedAt } : {}),
+                },
+            }));
+        } catch (err: unknown) {
+            if (err instanceof Error && err.name === 'ConditionalCheckFailedException') {
+                continue; // record changed under us — re-read and re-dispatch
+            }
+            throw err;
+        }
 
         invalidateCorrectionsCache();
 

@@ -14,6 +14,9 @@ describe('replayAnalyticsSideEffects', () => {
     reResolve.mockResolvedValueOnce({ summary: { reemitted: 2, hasMore: false } });
     const r = await replayAnalyticsSideEffects(base);
     expect(r.ok).toBe(true); expect(r.pending).toBe(false);
+    // Consumer context: the retro must NOT publish a version bump that would
+    // fence out this consumer's own bookkeeping (markStuck/delete)
+    expect(reResolve).toHaveBeenCalledWith({ visitorId: 'v1', markerManagedByCaller: true });
     expect(writeLinkAuditLog).toHaveBeenCalledWith(expect.objectContaining({
       id: expect.stringMatching(/^audit-[0-9a-f]{16}$/), reason: 'manual_link_visitor',
       details: expect.objectContaining({ unitType: 'analytics', retroSummary: expect.any(Object) }),

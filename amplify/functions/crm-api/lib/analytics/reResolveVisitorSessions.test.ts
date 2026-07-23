@@ -172,6 +172,15 @@ describe('reResolveVisitorSessions', () => {
     expect(out.summary).toMatchObject({ hasMore: false });
     expect(ensureMarker).not.toHaveBeenCalled();
   });
+  it('markerManagedByCaller (drainer/linkVisitor context): truncation does NOT publish a version bump', async () => {
+    listMarkersMock.mockResolvedValueOnce({ markers: [M('s-1', 'unresolved'), M('s-2', 'unresolved')], lastKey: { PK: 'VISITOR#v-1', SK: 'SESSION#s-2' } });
+    materialize.mockResolvedValue({ outcome: 'emitted' });
+    const out = await reResolveVisitorSessions({ visitorId: 'v-1', maxSessions: 2, markerManagedByCaller: true });
+    expect(out.summary).toMatchObject({ hasMore: true });
+    // The consumer's own continuation — bumping would fence out its own
+    // markStuck/delete (poison visitors could never age into stuck)
+    expect(ensureMarker).not.toHaveBeenCalled();
+  });
   it('marker write failure propagates (durable intent must commit before reporting hasMore)', async () => {
     ensureMarker.mockRejectedValueOnce(new Error('ddb down'));
     listMarkersMock.mockResolvedValueOnce({ markers: [M('s-1', 'unresolved'), M('s-2', 'unresolved')], lastKey: { PK: 'VISITOR#v-1', SK: 'SESSION#s-2' } });

@@ -246,6 +246,29 @@ describe('classify-org override/undo — displayName (rename) preservation', () 
         expect(u.UpdateExpression).toContain('REMOVE previousClassification');
         expect(u.ExpressionAttributeValues[':src']).toBe('ai');
         expect(u.ExpressionAttributeValues[':p']).toBe('bedrock');
+        // CAS on the read snapshot: a NEWER override committed between read
+        // and restore must not be overwritten with stale data
+        expect(u.ConditionExpression).toContain('#src = :manual');
+    });
+
+    it('undo restore race: a newer override landing mid-flight re-dispatches against the fresh record', async () => {
+        const prevA = { organizationType: 'telecom_isp', isTargetCustomer: false, confidence: 0.9, reason: 'AI', source: 'ai' };
+        const manualV1 = { orgName: 'v-abc123', organizationType: 'enterprise', isTargetCustomer: true, confidence: 1, reason: 'M1', source: 'manual', classifiedAt: 'T1', previousClassification: prevA };
+        const manualV2 = { orgName: 'v-abc123', organizationType: 'hospital', isTargetCustomer: true, confidence: 1, reason: 'M2', source: 'manual', classifiedAt: 'T2', previousClassification: { ...manualV1, source: 'manual' } };
+        mockGet.mockResolvedValueOnce({ Item: manualV1 }); // initial read
+        const conflict = new Error('conditional');
+        conflict.name = 'ConditionalCheckFailedException';
+        mockUpdate.mockRejectedValueOnce(conflict); // newer override (V2) landed → CAS fails
+        mockGet.mockResolvedValueOnce({ Item: manualV2 }); // re-read: the fresh record
+        // second restore succeeds
+
+        const res = await handler(makeEvent({ action: 'undo', orgName: 'v-abc123' }), {} as never, vi.fn());
+
+        expect(res.statusCode).toBe(200);
+        expect(mockUpdate).toHaveBeenCalledTimes(2);
+        const second = mockUpdate.mock.calls[1][0] as Record<string, any>;
+        // Re-dispatch operated on the FRESH record's snapshot, not the stale one
+        expect(second.ExpressionAttributeValues[':readAt']).toBe('T2');
     });
 
     it('undo with no previousClassification but a saved rename: neutralizes instead of deleting the rename', async () => {
@@ -261,6 +284,9 @@ describe('classify-org override/undo — displayName (rename) preservation', () 
         const u = mockUpdate.mock.calls[0][0] as Record<string, any>;
         expect(u.UpdateExpression).not.toContain('displayName');
         expect(u.ExpressionAttributeValues[':ot']).toBe('unknown');
+        // CAS: source + the displayName being preserved + revision token
+        expect(u.ConditionExpression).toContain('#src = :manual AND displayName = :dn');
+        expect(u.ExpressionAttributeValues[':dn']).toBe('InnateControl visitor');
         expect(JSON.parse(res.body)).toMatchObject({ undone: true, deleted: false, displayName: 'InnateControl visitor' });
     });
 

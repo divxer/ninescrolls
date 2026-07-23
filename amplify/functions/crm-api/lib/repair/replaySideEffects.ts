@@ -380,7 +380,12 @@ export async function replayAnalyticsSideEffects(args: {
   let hasMore = false;
 
   try {
-    const retro = await reResolveVisitorSessions({ visitorId: args.visitorId });
+    // markerManagedByCaller: this replay runs INSIDE a marker consumer (the
+    // drainer / linkVisitor) — a truncation here is the consumer's own
+    // continuation, and publishing a version bump would fence out the
+    // consumer's own bookkeeping (markStuck/delete carry the version it
+    // read → always lost → poison visitors could never age into stuck).
+    const retro = await reResolveVisitorSessions({ visitorId: args.visitorId, markerManagedByCaller: true });
     summary = (retro?.summary ?? {}) as Record<string, unknown>;
     hasMore = summary.hasMore === true;
   } catch (err) { transientError = msg(err); }

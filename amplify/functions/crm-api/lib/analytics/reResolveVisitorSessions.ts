@@ -9,7 +9,17 @@ const PAGE_LIMIT = 100;
 
 // NOTE: a persisted RETRO#STATE resume cursor takes precedence over startSessionSk — an in-flight
 // interrupted run always finishes before a manually-requested range starts.
-export interface RetroArgs { visitorId: string; startSessionSk?: string; maxSessions?: number; }
+export interface RetroArgs {
+  visitorId: string; startSessionSk?: string; maxSessions?: number;
+  // Set by callers that OWN the marker lifecycle around this call (the repair
+  // drainer / linkVisitor via replayAnalyticsSideEffects). Their truncation is
+  // the consumer's own continuation, not new external work — publishing a
+  // version bump here would fence out the consumer's OWN bookkeeping (its
+  // markStuck/delete carry the version it read → always lost → a poison
+  // visitor could never age into stuck). The marker they hold is already
+  // pending and discoverable; touchInProgress keeps it that way.
+  markerManagedByCaller?: boolean;
+}
 
 /**
  * Every `hasMore: true` return MUST leave a pending CRM_REPAIR#analytics
@@ -43,7 +53,7 @@ export async function reResolveVisitorSessions(args: RetroArgs): Promise<{ summa
   const nowIso = new Date().toISOString();
   const max = args.maxSessions ?? DEFAULT_MAX_SESSIONS;
   if (max <= 0) {
-    await ensureTruncationMarker(args.visitorId, nowIso);
+    if (!args.markerManagedByCaller) await ensureTruncationMarker(args.visitorId, nowIso);
     return { summary: { skipped: true, hasMore: true } };
   }
 
@@ -84,14 +94,14 @@ export async function reResolveVisitorSessions(args: RetroArgs): Promise<{ summa
       ...(startKey ? { cursor: startKey } : {}),
       retrySessionIds: [...failedSessionIds, ...(resume?.retrySessionIds ?? []).slice(processed)],
     });
-    await ensureTruncationMarker(args.visitorId, nowIso);
+    if (!args.markerManagedByCaller) await ensureTruncationMarker(args.visitorId, nowIso);
     return { summary: { ...counters, hasMore: true, churning: isChurning() } };
   }
   do {
     const remaining = max - processed;
     if (remaining <= 0) {
       await writeRetroState(args.visitorId, { ...(startKey ? { cursor: startKey } : {}) });
-      await ensureTruncationMarker(args.visitorId, nowIso);
+      if (!args.markerManagedByCaller) await ensureTruncationMarker(args.visitorId, nowIso);
       return { summary: { ...counters, hasMore: true, churning: isChurning() } };
     }
     const { markers, lastKey } = await listMarkers(args.visitorId, { limit: Math.min(PAGE_LIMIT, remaining), startKey });
@@ -103,12 +113,12 @@ export async function reResolveVisitorSessions(args: RetroArgs): Promise<{ summa
     }
     if (failedSessionIds.size > 0) {
       await writeRetroState(args.visitorId, { ...(lastKey ? { cursor: lastKey } : {}), retrySessionIds: [...failedSessionIds] });
-      await ensureTruncationMarker(args.visitorId, nowIso);
+      if (!args.markerManagedByCaller) await ensureTruncationMarker(args.visitorId, nowIso);
       return { summary: { ...counters, hasMore: true, churning: isChurning() } };
     }
     if (lastKey && processed >= max) {
       await writeRetroState(args.visitorId, { cursor: lastKey });
-      await ensureTruncationMarker(args.visitorId, nowIso);
+      if (!args.markerManagedByCaller) await ensureTruncationMarker(args.visitorId, nowIso);
       console.warn(JSON.stringify({ event: 'crm.analytics.retro.truncated', visitorId: args.visitorId }));
       return { summary: { ...counters, hasMore: true, churning: isChurning() } };
     }
