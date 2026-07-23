@@ -1339,6 +1339,57 @@ describe('order-api handler', () => {
             )).rejects.toThrow(/missing order/);
         });
 
+        it('duplicate path self-heals the VISITOR# bridge from stored META (no org re-upsert)', async () => {
+            mockTransact.mockRejectedValueOnce(makeCancel(MARKER_EXISTS_REASONS));
+            mockGet
+                .mockResolvedValueOnce({ Item: { PK: 'STRIPE_SESSION#cs_live_test123', orderId: 'ord-20260722-d169' } })
+                .mockResolvedValueOnce({
+                    Item: {
+                        ...SAMPLE_ORDER, orderId: 'ord-20260722-d169', status: 'PO_RECEIVED', source: 'STRIPE',
+                        visitorId: '550e8400-e29b-41d4-a716-446655440000', matchedOrgId: 'org-innate',
+                    },
+                });
+            mockQuery.mockResolvedValueOnce({ Items: [SAMPLE_CONTACT] });
+            mockUpsertVisitorBridge.mockResolvedValueOnce({ created: true, orgUpgraded: false, orgChanged: false });
+
+            const result = await handler(
+                makeDirectInvokeEvent(STRIPE_INPUT) as any,
+                {} as any,
+                vi.fn(),
+            ) as Record<string, unknown>;
+
+            expect(result.orderId).toBe('ord-20260722-d169');
+            // Bridge healed from the STORED order's identity, not re-derived
+            expect(mockUpsertVisitorBridge).toHaveBeenCalledTimes(1);
+            const bridgeInput = mockUpsertVisitorBridge.mock.calls[0][2] as Record<string, unknown>;
+            expect(bridgeInput.visitorId).toBe('550e8400-e29b-41d4-a716-446655440000');
+            expect(bridgeInput.matchedOrgId).toBe('org-innate');
+            expect(bridgeInput.sourceEntityType).toBe('order');
+            expect(bridgeInput.sourceEntityId).toBe('ord-20260722-d169');
+            expect(mockInvokeCrmAction).toHaveBeenCalledWith(
+                expect.objectContaining({ action: 'reResolveVisitorSessions' }),
+            );
+            // The NON-idempotent org score upsert must NOT run again
+            expect(mockInvokeOrgApi).not.toHaveBeenCalled();
+        });
+
+        it('duplicate path without a stored visitorId skips the bridge quietly', async () => {
+            mockTransact.mockRejectedValueOnce(makeCancel(MARKER_EXISTS_REASONS));
+            mockGet
+                .mockResolvedValueOnce({ Item: { PK: 'STRIPE_SESSION#cs_live_test123', orderId: 'ord-old' } })
+                .mockResolvedValueOnce({ Item: { ...SAMPLE_ORDER, orderId: 'ord-old', status: 'PO_RECEIVED', source: 'STRIPE' } });
+            mockQuery.mockResolvedValueOnce({ Items: [] });
+
+            const result = await handler(
+                makeDirectInvokeEvent(STRIPE_INPUT) as any,
+                {} as any,
+                vi.fn(),
+            ) as Record<string, unknown>;
+
+            expect(result.orderId).toBe('ord-old');
+            expect(mockUpsertVisitorBridge).not.toHaveBeenCalled();
+        });
+
         it('stores visitorId on META and upserts the VISITOR# bridge (order source)', async () => {
             mockUpsertVisitorBridge.mockResolvedValueOnce({ created: true, orgUpgraded: false });
 

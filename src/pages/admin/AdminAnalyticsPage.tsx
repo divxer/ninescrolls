@@ -15,7 +15,7 @@ import { OrgDetail } from './analytics/OrgDetail';
 import { aggregateKeywords } from './analytics/keywords';
 import { aggregatePageStats, aggregateProductStats, aggregateLandingPages } from './analytics/pageStats';
 import { aggregateBots } from './analytics/bots';
-import { aggregateByOrg } from './analytics/orgAggregation';
+import { aggregateByOrg, resolveOrgOverride } from './analytics/orgAggregation';
 
 const client = getAmplifyDataClient;
 
@@ -676,7 +676,9 @@ export function AdminAnalyticsPage() {
     }
 
     for (const org of orgs) {
-      const ov = overrideMap.get(org.orgName) || overrideMap.get(org.key);
+      // Same precedence as the detail view (stable key → legacy fallbacks) —
+      // list and detail must never resolve to different overrides.
+      const ov = resolveOrgOverride(overrideMap, org);
       if (!ov) continue;
 
       if (ov.displayName) {

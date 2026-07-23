@@ -32,11 +32,14 @@ export interface UpsertBridgeInput {
   sourceEntityType: 'rfq' | 'lead' | 'order'; sourceEntityId: string; now: string;
 }
 
-// Upgrade-only: a real matchedOrgId is never downgraded (latest-real-wins); email fills when null.
-// Returns { created, orgUpgraded } — orgUpgraded means an unresolved→resolved identity transition
-// (new bridge with a real org, or null→real), which is what triggers retro-resolve.
-export async function upsertVisitorBridge(send: Send, tableName: string, input: UpsertBridgeInput, attempt = 0): Promise<{ created: boolean; orgUpgraded: boolean }> {
-  if (!input.visitorId) return { created: false, orgUpgraded: false };
+// Never-downgrade + latest-real-wins: a real matchedOrgId is never replaced by null, but a
+// DIFFERENT real org does replace it (latest identity evidence wins); email fills when null.
+// Returns { created, orgUpgraded, orgChanged }:
+//   orgUpgraded — unresolved→resolved transition (new bridge with a real org, or null→real)
+//   orgChanged  — resolved→different-resolved transition (real A → real B)
+// Both are resolution changes; callers should retro-resolve sessions on either.
+export async function upsertVisitorBridge(send: Send, tableName: string, input: UpsertBridgeInput, attempt = 0): Promise<{ created: boolean; orgUpgraded: boolean; orgChanged: boolean }> {
+  if (!input.visitorId) return { created: false, orgUpgraded: false, orgChanged: false };
   const incomingOrg = input.matchedOrgId || null;   // '' → null (unmatched-order convention)
   const incomingEmail = input.email || null;        // '' → null (same normalization as org)
   const orgSource = input.sourceEntityType === 'rfq'
@@ -67,7 +70,7 @@ export async function upsertVisitorBridge(send: Send, tableName: string, input: 
       }
       throw err;
     }
-    return { created: true, orgUpgraded: !!incomingOrg };
+    return { created: true, orgUpgraded: !!incomingOrg, orgChanged: false };
   }
 
   const manualLocked = existing.orgSource === 'manual';                 // manual links are never overwritten by rfq/lead upserts
@@ -75,8 +78,9 @@ export async function upsertVisitorBridge(send: Send, tableName: string, input: 
   const nextOrgSource = manualLocked ? 'manual' : (incomingOrg ? orgSource : existing.orgSource); // provenance follows the org
   const nextEmail = (existing.email || null) ?? incomingEmail;          // fill-when-null only ('' counts as fillable)
   const orgUpgraded = !existing.matchedOrgId && !!incomingOrg;          // unresolved→resolved transition
+  const orgChanged = !!existing.matchedOrgId && !!nextOrg && nextOrg !== existing.matchedOrgId; // real→different-real
   const changed = nextOrg !== existing.matchedOrgId || nextEmail !== existing.email || nextOrgSource !== existing.orgSource;
-  if (!changed) return { created: false, orgUpgraded: false };
+  if (!changed) return { created: false, orgUpgraded: false, orgChanged: false };
 
   try {
     await send(new PutCommand({
@@ -99,7 +103,7 @@ export async function upsertVisitorBridge(send: Send, tableName: string, input: 
     }
     throw err;
   }
-  return { created: false, orgUpgraded };
+  return { created: false, orgUpgraded, orgChanged };
 }
 
 export interface UpsertManualBridgeInput {

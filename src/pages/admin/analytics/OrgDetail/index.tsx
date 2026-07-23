@@ -34,8 +34,11 @@ export function OrgDetail({ org, onBack, allContactLeads, allDownloadGateLeads, 
     getOrgOverride(overrideKey).then(async (initial) => {
       if (cancelled) return;
       let result = initial;
-      if (!result.found && overrideKey !== org.orgName) {
-        const legacy = await getOrgOverride(org.orgName);
+      // Same precedence as resolveOrgOverride (list view): stable key →
+      // legacy display name → legacy group key.
+      for (const fallback of [org.orgName, org.key]) {
+        if (result.found || fallback === overrideKey) continue;
+        const legacy = await getOrgOverride(fallback);
         if (cancelled) return;
         if (legacy.found) result = legacy;
       }
@@ -88,8 +91,10 @@ export function OrgDetail({ org, onBack, allContactLeads, allDownloadGateLeads, 
       if (!cancelled) setOverrideLoading(false);
     });
     return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- classify once per org name; org.events would re-trigger AI classification
-  }, [org.orgName]);
+    // org.key: two ISP visitors can share a display name — switching between
+    // them must not carry the previous visitor's override state.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- classify once per org identity; org.events would re-trigger AI classification
+  }, [org.orgName, org.key, org.isISPVisitor]);
 
   // ── Linked RFQ lookup ──────────────────────────────────────────────────
   const [linkedRfqs, setLinkedRfqs] = useState<RfqSubmission[]>([]);

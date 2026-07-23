@@ -50,11 +50,15 @@ export function OrgDetailHeader({
     setOverrideMsg(null);
     try {
       const overrideKey = orgOverrideKey(org);
-      await undoOrgOverride(overrideKey);
-      // Also clear a legacy display-name-keyed override (pre-stable-key writes)
+      // The override may live under the stable key (new writes) OR the legacy
+      // display name — undo each independently: a 404 on one must not stop
+      // the other from being cleared.
+      let undone = false;
+      try { await undoOrgOverride(overrideKey); undone = true; } catch { /* none under stable key */ }
       if (overrideKey !== org.orgName) {
-        try { await undoOrgOverride(org.orgName); } catch { /* no legacy override */ }
+        try { await undoOrgOverride(org.orgName); undone = true; } catch { /* none under legacy name */ }
       }
+      if (!undone) throw new Error('No override found to undo');
       // Re-fetch to get restored state
       const fresh = await getOrgOverride(overrideKey);
       setOverride(fresh);
@@ -74,7 +78,10 @@ export function OrgDetailHeader({
     }
     setRenameLoading(true);
     try {
-      await renameOrg(org.orgName, trimmed);
+      // Same stable key as target overrides — a display name stored under the
+      // synthesized ISP label would drift with city/#N changes and split from
+      // the visitor's target override.
+      await renameOrg(orgOverrideKey(org), trimmed);
       setOverride((prev) => prev ? { ...prev, displayName: trimmed } : { found: true, displayName: trimmed });
       setEditingName(false);
       setOverrideMsg({ type: 'success', text: `Renamed to "${trimmed}"` });

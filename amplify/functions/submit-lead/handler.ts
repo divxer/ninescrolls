@@ -710,7 +710,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
                         sourceEntityType: 'lead', sourceEntityId: leadId, now: submittedAt,
                     },
                 );
-                if (bridge.created || bridge.orgUpgraded) {
+                if (bridge.created || bridge.orgUpgraded || bridge.orgChanged) {
                     await invokeCrmAction({ action: 'reResolveVisitorSessions', visitorId: data.visitorId });
                 }
             } catch (err) {

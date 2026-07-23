@@ -51,6 +51,39 @@ function deriveModel(productName: string): string {
     return productName.split(/\s+-\s+|\s+–\s+/)[0].trim() || productName;
 }
 
+/**
+ * VISITOR# identity bridge + retro-resolve (non-fatal) — the deterministic
+ * link from the anonymous analytics visitor to the paying customer; IP-org
+ * attribution (e.g. a Cloudflare relay egress) can never provide it.
+ * Idempotent (bridge upsert no-ops when nothing changes), so it runs on BOTH
+ * the create path and the duplicate path: a crash after the order transaction
+ * but before this link must self-heal on the webhook retry. It deliberately
+ * does NOT touch the org score upsert — that is non-idempotent and create-only.
+ */
+async function linkVisitorToOrder(args: {
+    visitorId: string; orderId: string; matchedOrgId: string | null; email: string; now: string;
+}): Promise<void> {
+    try {
+        const bridge = await upsertVisitorBridge(
+            toSend(docClient), TABLE_NAME(),
+            {
+                visitorId: args.visitorId, matchedOrgId: args.matchedOrgId, email: args.email,
+                sourceEntityType: 'order', sourceEntityId: args.orderId, now: args.now,
+            },
+        );
+        if (bridge.created || bridge.orgUpgraded || bridge.orgChanged) {
+            await invokeCrmAction({ action: 'reResolveVisitorSessions', visitorId: args.visitorId });
+        }
+    } catch (err) {
+        console.error(JSON.stringify({
+            event: 'crm.visitor_bridge.write_failed',
+            visitorId: args.visitorId,
+            orderId: args.orderId,
+            error: err instanceof Error ? err.message : String(err),
+        }));
+    }
+}
+
 export async function createStripeOrder(event: AppSyncEvent) {
     const { input: rawInput } = event.arguments as { input: string | CreateStripeOrderInput };
     const input: CreateStripeOrderInput = typeof rawInput === 'string' ? JSON.parse(rawInput) : rawInput;
@@ -235,7 +268,22 @@ export async function createStripeOrder(event: AppSyncEvent) {
             stripeSessionId: input.stripeSessionId,
             orderId: existingOrderId,
         }));
-        return buildOrderResponse(metaRes.Item as OrderItem, (contactsRes.Items ?? []) as ContactItem[]);
+        // Self-heal the visitor link from the STORED order's identity: if the
+        // original invocation died between its transaction commit and the
+        // bridge write, this retry is the only chance to repair it. Never
+        // re-runs the non-idempotent org score upsert.
+        const storedMeta = metaRes.Item as OrderItem;
+        const healVisitorId = sanitizeVisitorId(storedMeta.visitorId) ?? visitorId;
+        if (healVisitorId) {
+            await linkVisitorToOrder({
+                visitorId: healVisitorId,
+                orderId: existingOrderId,
+                matchedOrgId: storedMeta.matchedOrgId || null,
+                email: normalizedEmail,
+                now,
+            });
+        }
+        return buildOrderResponse(storedMeta, (contactsRes.Items ?? []) as ContactItem[]);
     }
 
     // 5. Slack notification — a paid order deserves a loud ping.
@@ -277,30 +325,10 @@ export async function createStripeOrder(event: AppSyncEvent) {
         }));
     }
 
-    // 7. VISITOR# identity bridge + retro-resolve (non-fatal; upgrade-only) —
-    // same pattern as submit-rfq/submit-lead. This is the deterministic link
-    // from the anonymous analytics visitor to the paying customer; IP-org
-    // attribution (e.g. a Cloudflare relay egress) can never provide it.
+    // 7. Deterministic visitor→order link (shared with the duplicate path's
+    // self-heal — see linkVisitorToOrder).
     if (visitorId) {
-        try {
-            const bridge = await upsertVisitorBridge(
-                toSend(docClient), TABLE_NAME(),
-                {
-                    visitorId, matchedOrgId: matchedOrgId ?? null, email: normalizedEmail,
-                    sourceEntityType: 'order', sourceEntityId: orderId, now,
-                },
-            );
-            if (bridge.created || bridge.orgUpgraded) {
-                await invokeCrmAction({ action: 'reResolveVisitorSessions', visitorId });
-            }
-        } catch (err) {
-            console.error(JSON.stringify({
-                event: 'crm.visitor_bridge.write_failed',
-                visitorId,
-                orderId,
-                error: err instanceof Error ? err.message : String(err),
-            }));
-        }
+        await linkVisitorToOrder({ visitorId, orderId, matchedOrgId: matchedOrgId ?? null, email: normalizedEmail, now });
     }
 
     await emitTimelineEventToCrm(buildOrderCreatedEmitArgs(

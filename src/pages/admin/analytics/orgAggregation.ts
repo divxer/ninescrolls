@@ -19,6 +19,19 @@ export function orgOverrideKey(org: Pick<OrganizationRecord, 'key' | 'orgName' |
   return org.isISPVisitor ? org.key : org.orgName;
 }
 
+/**
+ * Single override-lookup precedence for BOTH the list and the detail view —
+ * they must never disagree. Stable key first (visitorId for ISP visitors, org
+ * name otherwise), then the legacy fallbacks: the display name (pre-stable-key
+ * ISP writes) and the group key (pre-split org rows).
+ */
+export function resolveOrgOverride<T>(
+  overrides: Map<string, T>,
+  org: Pick<OrganizationRecord, 'key' | 'orgName' | 'isISPVisitor'>,
+): T | undefined {
+  return overrides.get(orgOverrideKey(org)) ?? overrides.get(org.orgName) ?? overrides.get(org.key);
+}
+
 export function computeOrgLifecycleStage(group: AnalyticsEvent[], productsViewed: Set<string>, pdfDownloads: number, returnVisits: number): LifecycleStage {
   const hasRFQSubmission = group.some(e => e.eventType === 'rfq_submission');
   if (hasRFQSubmission) return 'intent';
