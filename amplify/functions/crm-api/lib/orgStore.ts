@@ -58,8 +58,17 @@ export async function bumpOrgRollupOnCreate(args: { orgId: string; kind: string;
   const advanceActivity = !args.isInternalOnly;
 
   if (advanceActivity) {
+    // The clause list is conditional, so the value map MUST be built alongside it: DynamoDB rejects
+    // the whole write with `ValidationException: Value provided in ExpressionAttributeValues unused
+    // in expressions` if a supplied value is never referenced. Kinds with no count attribute
+    // (site_visit_session, email, order_stage_changed, quote_sent, logistics_milestone, …) build a
+    // lastActivityAt-only expression, so :zero/:one must not be sent.
     let expr = 'SET lastActivityAt = :occ';
-    if (countAttr) expr += `, ${countAttr} = if_not_exists(${countAttr}, :zero) + :one`;
+    const values: Record<string, unknown> = { ':occ': args.occurredAt };
+    if (countAttr) {
+      expr += `, ${countAttr} = if_not_exists(${countAttr}, :zero) + :one`;
+      values[':zero'] = 0; values[':one'] = 1;
+    }
     if (latestAttr) expr += `, ${latestAttr} = :occ`;
     try {
       await docClient.send(new UpdateCommand({
@@ -67,7 +76,7 @@ export async function bumpOrgRollupOnCreate(args: { orgId: string; kind: string;
         Key: { PK: `ORG#${args.orgId}`, SK: ORG_META_SK },
         UpdateExpression: expr,
         ConditionExpression: 'attribute_not_exists(lastActivityAt) OR lastActivityAt < :occ',
-        ExpressionAttributeValues: { ':occ': args.occurredAt, ':zero': 0, ':one': 1 },
+        ExpressionAttributeValues: values,
       }));
     } catch (err: unknown) {
       // Out-of-order event (older than current lastActivityAt). The single conditional update
@@ -83,16 +92,23 @@ export async function bumpOrgRollupOnCreate(args: { orgId: string; kind: string;
   }
 
   // internalOnly: do NOT touch lastActivityAt. Apply count/latest only if the kind has them (rare).
-  const sets = [
-    countAttr ? `${countAttr} = if_not_exists(${countAttr}, :zero) + :one` : null,
-    latestAttr ? `${latestAttr} = :occ` : null,
-  ].filter(Boolean) as string[];
+  // Same rule as above — every supplied value must be referenced by the assembled expression.
+  const sets: string[] = [];
+  const internalValues: Record<string, unknown> = {};
+  if (countAttr) {
+    sets.push(`${countAttr} = if_not_exists(${countAttr}, :zero) + :one`);
+    internalValues[':zero'] = 0; internalValues[':one'] = 1;
+  }
+  if (latestAttr) {
+    sets.push(`${latestAttr} = :occ`);
+    internalValues[':occ'] = args.occurredAt;
+  }
   if (sets.length === 0) return; // pure internal note → nothing to roll up
   await docClient.send(new UpdateCommand({
     TableName: TABLE_NAME(),
     Key: { PK: `ORG#${args.orgId}`, SK: ORG_META_SK },
     UpdateExpression: 'SET ' + sets.join(', '),
-    ExpressionAttributeValues: { ':occ': args.occurredAt, ':zero': 0, ':one': 1 },
+    ExpressionAttributeValues: internalValues,
   }));
 }
 
