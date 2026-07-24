@@ -204,7 +204,6 @@ const PRODUCT_CATEGORY_MAP: Record<string, string> = {
   'icp-etcher': 'ICP',
   'striper': 'Stripper',
   'plasma-cleaner': 'Plasma-Cleaner',
-  'hy-4l': 'Plasma-Cleaner', 'hy-20l': 'Plasma-Cleaner',
   'pluto-': 'Plasma-Cleaner',
 };
 

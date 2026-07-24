@@ -108,21 +108,6 @@ URL: https://ninescrolls.com/products/pluto-f
 Price: $15,999 | Chamber: ~14.5L aluminum alloy | RF: 500W @ 13.56 MHz | Gas: 2 lines | Control: touchscreen with advanced recipe management | Vacuum: oil pump (dry pump +$2,500)
 Best for: High-power cleaning, large batches, multi-user core facilities, advanced recipe sequences
 
-#### HY-4L — Compact Plasma Cleaner
-URL: https://ninescrolls.com/products/hy-4l
-Price: RF $7,999 / MF $6,499 | Chamber: ~4L | RF: 150W @ 13.56 MHz or MF: 300W @ 40 kHz | Gas: 2 channels | Control: PLC + touchscreen
-Best for: Compact cleaning, surface activation, education, process development
-
-#### HY-20L — Batch Plasma Processing System
-URL: https://ninescrolls.com/products/hy-20l
-Price: RF $14,999 / MF $11,999 | Chamber: 20L stainless steel | RF: 150W or MF: 300W | Gas: 2 channels | Control: PLC + touchscreen
-Best for: Batch plasma cleaning, photoresist ashing, multi-sample preparation
-
-#### HY-20LRF — Research-Grade Batch Plasma Cleaner
-URL: https://ninescrolls.com/products/hy-20lrf
-Price: $14,499 | Chamber: 20L | RF: 300W @ 13.56 MHz | Gas: 2 lines | 4-layer sample tray | Control: PLC + touchscreen
-Best for: Academic research requiring documented, repeatable plasma processing
-
 Plasma Cleaner Comparison: https://ninescrolls.com/products/plasma-cleaner/compare
 
 ### Wafer Probe Stations
@@ -526,7 +511,7 @@ Q: What is the difference between RF and mid-frequency plasma cleaners?
 A: RF plasma cleaners (13.56 MHz) produce higher-density plasma for more effective cleaning and activation. Mid-frequency systems (40 kHz) are more affordable and sufficient for basic cleaning applications.
 
 Q: Which plasma cleaner should I choose for my research lab?
-A: For basic cleaning: HY-4L ($6,499–$7,999). For batch processing: HY-20L ($11,999–$14,999) or HY-20LRF ($14,499). For high-power applications: PLUTO-F ($15,999). See our buying guide: https://ninescrolls.com/insights/plasma-cleaner-buying-guide
+A: For compact single-sample cleaning and activation: PLUTO-T ($9,999). For larger fixtures and small batches: PLUTO-M ($12,999). For high-power cleaning and larger batches: PLUTO-F ($15,999). For floor-standing pilot-scale batch work: PLUTO-30 (request pricing). See our buying guide: https://ninescrolls.com/insights/plasma-cleaner-buying-guide
 
 ### About NineScrolls
 

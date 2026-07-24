@@ -53,7 +53,7 @@ export function CartPage() {
             </ConversionCard>
             <ConversionCard>
               <h2 className="font-headline text-xl font-bold text-slate-950">Compare cleaners</h2>
-              <p className="mt-2 text-sm leading-6 text-slate-600">Match chamber size, RF/MF power, and use case before ordering.</p>
+              <p className="mt-2 text-sm leading-6 text-slate-600">Match chamber size, RF power, and use case before ordering.</p>
               <Link to="/products/plasma-cleaner/compare" className="mt-5 inline-flex text-sm font-bold text-sky-600 hover:text-sky-700">Compare Models</Link>
             </ConversionCard>
           </section>

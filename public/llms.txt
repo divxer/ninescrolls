@@ -33,11 +33,8 @@ NineScrolls serves universities, research institutes, and corporate R&D labs wor
 
 ## Products — Plasma Cleaners
 
-- [Plasma Cleaners Overview](https://ninescrolls.com/products/plasma-cleaner): HY and PLUTO series overview
+- [Plasma Cleaners Overview](https://ninescrolls.com/products/plasma-cleaner): PLUTO series overview
 - [Plasma Cleaner Comparison](https://ninescrolls.com/products/plasma-cleaner/compare): Side-by-side spec comparison
-- [HY-4L](https://ninescrolls.com/products/hy-4l): Compact RF/MF plasma cleaner (~4L), from $6,499
-- [HY-20L](https://ninescrolls.com/products/hy-20l): Research-grade batch plasma cleaner (20L), from $11,999
-- [HY-20LRF](https://ninescrolls.com/products/hy-20lrf): Integrated RF vacuum plasma cleaner (20L), from $14,499
 - [PLUTO-T](https://ninescrolls.com/products/pluto-t): 200W RF plasma cleaner (~4.3L), $9,999
 - [PLUTO-M](https://ninescrolls.com/products/pluto-m): 200W RF plasma cleaner (~8L), $12,999
 - [PLUTO-F](https://ninescrolls.com/products/pluto-f): 500W RF flagship plasma cleaner (~14.5L), $15,999

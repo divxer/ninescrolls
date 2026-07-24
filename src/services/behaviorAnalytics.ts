@@ -369,7 +369,7 @@ interface BehaviorSignal {
 
 interface BehaviorScore {
   productPagesViewed: number;      // 浏览的产品页数量
-  highValuePagesViewed: number;    // 高价值页面（如 hy-20l）
+  highValuePagesViewed: number;    // 高价值页面（如 pluto-f）
   timeOnSite: number;              // 总停留时间（秒）
   pdfDownloads: number;            // PDF 下载次数
   returnVisits: number;            // 回访次数（14天内）
@@ -466,8 +466,8 @@ class BehaviorAnalyticsService {
     );
     if (alreadyTracked) return;
 
-    const isHighValue = productId.includes('hy-20l') ||
-                        productId.includes('hy-20lrf') ||
+    const isHighValue = productId.includes('pluto-f') ||
+                        productId.includes('pluto-30') ||
                         productId.includes('compact-rie');
 
     this.trackSignal('product_view', isHighValue ? 1 : 0.5, {

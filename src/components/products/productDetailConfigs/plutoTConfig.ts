@@ -23,8 +23,8 @@ export const plutoTConfig: ProductDetailConfig = {
   },
   faq: [
     {
-      question: 'How is PLUTO-T different from HY-4L?',
-      answer: 'PLUTO-T is an RF-only 200 W compact cleaner with 1 W power precision and touchscreen automation, sized for single-sample workflows. HY-4L offers RF or mid-frequency options in a 4L chamber format. See the PLUTO vs HY comparison guide for a full breakdown.',
+      question: 'How is PLUTO-T different from PLUTO-M?',
+      answer: 'PLUTO-T is an RF-only 200 W compact cleaner with a ~4.3L chamber and 1 W power precision, sized for single-sample workflows. PLUTO-M shares the same 200 W RF generator in a larger ~8L chamber with two standard gas lines and recipe storage, for larger fixtures and small batches.',
     },
     {
       question: 'Can PLUTO-T be purchased directly?',
@@ -89,7 +89,7 @@ export const plutoTConfig: ProductDetailConfig = {
   coreWindows: {
     eyebrow: 'Use Cases',
     title: 'Built for compact single-sample plasma workflows.',
-    compareAction: { label: 'Compare HY-4L', href: '/products/hy-4l' },
+    compareAction: { label: 'Compare PLUTO-M', href: '/products/pluto-m' },
     cards: [
       { title: 'Sample Cleaning', copy: 'Prepare individual substrates and samples with adjustable 0-200 W RF power.' },
       { title: 'Surface Activation', copy: 'Activate surfaces before bonding, coating, or microfluidic assembly.' },

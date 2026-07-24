@@ -48,12 +48,12 @@ describe('single <main> landmark', () => {
     // wrapper that must also be a <div>, not a <main>.
     localStorage.setItem(
       'cart',
-      JSON.stringify([{ id: 'hy-4l', name: 'HY-4L', price: 1000, quantity: 1, sku: 'HY-4L' }])
+      JSON.stringify([{ id: 'pluto-t', name: 'PLUTO-T', price: 1000, quantity: 1, sku: 'pluto-t' }])
     );
     renderInLayout(<CartPage />, '/cart');
     // Guard against silently testing the empty branch: confirm the seeded
     // item actually rendered (populated branch), then assert the landmark.
-    expect(document.body.textContent).toContain('HY-4L');
+    expect(document.body.textContent).toContain('PLUTO-T');
     expect(document.body.querySelectorAll('main').length).toBe(1);
   });
 

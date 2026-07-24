@@ -352,7 +352,7 @@ export const products: GuideProduct[] = [
   },
   {
     id: 'plasma-cleaner', series: 'Plasma Cleaner Systems', order: 10,
-    image: `${IMG}/hy-20l-standardized.webp`, imageAlt: 'NineScrolls compact RF plasma cleaner system',
+    image: `${IMG}/pluto-m-standardized.webp`, imageAlt: 'NineScrolls compact RF plasma cleaner system',
     footprint: 'ref 630 mm × 600 mm',
     content: {
       lead: 'Benchtop plasma cleaning for surface activation, cleaning, and hydrophilic or hydrophobic treatment.',
@@ -379,7 +379,7 @@ export const products: GuideProduct[] = [
       { label: 'Main Functions', value: 'Surface cleaning; surface activation; hydrophilic / hydrophobic treatment; functional group modification (–OH / –H / –COOH); contact-free plasma processing' },
       { label: 'Typical Applications', value: 'Chemical & biological laboratories; failure analysis; optical components; biomedical and medical devices' },
     ],
-    familyOptions: ['HY-4L', 'HY-20L', 'HY-20LRF', 'PLUTO-T', 'PLUTO-M', 'PLUTO-F'],
+    familyOptions: ['PLUTO-T', 'PLUTO-M', 'PLUTO-F', 'PLUTO-30'],
     // No websiteSpecParity: the guide's cleaner page is a family summary, not a single website SKU.
   },
   {

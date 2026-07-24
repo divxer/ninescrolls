@@ -21,8 +21,12 @@ describe('PlasmaSystemsComparePage', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Compare plasma cleaners by chamber, power, and workflow.' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 2, name: 'Side-by-side model matrix' })).toBeInTheDocument();
     expect(screen.getByText('Buy Online')).toBeInTheDocument();
-    expect(screen.getByText('From $6,499')).toBeInTheDocument();
+    expect(screen.getByText('$9,999')).toBeInTheDocument();
     expect(screen.getByText('$15,999')).toBeInTheDocument();
+
+    // HY series delisted — the matrix must not surface HY rows or pricing.
+    expect(screen.queryByText(/HY-4L|HY-20L|HY-20LRF/)).not.toBeInTheDocument();
+    expect(screen.queryByText('From $6,499')).not.toBeInTheDocument();
 
     expect(screen.queryByText(/慧仪智控|沛沅仪器|supplier|OEM|distributor/i)).not.toBeInTheDocument();
   });
@@ -31,11 +35,8 @@ describe('PlasmaSystemsComparePage', () => {
     renderComparePage();
 
     [
-      ['HY-4L', '/products/hy-4l'],
       ['PLUTO-T', '/products/pluto-t'],
-      ['HY-20L', '/products/hy-20l'],
       ['PLUTO-M', '/products/pluto-m'],
-      ['HY-20LRF', '/products/hy-20lrf'],
       ['PLUTO-F', '/products/pluto-f'],
     ].forEach(([name, href]) => {
       expect(screen.getByRole('link', { name: `View ${name}` })).toHaveAttribute('href', href);

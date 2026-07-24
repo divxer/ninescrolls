@@ -47,10 +47,14 @@ describe('ProductsPage', () => {
     renderProductsPage();
 
     expect(screen.getAllByText('RFQ Platform').length).toBeGreaterThanOrEqual(10);
-    expect(screen.getAllByText('Buy Online').length).toBeGreaterThanOrEqual(6);
-    expect(screen.getByText('From $6,499')).toBeInTheDocument();
-    expect(screen.getByText('$14,499')).toBeInTheDocument();
+    expect(screen.getAllByText('Buy Online').length).toBeGreaterThanOrEqual(3);
+    expect(screen.getByText('$9,999')).toBeInTheDocument();
+    expect(screen.getByText('$12,999')).toBeInTheDocument();
     expect(screen.getByText('$15,999')).toBeInTheDocument();
+
+    // HY series delisted — no HY card may remain in the catalog.
+    expect(screen.queryByText(/HY-4L|HY-20L|HY-20LRF/)).not.toBeInTheDocument();
+    expect(screen.queryByText('From $6,499')).not.toBeInTheDocument();
   });
 
   it('filters the catalog by process family', async () => {
@@ -79,9 +83,6 @@ describe('ProductsPage', () => {
       ['MEB-600 e-beam and thermal evaporation system for IR and photonic thin films', '/assets/images/redesign/products/e-beam-standardized.webp'],
       ['Ion Beam Etching (IBE/RIBE) system for directional etch', '/assets/images/redesign/products/ibe-ribe-standardized.webp'],
       ['Plasma photoresist stripping system', '/assets/images/redesign/products/striper-standardized.webp'],
-      ['HY-20L - Compact RF Plasma Processing System', '/assets/images/redesign/products/hy-20l-standardized.webp'],
-      ['HY-4L - Compact RF Plasma System', '/assets/images/redesign/products/hy-4l-standardized.webp'],
-      ['HY-20LRF - Research-Grade Batch Plasma Cleaning', '/assets/images/redesign/products/hy-20lrf-standardized.webp'],
       ['PLUTO-T - Compact RF Plasma Cleaner', '/assets/images/redesign/products/pluto-t-standardized.webp'],
       ['PLUTO-M - Mid-Size RF Plasma Cleaner', '/assets/images/redesign/products/pluto-m-standardized.webp'],
       ['PLUTO-F - Flagship RF Plasma Cleaner', '/assets/images/redesign/products/pluto-f-standardized.webp'],

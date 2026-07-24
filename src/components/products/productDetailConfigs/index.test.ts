@@ -8,10 +8,16 @@ describe('product config registry', () => {
   });
   it('covers the full canonical product set, including previously-omitted products', () => {
     const slugs = new Set(productOptions.map((o) => o.slug));
-    for (const s of ['ald', 'rie-etcher', 'hy-4l', 'hy-20l', 'hy-20lrf', 'pluto-t', 'pluto-f', 'pluto-m', 'pluto-30']) {
+    for (const s of ['ald', 'rie-etcher', 'pluto-t', 'pluto-f', 'pluto-m', 'pluto-30']) {
       expect(slugs.has(s)).toBe(true);
     }
-    expect(productOptions.length).toBeGreaterThanOrEqual(18);
+    expect(productOptions.length).toBeGreaterThanOrEqual(15);
+  });
+  it('excludes the delisted HY plasma cleaners', () => {
+    const slugs = new Set(productOptions.map((o) => o.slug));
+    for (const s of ['hy-4l', 'hy-20l', 'hy-20lrf']) {
+      expect(slugs.has(s)).toBe(false);
+    }
   });
   it('every option has a non-empty label', () => {
     for (const o of productOptions) expect(o.label.trim().length).toBeGreaterThan(0);

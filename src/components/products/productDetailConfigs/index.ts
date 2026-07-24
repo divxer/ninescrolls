@@ -8,9 +8,6 @@ import { coaterDeveloperConfig } from './coaterDeveloperConfig';
 import { compactRieConfig } from './compactRieConfig';
 import { eBeamEvaporatorConfig } from './eBeamEvaporatorConfig';
 import { hdpCvdSystemConfig } from './hdpCvdSystemConfig';
-import { hy20lConfig } from './hy20lConfig';
-import { hy20lrfConfig } from './hy20lrfConfig';
-import { hy4lConfig } from './hy4lConfig';
 import { ibeRibeSystemConfig } from './ibeRibeSystemConfig';
 import { icpEtcherConfig } from './icpEtcherConfig';
 import { pecvdSystemConfig } from './pecvdSystemConfig';
@@ -25,8 +22,8 @@ import { striperSystemConfig } from './striperSystemConfig';
 export const productConfigs: ProductDetailConfig[] = [
   aldSystemConfig, pecvdSystemConfig, hdpCvdSystemConfig, rieEtcherConfig,
   compactRieConfig, icpEtcherConfig, ibeRibeSystemConfig, sputterSystemConfig,
-  eBeamEvaporatorConfig, striperSystemConfig, coaterDeveloperConfig, hy4lConfig,
-  hy20lConfig, hy20lrfConfig, plutoTConfig, plutoMConfig, plutoFConfig, pluto30Config,
+  eBeamEvaporatorConfig, striperSystemConfig, coaterDeveloperConfig,
+  plutoTConfig, plutoMConfig, plutoFConfig, pluto30Config,
 ];
 
 export interface ProductOption { slug: string; label: string; }

@@ -231,7 +231,7 @@ export function CheckoutPage() {
     <>
       <SEO
         title="Checkout"
-        description="Complete your order for HY Series plasma systems."
+        description="Complete your order for PLUTO Series plasma systems."
         url="/checkout"
         robots="noindex, nofollow"
       />

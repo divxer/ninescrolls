@@ -19,18 +19,6 @@ interface CleanerComparison {
 
 const cleaners: CleanerComparison[] = [
   {
-    name: 'HY-4L',
-    route: '/products/hy-4l',
-    chamber: '~4 L',
-    power: 'RF or MF',
-    frequency: '13.56 MHz / 40 kHz',
-    gasLines: '1 standard',
-    workflow: 'Teaching, validation, small samples',
-    controls: 'PLC + touchscreen',
-    price: 'From $6,499',
-    signal: 'Lowest entry price',
-  },
-  {
     name: 'PLUTO-T',
     route: '/products/pluto-t',
     chamber: '~4.3 L',
@@ -43,18 +31,6 @@ const cleaners: CleanerComparison[] = [
     signal: 'Compact RF with touchscreen',
   },
   {
-    name: 'HY-20L',
-    route: '/products/hy-20l',
-    chamber: '20 L',
-    power: 'RF or MF',
-    frequency: '13.56 MHz / 40 kHz',
-    gasLines: '1 standard',
-    workflow: 'Batch activation and repeatable cleaning',
-    controls: 'PLC + touchscreen',
-    price: 'From $11,999',
-    signal: 'Flexible batch workhorse',
-  },
-  {
     name: 'PLUTO-M',
     route: '/products/pluto-m',
     chamber: '~8 L',
@@ -65,18 +41,6 @@ const cleaners: CleanerComparison[] = [
     controls: 'Touchscreen + recipe storage',
     price: '$12,999',
     signal: 'Mid-size RF workflow',
-  },
-  {
-    name: 'HY-20LRF',
-    route: '/products/hy-20lrf',
-    chamber: '20 L',
-    power: '300 W RF',
-    frequency: '13.56 MHz',
-    gasLines: '1 standard',
-    workflow: 'Tray-based repeatable processing',
-    controls: 'PLC + touchscreen',
-    price: '$14,499',
-    signal: 'Research batch RF',
   },
   {
     name: 'PLUTO-F',
@@ -120,9 +84,9 @@ export function PlasmaSystemsComparePage() {
   return (
     <>
       <SEO
-        title="Compare Plasma Cleaners | HY & PLUTO Models"
-        description="Compare six NineScrolls plasma cleaners by chamber volume, RF power, frequency, gas lines, workflow, and price."
-        keywords="plasma cleaner comparison, RF plasma cleaner comparison, HY-4L, HY-20L, HY-20LRF, PLUTO-T, PLUTO-M, PLUTO-F"
+        title="Compare Plasma Cleaners | PLUTO Models"
+        description="Compare three NineScrolls PLUTO plasma cleaners by chamber volume, RF power, frequency, gas lines, workflow, and price."
+        keywords="plasma cleaner comparison, RF plasma cleaner comparison, PLUTO-T, PLUTO-M, PLUTO-F"
         url="/products/plasma-cleaner/compare"
         type="website"
       />
@@ -144,7 +108,7 @@ export function PlasmaSystemsComparePage() {
                 Compare plasma cleaners by chamber, power, and workflow.
               </h1>
               <p className="mt-6 max-w-3xl text-lg leading-8 text-slate-600">
-                Six buy-online systems cover compact sample prep, teaching labs, batch surface activation, and higher-power RF cleaning. Use this page for first-pass model selection.
+                Three buy-online systems cover compact sample prep, mid-size batch surface activation, and higher-power RF cleaning. Use this page for first-pass model selection.
               </p>
             </div>
             <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-emerald-800">
@@ -202,8 +166,8 @@ export function PlasmaSystemsComparePage() {
       <section className="border-y border-slate-200 bg-slate-50 py-16">
         <div className="mx-auto grid max-w-screen-2xl gap-6 px-6 md:grid-cols-3 lg:px-10">
           {[
-            ['Start compact', 'Choose HY-4L or PLUTO-T when chamber size is secondary to price, footprint, and fast sample prep.'],
-            ['Scale batch work', 'Choose HY-20L, HY-20LRF, or PLUTO-M when fixture size, repeated recipes, and batch cleaning matter.'],
+            ['Start compact', 'Choose PLUTO-T when chamber size is secondary to price, footprint, and fast sample prep.'],
+            ['Scale batch work', 'Choose PLUTO-M when fixture size, repeated recipes, and batch cleaning matter.'],
             ['Maximize RF power', 'Choose PLUTO-F when higher RF power and a larger chamber are more important than entry price.'],
           ].map(([heading, copy]) => (
             <div key={heading} className="rounded-xl border border-slate-200 bg-white p-6">
