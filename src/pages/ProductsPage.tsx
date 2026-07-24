@@ -428,7 +428,7 @@ export function ProductsPage() {
               ['Etch', 'Need anisotropy, profile control, deep silicon, diamond, or ion milling? Start with ICP-RIE, RIE, Compact RIE, or IBE/RIBE.'],
               ['Deposit', 'Need dielectric films, conformal ALD, PVD metals, optical stacks, or gap fill? Start with PECVD, ALD, Sputter, E-Beam, or HDP-CVD.'],
               ['Pattern', 'Need coating, developing, bake, stripping, or resist removal around lithography? Start with Coater/Developer or Striper.'],
-              ['Clean', 'Need surface activation or lab-scale plasma cleaning? Start with HY and PLUTO buy-online platforms.'],
+              ['Clean', 'Need surface activation or lab-scale plasma cleaning? Start with the PLUTO buy-online platforms.'],
             ].map(([heading, copy]) => (
               <div key={heading} className="rounded-xl border border-slate-200 bg-white p-6">
                 <h3 className="text-lg font-headline font-bold text-slate-950">{heading}</h3>

@@ -84,8 +84,8 @@ export function PlasmaSystemsComparePage() {
   return (
     <>
       <SEO
-        title="Compare Plasma Cleaners | HY & PLUTO Models"
-        description="Compare six NineScrolls plasma cleaners by chamber volume, RF power, frequency, gas lines, workflow, and price."
+        title="Compare Plasma Cleaners | PLUTO Models"
+        description="Compare three NineScrolls PLUTO plasma cleaners by chamber volume, RF power, frequency, gas lines, workflow, and price."
         keywords="plasma cleaner comparison, RF plasma cleaner comparison, PLUTO-T, PLUTO-M, PLUTO-F"
         url="/products/plasma-cleaner/compare"
         type="website"
@@ -108,7 +108,7 @@ export function PlasmaSystemsComparePage() {
                 Compare plasma cleaners by chamber, power, and workflow.
               </h1>
               <p className="mt-6 max-w-3xl text-lg leading-8 text-slate-600">
-                Six buy-online systems cover compact sample prep, teaching labs, batch surface activation, and higher-power RF cleaning. Use this page for first-pass model selection.
+                Three buy-online systems cover compact sample prep, mid-size batch surface activation, and higher-power RF cleaning. Use this page for first-pass model selection.
               </p>
             </div>
             <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-emerald-800">

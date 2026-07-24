@@ -130,7 +130,7 @@ export function aggregateProductStats(pageStats: PageStats[], events: AnalyticsE
   const normalize = (s: string) => s.toLowerCase().replace(/[\s-]/g, '');
 
   return productPages.map(p => {
-    // Extract product name from pathname: /products/hy-20l → hy-20l
+    // Extract product name from pathname: /products/pluto-m → pluto-m
     const slug = p.pathname.replace('/products/', '').replace(/\/$/, '');
     // Slug-match the legacy name-keyed counts (case-insensitive, ignore spaces/dashes)
     const matchedPdfKey = Array.from(namePdf.keys()).find(k => normalize(k) === normalize(slug));

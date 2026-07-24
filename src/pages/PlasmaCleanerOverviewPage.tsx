@@ -203,7 +203,7 @@ export function PlasmaCleanerOverviewPage() {
     <>
       <SEO
         title="Plasma Cleaner Systems | Benchtop & Floor-Standing RF Plasma Cleaners | Request Pricing"
-        description="Compare NineScrolls HY and PLUTO plasma cleaner systems — benchtop and floor-standing RF and MF models — for research laboratories. Explore chamber sizes, applications, and request pricing for surface activation, wafer bonding preparation, and sample cleaning."
+        description="Compare NineScrolls PLUTO plasma cleaner systems — benchtop and floor-standing RF models — for research laboratories. Explore chamber sizes, applications, and request pricing for surface activation, wafer bonding preparation, and sample cleaning."
         keywords="plasma cleaner, RF plasma cleaner, surface activation, plasma cleaning system, PLUTO-T, PLUTO-M, PLUTO-F, PLUTO-30, floor-standing plasma cleaner"
         url="/products/plasma-cleaner"
         type="website"
@@ -262,7 +262,7 @@ export function PlasmaCleanerOverviewPage() {
             <span className="text-xs font-bold uppercase tracking-[0.24em] text-sky-600">Cleaner Family</span>
             <h2 className="text-4xl font-headline font-bold tracking-tight text-slate-950">Choose by chamber size and workflow</h2>
             <p className="max-w-3xl text-base leading-7 text-slate-600">
-              HY systems emphasize flexible RF/MF and batch workflows; PLUTO systems emphasize touchscreen RF operation and clear chamber-size progression.
+              PLUTO systems emphasize touchscreen RF operation and a clear chamber-size progression, from compact single-sample cleaning to flagship high-power batch processing.
             </p>
           </div>
           <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
