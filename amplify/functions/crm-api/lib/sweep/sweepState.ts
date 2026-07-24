@@ -20,7 +20,16 @@ export interface SweepState {
 
 export async function readState(mode: SweepMode, pass: SweepPass): Promise<SweepState> {
   const res = await docClient.send(new GetCommand({ TableName: TABLE_NAME(), Key: stateKey(mode, pass) }));
-  return (res.Item as SweepState | undefined) ?? {};
+  const item = (res.Item as SweepState | undefined) ?? {};
+  // persistPage stores "no next page" as an explicit NULL (`p.cursor ?? null`) and
+  // releaseLeaseKeepCursor deliberately preserves it, so a STORED cursor can legitimately be NULL —
+  // the `cursor?: Record<string, unknown>` type hides that. Passing NULL through to
+  // ExclusiveStartKey makes the lib-dynamodb marshaller walk it with Object.entries(null) and throw
+  // "Cannot convert undefined or null to object" (undefined is short-circuited; NULL is not), which
+  // then repeats forever because the failing pass never advances the cursor. Normalize NULL →
+  // absent once, here, for every reader.
+  if (item.cursor == null) delete item.cursor;
+  return item;
 }
 
 // Acquire the per-pass lease iff none is active (or it has expired). Returns the token, or null if held.
