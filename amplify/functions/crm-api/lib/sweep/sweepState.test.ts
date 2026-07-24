@@ -73,6 +73,19 @@ describe('sweepState', () => {
     mockSend.mockResolvedValueOnce({});
     expect((await readState('cold', 'existence')).cursor).toBeUndefined();
   });
+  it('readState normalizes a STORED NULL cursor to absent (persistPage writes end-of-partition as NULL)', async () => {
+    // Prod shape after one recovery pass: `SET #c = :c` with `:c = null`, then releaseLeaseKeepCursor
+    // preserves it. Handing that NULL to ExclusiveStartKey throws inside the lib-dynamodb marshaller.
+    mockSend.mockResolvedValueOnce({ Item: { PK: 'CRM_SWEEP#repair#drain', SK: 'STATE', cursor: null, hasMore: false } });
+    const state = await readState('repair', 'drain');
+    expect(state.cursor).toBeUndefined();
+    expect('cursor' in state).toBe(false);
+    expect(state.hasMore).toBe(false); // the rest of the item is untouched
+  });
+  it('readState passes a REAL cursor through unchanged', async () => {
+    mockSend.mockResolvedValueOnce({ Item: { cursor: { PK: 'x', SK: 'y' } } });
+    expect((await readState('repair', 'drain')).cursor).toEqual({ PK: 'x', SK: 'y' });
+  });
   it('releaseLeaseKeepCursor keeps hasMore:true when passed (defaults false)', async () => {
     mockSend.mockResolvedValueOnce({});
     await releaseLeaseKeepCursor('repair', 'drain', 'tok', { lastSummary: { repaired: 1 }, hasMore: true });
