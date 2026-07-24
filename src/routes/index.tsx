@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { HomePage } from '../pages/HomePage';
 import { NotFoundPage } from '../pages/NotFoundPage';
 import { lazyWithReload } from '../utils/lazyWithReload';
@@ -39,9 +39,6 @@ const SputterSystem = lazyWithReload(() => import('../components/products').then
 const EBeamEvaporator = lazyWithReload(() => import('../components/products').then(m => ({ default: m.EBeamEvaporator })));
 const CoaterDeveloper = lazyWithReload(() => import('../components/products').then(m => ({ default: m.CoaterDeveloper })));
 const PECVDSystem = lazyWithReload(() => import('../components/products').then(m => ({ default: m.PECVDSystem })));
-const HY4L = lazyWithReload(() => import('../components/products').then(m => ({ default: m.HY4L })));
-const HY20L = lazyWithReload(() => import('../components/products').then(m => ({ default: m.HY20L })));
-const HY20LRF = lazyWithReload(() => import('../components/products').then(m => ({ default: m.HY20LRF })));
 const PlutoT = lazyWithReload(() => import('../components/products').then(m => ({ default: m.PlutoT })));
 const PlutoM = lazyWithReload(() => import('../components/products').then(m => ({ default: m.PlutoM })));
 const PlutoF = lazyWithReload(() => import('../components/products').then(m => ({ default: m.PlutoF })));
@@ -97,11 +94,13 @@ export function AppRoutes() {
         <Route path="/products/pecvd" element={<PECVDSystem />} />
         <Route path="/products/plasma-cleaner" element={<PlasmaCleanerOverviewPage />} />
         <Route path="/products/plasma-cleaner/compare" element={<PlasmaSystemsComparePage />} />
-        <Route path="/products/hy-4l" element={<HY4L />} />
-        <Route path="/products/hy-4l-rf" element={<HY4L />} />
-        <Route path="/products/hy-4l-mf" element={<HY4L />} />
-        <Route path="/products/hy-20l" element={<HY20L />} />
-        <Route path="/products/hy-20lrf" element={<HY20LRF />} />
+        {/* HY plasma cleaners delisted — redirect to the PLUTOVAC overview.
+            A true server-side 301 must also be added as an Amplify Console rewrite rule. */}
+        <Route path="/products/hy-4l" element={<Navigate to="/products/plasma-cleaner" replace />} />
+        <Route path="/products/hy-4l-rf" element={<Navigate to="/products/plasma-cleaner" replace />} />
+        <Route path="/products/hy-4l-mf" element={<Navigate to="/products/plasma-cleaner" replace />} />
+        <Route path="/products/hy-20l" element={<Navigate to="/products/plasma-cleaner" replace />} />
+        <Route path="/products/hy-20lrf" element={<Navigate to="/products/plasma-cleaner" replace />} />
         <Route path="/products/pluto-t" element={<PlutoT />} />
         <Route path="/products/pluto-m" element={<PlutoM />} />
         <Route path="/products/pluto-f" element={<PlutoF />} />

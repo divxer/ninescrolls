@@ -23,19 +23,6 @@ interface CleanerCard {
 
 const cleaners: CleanerCard[] = [
   {
-    name: 'HY-4L',
-    route: '/products/hy-4l',
-    label: 'Compact Entry',
-    image: '/assets/images/redesign/products/hy-4l-standardized.webp',
-    alt: 'HY-4L - Compact RF/MF Plasma Cleaner',
-    price: 'From $6,499',
-    chamber: '~4 L',
-    power: 'RF or MF',
-    workflow: 'Teaching, validation, small samples',
-    description: 'Compact plasma cleaner for sample preparation, teaching labs, bonding prep, and low-volume research.',
-    chips: ['Benchtop', 'RF/MF variants', 'Entry workflow'],
-  },
-  {
     name: 'PLUTO-T',
     route: '/products/pluto-t',
     label: 'Touchscreen Compact',
@@ -49,20 +36,6 @@ const cleaners: CleanerCard[] = [
     chips: ['Touchscreen', '200 W RF', 'Compact chamber'],
   },
   {
-    name: 'HY-20L',
-    route: '/products/hy-20l',
-    label: 'Batch Processing',
-    image: '/assets/images/redesign/products/hy-20l-standardized.webp',
-    alt: 'HY-20L - Research-Grade Batch Plasma Processing System',
-    price: 'From $11,999',
-    chamber: '20 L',
-    power: 'RF or MF',
-    workflow: 'Batch activation and repeatable cleaning',
-    description: '20-liter batch plasma processing for surface activation, bonding prep, and repeatable lab cleaning.',
-    chips: ['20 L chamber', 'RF/MF variants', 'Batch workflow'],
-    featured: true,
-  },
-  {
     name: 'PLUTO-M',
     route: '/products/pluto-m',
     label: 'Mid-Size RF',
@@ -74,19 +47,6 @@ const cleaners: CleanerCard[] = [
     workflow: 'Larger fixtures and small batches',
     description: 'Mid-size RF plasma cleaner for larger fixtures, small batch work, and routine lab preparation.',
     chips: ['Mid-size chamber', 'Recipe storage', 'Batch capable'],
-  },
-  {
-    name: 'HY-20LRF',
-    route: '/products/hy-20lrf',
-    label: 'Research Batch RF',
-    image: '/assets/images/redesign/products/hy-20lrf-standardized.webp',
-    alt: 'HY-20LRF - Integrated RF Vacuum Plasma Cleaner',
-    price: '$14,499',
-    chamber: '20 L',
-    power: '300 W RF',
-    workflow: 'Tray-based repeatable processing',
-    description: 'Research-grade 20 L RF plasma cleaner with tray-based processing and documented repeatability.',
-    chips: ['300 W RF', '4-layer tray', 'Repeatable recipes'],
   },
   {
     name: 'PLUTO-F',
@@ -127,7 +87,7 @@ const pricingFaqs = [
   {
     question: 'How much does a plasma cleaner cost?',
     answer:
-      'NineScrolls plasma cleaner systems start at $6,499 for compact HY configurations, with larger RF systems ranging up to $15,999 depending on chamber size, generator power, controls, and selected configuration.',
+      'NineScrolls plasma cleaner systems start at $9,999 for compact PLUTO configurations, with larger RF systems ranging up to $15,999 depending on chamber size, generator power, controls, and selected configuration.',
   },
   {
     question: 'What affects plasma cleaner pricing?',
@@ -244,7 +204,7 @@ export function PlasmaCleanerOverviewPage() {
       <SEO
         title="Plasma Cleaner Systems | Benchtop & Floor-Standing RF Plasma Cleaners | Request Pricing"
         description="Compare NineScrolls HY and PLUTO plasma cleaner systems — benchtop and floor-standing RF and MF models — for research laboratories. Explore chamber sizes, applications, and request pricing for surface activation, wafer bonding preparation, and sample cleaning."
-        keywords="plasma cleaner, RF plasma cleaner, surface activation, plasma cleaning system, HY-4L, HY-20L, HY-20LRF, PLUTO-T, PLUTO-M, PLUTO-F, PLUTO-30, floor-standing plasma cleaner"
+        keywords="plasma cleaner, RF plasma cleaner, surface activation, plasma cleaning system, PLUTO-T, PLUTO-M, PLUTO-F, PLUTO-30, floor-standing plasma cleaner"
         url="/products/plasma-cleaner"
         type="website"
       />
@@ -272,17 +232,17 @@ export function PlasmaCleanerOverviewPage() {
                 <Link to="/products/plasma-cleaner/compare" className="inline-flex items-center justify-center rounded-md bg-sky-600 px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-sky-700">
                   Compare Models
                 </Link>
-                <Link to="/products/hy-4l" className="inline-flex items-center justify-center rounded-md border border-slate-300 bg-white px-6 py-3 text-sm font-bold text-slate-950 transition-colors hover:border-slate-400 hover:bg-slate-50">
-                  Start at HY-4L
+                <Link to="/products/pluto-t" className="inline-flex items-center justify-center rounded-md border border-slate-300 bg-white px-6 py-3 text-sm font-bold text-slate-950 transition-colors hover:border-slate-400 hover:bg-slate-50">
+                  Start at PLUTO-T
                 </Link>
               </div>
             </div>
             <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-[0_18px_70px_rgba(15,23,42,0.08)]">
               <div className="grid grid-cols-2 gap-4">
                 {[
-                  ['6', 'Buy-online models'],
-                  ['$6,499', 'Entry price'],
-                  ['20 L', 'Largest HY chamber'],
+                  ['3', 'Buy-online models'],
+                  ['$9,999', 'Entry price'],
+                  ['30 L', 'Largest chamber'],
                   ['500 W', 'Highest RF power'],
                 ].map(([value, label]) => (
                   <div key={label} className="rounded-lg border border-slate-200 bg-slate-50 p-5">

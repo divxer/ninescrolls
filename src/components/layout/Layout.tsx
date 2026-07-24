@@ -190,9 +190,6 @@ export function Layout({ children }: LayoutProps) {
   // for long-tail SEO) rather than the mega menu; the /products/plasma-cleaner
   // overview page carries the full model cards and detail links.
   const plasmaCleanerModels = [
-    { to: '/products/hy-4l', label: 'HY-4L' },
-    { to: '/products/hy-20l', label: 'HY-20L' },
-    { to: '/products/hy-20lrf', label: 'HY-20LRF' },
     { to: '/products/pluto-t', label: 'PLUTO-T' },
     { to: '/products/pluto-m', label: 'PLUTO-M' },
     { to: '/products/pluto-f', label: 'PLUTO-F' },

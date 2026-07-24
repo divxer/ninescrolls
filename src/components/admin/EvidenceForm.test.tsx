@@ -23,10 +23,10 @@ beforeEach(() => {
 });
 
 describe('EvidenceForm', () => {
-  it('renders a product checkbox for every canonical product, including hy-4l and pluto-t', () => {
+  it('renders a product checkbox for every canonical product, including ald and pluto-t', () => {
     render(<EvidenceForm onSubmit={noop} onCancel={noop} />);
     expect(screen.getByLabelText('ald')).toBeInTheDocument();
-    expect(screen.getByLabelText('hy-4l')).toBeInTheDocument();
+    expect(screen.getByLabelText('pluto-30')).toBeInTheDocument();
     expect(screen.getByLabelText('pluto-t')).toBeInTheDocument();
   });
 
