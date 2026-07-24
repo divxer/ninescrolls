@@ -95,7 +95,8 @@ export function AppRoutes() {
         <Route path="/products/plasma-cleaner" element={<PlasmaCleanerOverviewPage />} />
         <Route path="/products/plasma-cleaner/compare" element={<PlasmaSystemsComparePage />} />
         {/* HY plasma cleaners delisted — redirect to the PLUTOVAC overview.
-            A true server-side 301 must also be added as an Amplify Console rewrite rule. */}
+            Mirrors the live Amplify Console 301 rewrite rules for these paths;
+            this client-side fallback covers in-app navigation and keeps the two in sync. */}
         <Route path="/products/hy-4l" element={<Navigate to="/products/plasma-cleaner" replace />} />
         <Route path="/products/hy-4l-rf" element={<Navigate to="/products/plasma-cleaner" replace />} />
         <Route path="/products/hy-4l-mf" element={<Navigate to="/products/plasma-cleaner" replace />} />

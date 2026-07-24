@@ -92,7 +92,7 @@ const pricingFaqs = [
   {
     question: 'What affects plasma cleaner pricing?',
     answer:
-      'Pricing depends on chamber volume, RF or mid-frequency power configuration, gas-line requirements, fixture needs, pump configuration, controls, and whether the system is purchased online or through an institutional quotation.',
+      'Pricing depends on chamber volume, RF power configuration, gas-line requirements, fixture needs, pump configuration, controls, and whether the system is purchased online or through an institutional quotation.',
   },
   {
     question: 'What is included with a plasma cleaner system?',
@@ -178,7 +178,7 @@ export function PlasmaCleanerOverviewPage() {
     '@context': 'https://schema.org/',
     '@type': 'ItemList',
     name: 'NineScrolls plasma cleaner systems',
-    description: 'RF and mid-frequency plasma cleaners for research laboratories, surface activation, bonding preparation, and precision sample cleaning.',
+    description: 'RF plasma cleaners for research laboratories, surface activation, bonding preparation, and precision sample cleaning.',
     itemListElement: [...cleaners, ...floorStanding].map((cleaner, index) => ({
       '@type': 'ListItem',
       position: index + 1,
@@ -226,7 +226,7 @@ export function PlasmaCleanerOverviewPage() {
                 Plasma cleaners for surface activation and lab-scale cleaning.
               </h1>
               <p className="mt-6 max-w-3xl text-lg leading-8 text-slate-600">
-                Buy online or request an institutional quote for compact RF and mid-frequency plasma cleaners used in bonding prep, surface activation, organic residue removal, and sample preparation.
+                Buy online or request an institutional quote for compact RF plasma cleaners used in bonding prep, surface activation, organic residue removal, and sample preparation.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <Link to="/products/plasma-cleaner/compare" className="inline-flex items-center justify-center rounded-md bg-sky-600 px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-sky-700">
